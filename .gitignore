@@ -1,0 +1,14 @@
+*.exe
+*.pdb
+*.user
+*.suo
+.vs/
+bin/
+obj/
+
+# Local Google OAuth credentials and runtime data
+oauth.local.json
+*.token
+*.dat
+items-*.json
+settings.json
