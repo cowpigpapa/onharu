@@ -270,5 +270,13 @@ Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하�
 반복 일정 계산 검사는 다음처럼 실행할 수 있습니다.
 
 ```powershell
-.\recurrence-check.ps1 -Exe .\Onharu-step88-refactor.exe
+.\recurrence-check.ps1 -Exe .\Step2-Refactoring\Onharu-step90-refactor.exe
 ```
+
+## 개발 결과물 폴더
+
+- `Step1-Development`: step87~step88 기능 개발 실행 파일
+- `Step2-Refactoring`: 모델 분리부터 step90 리팩토링 실행 파일
+- `Step3-Distribution`: 설치 프로그램과 최종 배포 파일
+
+현재 기능 확인의 기준 파일은 `Step2-Refactoring\Onharu-step90-refactor.exe`입니다.
