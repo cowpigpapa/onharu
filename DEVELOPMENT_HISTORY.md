@@ -1,5 +1,13 @@
 # 온하루 개발 기록
 
+- step88 반복 UI 종료 수정: 반복 종류를 바꿀 때 재사용 라디오/체크 컨트롤이 이전 행의 자식으로 남아 발생한 WPF 논리 부모 예외를 수정했다. 다시 배치하기 전에 기존 부모에서 안전하게 분리한다.
+
+- step88 일정창 이동 개선: 신규 등록과 수정이 같은 일정창 상단 빈 공간 어디서든 드래그되도록 설정창과 이동 동작을 통일했다. 닫기 버튼은 이동 대상에서 제외했다.
+
+- step88 로그인 재수정: 현재 Google Desktop OAuth 클라이언트가 Client Secret을 요구하므로, 소스/EXE에는 포함하지 않고 Windows 사용자 환경에서 읽어 토큰 발급과 갱신에 사용하도록 복구했다.
+
+- step88 로그인 수정: 환경변수 Client Secret 의존성 때문에 새 EXE에서 Google 로그인이 막힌 문제를 수정했다. Desktop OAuth의 PKCE 흐름에서 토큰 발급과 갱신에 Client Secret을 보내지 않도록 변경했다.
+
 - step88: 하단 크레딧을 `MADE BY JUAN.HJLEE · ONHARU (step88)`로 변경하고, 검정색보다 부드러운 진한 슬레이트 색과 SemiBold 굵기를 적용했다.
 
 - step87 배포 준비: 하단 표기를 `made by Juan.HJ · ONHARU (step87)`로 변경하고, Google OAuth client secret을 소스에서 제거하여 `ONHARU_GOOGLE_CLIENT_SECRET` Windows 환경변수로 분리했다. 정식 배포부터는 `ver. x.x.x` 형식을 사용한다.

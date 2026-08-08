@@ -2,7 +2,7 @@
 
 개발판 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (step88)`로 표시합니다. 정식 배포부터는 `ver. 1.0.0` 형식의 버전을 사용합니다.
 
-직접 빌드해 Google Calendar를 연결하려면 Windows 환경변수 `ONHARU_GOOGLE_CLIENT_SECRET`에 본인의 Google OAuth 클라이언트 보안 비밀번호를 설정해야 합니다. 이 값은 소스와 GitHub에 올리지 마세요.
+Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. Client Secret은 소스에 넣지 않고 해당 Windows 사용자 환경에만 보관합니다.
 
 온하루는 Windows 바탕화면에 계속 보이는 월간 달력입니다. 하루 종일 일정, 시간별 Todo, 업무/개인 일정과 Google Calendar를 한 화면에서 관리할 수 있습니다.
 

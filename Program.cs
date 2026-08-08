@@ -348,9 +348,10 @@ namespace FamilyPlanner
         {
             get
             {
-                var value = Environment.GetEnvironmentVariable("ONHARU_GOOGLE_CLIENT_SECRET");
+                var value = Environment.GetEnvironmentVariable("ONHARU_GOOGLE_CLIENT_SECRET") ??
+                    Environment.GetEnvironmentVariable("ONHARU_GOOGLE_CLIENT_SECRET", EnvironmentVariableTarget.User);
                 if (string.IsNullOrWhiteSpace(value))
-                    throw new InvalidOperationException("Google 연결 설정이 없습니다. ONHARU_GOOGLE_CLIENT_SECRET 환경변수를 설정해 주세요.");
+                    throw new InvalidOperationException("Google 연결 설정이 없습니다.");
                 return value;
             }
         }
@@ -676,6 +677,11 @@ namespace FamilyPlanner
             Title = existing == null ? "새 일정" : "일정 수정";
             Width = 460; SizeToContent = SizeToContent.Height; WindowStartupLocation = WindowStartupLocation.CenterOwner;
             WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ResizeMode = ResizeMode.NoResize;
+            PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (e.GetPosition(this).Y < 70 && !HasButtonParent(e.OriginalSource as DependencyObject) && Mouse.LeftButton == MouseButtonState.Pressed)
+                    DragMove();
+            };
             for (var h = 1; h <= 12; h++)
                 hourGrid.Children.Add(new RadioButton { Content = h + "시", Tag = h, GroupName = "Hour", IsChecked = h == 9, Margin = new Thickness(2, 4, 2, 4) });
             foreach (var minute in new[] { 0, 15, 30, 45 })
@@ -715,8 +721,6 @@ namespace FamilyPlanner
                     Child = new TextBlock { Text = string.IsNullOrWhiteSpace(existing.GoogleCalendarId) ? "온하루 등록" : "Google Calendar",
                         Foreground = string.IsNullOrWhiteSpace(existing.GoogleCalendarId) ? Brush("#4338CA") : Brush("#15803D"), FontSize = 11, FontWeight = FontWeights.SemiBold } });
             header.Children.Add(headerTitle);
-            header.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
-            { if (!HasButtonParent(e.OriginalSource as DependencyObject) && Mouse.LeftButton == MouseButtonState.Pressed) DragMove(); };
             var dateCard = new Border { Background = Brush("#EFF6FF"), CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 18) };
             Popup datePopup = null;
@@ -881,6 +885,7 @@ namespace FamilyPlanner
             recurrenceAdvanced.Children.Clear(); recurrenceAdvancedCard.Visibility = string.IsNullOrWhiteSpace(frequency) ? Visibility.Collapsed : Visibility.Visible;
             if (frequency == "daily")
             {
+                Detach(dailyEvery); Detach(dailyWeekdays);
                 var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(dailyEvery); row.Children.Add(dailyWeekdays); recurrenceAdvanced.Children.Add(row);
             }
             else if (frequency == "weekly")
@@ -888,15 +893,22 @@ namespace FamilyPlanner
                 if (weeklyDays.Count == 0)
                     foreach (var day in new[] { Tuple.Create("월", "MO", DayOfWeek.Monday), Tuple.Create("화", "TU", DayOfWeek.Tuesday), Tuple.Create("수", "WE", DayOfWeek.Wednesday), Tuple.Create("목", "TH", DayOfWeek.Thursday), Tuple.Create("금", "FR", DayOfWeek.Friday), Tuple.Create("토", "SA", DayOfWeek.Saturday), Tuple.Create("일", "SU", DayOfWeek.Sunday) })
                         weeklyDays.Add(new CheckBox { Content = day.Item1, Tag = day.Item2, IsChecked = day.Item3 == selectedDate.DayOfWeek, Margin = new Thickness(0, 0, 13, 4) });
-                var row = new WrapPanel(); foreach (var day in weeklyDays) row.Children.Add(day); recurrenceAdvanced.Children.Add(row);
+                var row = new WrapPanel(); foreach (var day in weeklyDays) { Detach(day); row.Children.Add(day); } recurrenceAdvanced.Children.Add(row);
             }
             else if (frequency == "monthly")
             {
                 monthlyDate.Content = "매월 " + selectedDate.Day + "일"; monthlyNth.Content = "매월 " + MonthlyPositionText(selectedDate);
+                Detach(monthlyDate); Detach(monthlyNth); Detach(monthlyLast);
                 var row = new WrapPanel(); row.Children.Add(monthlyDate); row.Children.Add(monthlyNth); row.Children.Add(monthlyLast); recurrenceAdvanced.Children.Add(row);
             }
             else if (frequency == "yearly")
                 recurrenceAdvanced.Children.Add(new TextBlock { Text = "매년 " + selectedDate.Month + "월 " + selectedDate.Day + "일", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(2, 0, 0, 4) });
+        }
+
+        static void Detach(UIElement element)
+        {
+            var parent = VisualTreeHelper.GetParent(element) as Panel;
+            if (parent != null) parent.Children.Remove(element);
         }
 
         static string DayCode(DayOfWeek day)
