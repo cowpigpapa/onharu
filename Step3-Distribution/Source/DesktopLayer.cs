@@ -34,7 +34,6 @@ namespace FamilyPlanner
         const int WM_HOTKEY = 0x0312;
         const int WM_NCLBUTTONDOWN = 0x00A1;
         const int HTBOTTOMRIGHT = 17;
-        const int SHELL_SPAWN_WORKER = 0x052C;
         const uint MOD_CONTROL = 0x0002;
         const uint MOD_ALT = 0x0001;
         const uint VK_F = 0x46;
@@ -45,10 +44,7 @@ namespace FamilyPlanner
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr FindWindow(string className, string windowName);
         [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string className, string windowName);
-        delegate bool EnumWindowsCallback(IntPtr window, IntPtr parameter);
-        [DllImport("user32.dll")] static extern bool EnumWindows(EnumWindowsCallback callback, IntPtr parameter);
         [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetParent(IntPtr child, IntPtr parent);
-        [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr SendMessageTimeout(IntPtr window, uint message, IntPtr wParam, IntPtr lParam, uint flags, uint timeout, out IntPtr result);
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
         static extern IntPtr SetWindowLongPtr64(IntPtr window, int index, IntPtr value);
         [DllImport("user32.dll", EntryPoint = "SetWindowLong", SetLastError = true)]
@@ -95,13 +91,13 @@ namespace FamilyPlanner
         public static void Attach(Window window)
         {
             var handle = new WindowInteropHelper(window).Handle;
-            var desktop = BackgroundWorker();
-            if (handle == IntPtr.Zero || desktop == IntPtr.Zero) return;
+            IntPtr desktop, icons;
+            if (handle == IntPtr.Zero || !DesktopIconLayer(out desktop, out icons)) return;
             SetParent(handle, desktop);
             SetStyle(handle, GetStyle(handle) | WS_EX_NOACTIVATE);
             window.Topmost = false;
             window.ShowInTaskbar = false;
-            Lower(window);
+            SetWindowPos(handle, icons, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
         public static void Detach(Window window)
@@ -116,23 +112,25 @@ namespace FamilyPlanner
         public static void Lower(Window window)
         {
             var handle = new WindowInteropHelper(window).Handle;
-            if (handle != IntPtr.Zero)
-                SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            if (handle == IntPtr.Zero) return;
+            IntPtr desktop, icons;
+            SetWindowPos(handle, DesktopIconLayer(out desktop, out icons) ? icons : HWND_BOTTOM,
+                0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
-        static IntPtr BackgroundWorker()
+        static bool DesktopIconLayer(out IntPtr host, out IntPtr icons)
         {
             var progman = FindWindow("Progman", null);
-            IntPtr ignored;
-            if (progman != IntPtr.Zero) SendMessageTimeout(progman, SHELL_SPAWN_WORKER, IntPtr.Zero, IntPtr.Zero, 0, 1000, out ignored);
-            var background = IntPtr.Zero;
-            EnumWindows(delegate(IntPtr top, IntPtr parameter)
+            icons = progman == IntPtr.Zero ? IntPtr.Zero : FindWindowEx(progman, IntPtr.Zero, "SHELLDLL_DefView", null);
+            if (icons != IntPtr.Zero) { host = progman; return true; }
+            var worker = IntPtr.Zero;
+            while ((worker = FindWindowEx(IntPtr.Zero, worker, "WorkerW", null)) != IntPtr.Zero)
             {
-                if (FindWindowEx(top, IntPtr.Zero, "SHELLDLL_DefView", null) == IntPtr.Zero) return true;
-                background = FindWindowEx(IntPtr.Zero, top, "WorkerW", null);
-                return background == IntPtr.Zero;
-            }, IntPtr.Zero);
-            return background != IntPtr.Zero ? background : progman;
+                icons = FindWindowEx(worker, IntPtr.Zero, "SHELLDLL_DefView", null);
+                if (icons != IntPtr.Zero) { host = worker; return true; }
+            }
+            host = IntPtr.Zero;
+            return false;
         }
 
         public static void BeginResize(Window window)

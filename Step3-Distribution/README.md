@@ -12,7 +12,7 @@
 ## 현재 진행 상태
 
 - `Source`: Step2 안정판에서 복사한 배포용 작업 소스
-- `ONHARU-ver1.0.0-desktop-layer-preview.exe`: 바탕화면 아이콘 뒤·일반 창 아래 계층과 독립 일정창을 적용한 시험판
+- `ONHARU-ver1.0.0-desktop-layer-fix-preview.exe`: 실제 아이콘 호스트 바로 아래에 캘린더를 배치하고 독립 일정창을 적용한 시험판
 - `Installer\ONHARU.iss`: 설치·삭제, 바로가기와 선택형 자동 실행을 구성하는 Inno Setup 설정
 - `Installer\build-installer.ps1`: `Installer\Output\ONHARU-Setup-1.0.0.exe` 생성 스크립트
 
