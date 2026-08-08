@@ -188,3 +188,5 @@
 - secret 금지 문자열과 PKCE 필수 항목을 확인하는 `oauth-check.ps1`을 추가했다.
 - `ONHARU-step3-oauth.exe` 빌드와 고급 반복 일정 자동 검사를 통과했다.
 - 실제 Google 로그인·토큰 갱신·계정 전환은 사용자 실사용 확인 후 안정판으로 확정한다.
+- 기존 OAuth 클라이언트가 `client_secret is missing`을 반환해 Google Cloud에서 새 Desktop 앱 클라이언트를 생성했다.
+- Step3는 새 Desktop Client ID와 `google-v3.token`/`google-account-v3.dat`를 사용하며 Step2의 기존 v2 토큰은 보존한다.

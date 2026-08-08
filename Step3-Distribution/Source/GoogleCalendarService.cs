@@ -15,10 +15,10 @@ namespace FamilyPlanner
 {
     static class GoogleCalendar
     {
-        const string ClientId = "397166784516-v2rap5v944sp38g0h5mnoo3v3nsqkjgg.apps.googleusercontent.com";
+        const string ClientId = "397166784516-g8l18umimg4uvp3l4tjcnlguedoa4c1j.apps.googleusercontent.com";
         const string Scope = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly";
-        static readonly string TokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-v2.token");
-        static readonly string AccountPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-account-v2.dat");
+        static readonly string TokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-v3.token");
+        static readonly string AccountPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-account-v3.dat");
         static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         static string accessToken;
         static DateTime expiresAt;
