@@ -179,3 +179,4 @@
 - 설치 프로그램과 최종 배포 파일은 `Step3-Distribution`에 보관한다.
 - 현재 기능 비교 기준은 `Step2-Refactoring\Onharu-step90-refactor.exe`이다.
 - 리팩토링 소스와 빌드·검사 스크립트는 `Step2-Refactoring\Source`에 함께 보관한다.
+- 리팩토링 전 단일 파일 원본은 `Step1-Development\Source\Program.cs`에 별도로 보관하며 `step88-stable` 태그와 동일하다.
