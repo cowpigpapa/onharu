@@ -653,7 +653,7 @@ namespace FamilyPlanner
                         if (deleteScope == "future") await GoogleCalendar.TrimSeriesBeforeAsync(item);
                         else await GoogleCalendar.DeleteAsync(item, deleteScope == "all");
                     }
-                    catch { ShowItemNotice(item, "Google에서 삭제하지 못했습니다 · 일정은 유지됩니다."); return; }
+                    catch (Exception ex) { ErrorLog.Write("Delete Google event", ex); ShowItemNotice(item, "Google에서 삭제하지 못했습니다 · 일정은 유지됩니다."); return; }
                 }
                 if (deleteScope == "all" && !string.IsNullOrWhiteSpace(item.SeriesId)) items.RemoveAll(x => x.SeriesId == item.SeriesId);
                 else if (deleteScope == "all" && !string.IsNullOrWhiteSpace(item.GoogleRecurringEventId)) items.RemoveAll(x => x.GoogleRecurringEventId == item.GoogleRecurringEventId);
@@ -669,7 +669,7 @@ namespace FamilyPlanner
                 { window.Result.SeriesId = null; window.Result.RecurrenceFrequency = null; window.Result.RecurrenceMode = null; window.Result.RecurrenceDays = null; window.Result.RecurrenceUntil = window.Result.Start.Date; }
                 var movedCalendar = oldGoogle && (!newGoogle || item.GoogleCalendarId != window.Result.GoogleCalendarId);
                 if (movedCalendar && GoogleCalendar.IsConnected)
-                    try { await GoogleCalendar.DeleteAsync(item, window.ApplyToSeries); } catch { ShowItemNotice(item, "Google 캘린더를 변경하지 못했습니다."); return; }
+                    try { await GoogleCalendar.DeleteAsync(item, window.ApplyToSeries); } catch (Exception ex) { ErrorLog.Write("Delete Google recurrence", ex); ShowItemNotice(item, "Google 캘린더를 변경하지 못했습니다."); return; }
                 var index = items.FindIndex(x => x.Id == item.Id);
                 if (index >= 0) items[index] = window.Result;
                 if (window.ApplyToSeries && !string.IsNullOrWhiteSpace(item.SeriesId) && string.IsNullOrWhiteSpace(item.GoogleCalendarId) &&
@@ -722,8 +722,9 @@ namespace FamilyPlanner
                 googleConnecting = true; googleButton.IsEnabled = true; googleButton.Content = "로그인 취소";
                 await GoogleCalendar.ConnectAsync(); return true;
             }
-            catch
+            catch (Exception ex)
             {
+                ErrorLog.Write("Connect Google account", ex);
                 ShowGoogleStatus("Google 로그인 실패 또는 취소", UiRound.ErrorNoticeMilliseconds); return false;
             }
             finally { googleConnecting = false; UpdateGoogleButton(); }
@@ -766,6 +767,7 @@ namespace FamilyPlanner
             }
             catch (Exception ex)
             {
+                ErrorLog.Write("Synchronize Google Calendar", ex);
                 syncProblem = IsOffline(ex) ? "오프라인" : "Google 오류"; UpdateAccountStatus();
                 if (showSuccess)
                 {
@@ -792,6 +794,7 @@ namespace FamilyPlanner
             try { if (wholeSeries) await GoogleCalendar.UpsertSeriesAsync(item); else await GoogleCalendar.UpsertAsync(item); item.PendingGoogleSync = false; syncProblem = null; AttachPrimaryCalendar(item); Store.Save(items); RenderAll(); UpdateAccountStatus(); }
             catch (Exception ex)
             {
+                ErrorLog.Write("Save Google event", ex);
                 item.PendingGoogleSync = true; syncProblem = IsOffline(ex) ? "오프라인" : "Google 오류"; Store.Save(items); UpdateAccountStatus();
                 ShowItemNotice(item, "로컬 저장됨 · " + ShortGoogleError(ex.Message));
             }
@@ -890,7 +893,7 @@ namespace FamilyPlanner
             Store.Save(items); RenderAll();
             if (GoogleCalendar.IsConnected)
                 foreach (var item in changed.Where(x => x.Category == "개인일정" && !string.IsNullOrWhiteSpace(x.GoogleEventId)))
-                    try { await GoogleCalendar.UpsertAsync(item); } catch { }
+                    try { await GoogleCalendar.UpsertAsync(item); } catch (Exception ex) { ErrorLog.Write("Rollover Google event", ex); }
             Store.Save(items);
         }
 

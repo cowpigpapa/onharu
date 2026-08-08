@@ -20,14 +20,20 @@ namespace FamilyPlanner
         const string Scope = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly";
         static readonly string TokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-v3.token");
         static readonly string AccountPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-account-v3.dat");
-        static readonly string OAuthErrorPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "oauth-error.log");
         static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         static string accessToken;
         static DateTime expiresAt;
         static HttpListener pendingListener;
 
         public static bool IsConnected { get { return File.Exists(TokenPath); } }
-        public static string ConnectedAccountId { get { try { return File.Exists(AccountPath) ? Unprotect(File.ReadAllBytes(AccountPath)) : null; } catch { return null; } } }
+        public static string ConnectedAccountId
+        {
+            get
+            {
+                try { return File.Exists(AccountPath) ? Unprotect(File.ReadAllBytes(AccountPath)) : null; }
+                catch (Exception ex) { ErrorLog.Write("Read connected Google account", ex); return null; }
+            }
+        }
         public static void RememberAccount(string id) { if (!string.IsNullOrWhiteSpace(id)) File.WriteAllBytes(AccountPath, Protect(id)); }
 
         public static async Task ConnectAsync()
@@ -189,14 +195,9 @@ namespace FamilyPlanner
             if (!response.IsSuccessStatusCode)
             {
                 var message = token.ErrorDescription ?? token.Error ?? "Google 로그인에 실패했습니다.";
-                try
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(OAuthErrorPath));
-                    File.WriteAllText(OAuthErrorPath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
-                        "HTTP " + (int)response.StatusCode + Environment.NewLine + (token.Error ?? "unknown_error") + Environment.NewLine + message, Encoding.UTF8);
-                }
-                catch { }
-                throw new InvalidOperationException(message);
+                var error = new InvalidOperationException(message);
+                ErrorLog.Write("Google OAuth token request", error, "HTTP " + (int)response.StatusCode + " · " + (token.Error ?? "unknown_error"));
+                throw error;
             }
             return token;
         }

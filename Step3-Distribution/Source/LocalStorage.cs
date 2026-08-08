@@ -45,7 +45,7 @@ namespace FamilyPlanner
                     return items;
                 }
             }
-            catch { return new List<PlannerItem>(); }
+            catch (Exception ex) { ErrorLog.Write("Load calendar data", ex); return new List<PlannerItem>(); }
         }
 
         public static void Save(List<PlannerItem> items)
@@ -131,7 +131,7 @@ namespace FamilyPlanner
                     return settings;
                 }
             }
-            catch { return new PlannerSettings(); }
+            catch (Exception ex) { ErrorLog.Write("Load settings", ex); return new PlannerSettings(); }
         }
 
         public static void SaveSettings(PlannerSettings settings)

@@ -197,3 +197,6 @@
 - `version-check.ps1`로 배포 EXE의 제품명 `ONHARU`, 제작자 `JUAN.HJLEE`, 버전 `1.0.0`을 자동 확인한다.
 - 앱 헤더의 3×3 컬러 타일을 기반으로 16·32·48·256px Windows 아이콘을 생성하고 EXE와 트레이 아이콘에 동일하게 적용했다.
 - `Assets\create-icon.ps1`로 아이콘을 재생성할 수 있으며 버전 검사에서 EXE 아이콘 포함 여부도 확인한다.
+- 날짜별 오류 로그를 `%LOCALAPPDATA%\FamilyPlanner\logs`에 기록하고 최근 14개만 보관하는 `ErrorLog`를 추가했다.
+- 오류 로그는 Client Secret, access/refresh token과 이메일 주소를 자동으로 가리며 일정 제목·메모를 기록하지 않는다.
+- `error-log-check.ps1`로 민감정보 가림을 자동 검증한다.

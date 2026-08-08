@@ -60,7 +60,14 @@ namespace FamilyPlanner
             using (var singleInstance = new Mutex(true, "Local\\OnharuSingleInstance", out first))
             {
                 if (!first) return;
-                try { var app = new Application(); app.Run(new MainWindow()); }
+                try
+                {
+                    AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
+                    { ErrorLog.Write("Unhandled application error", e.ExceptionObject as Exception); };
+                    TaskScheduler.UnobservedTaskException += delegate(object sender, UnobservedTaskExceptionEventArgs e)
+                    { ErrorLog.Write("Unobserved task error", e.Exception); };
+                    var app = new Application(); app.Run(new MainWindow());
+                }
                 finally { singleInstance.ReleaseMutex(); }
             }
         }
