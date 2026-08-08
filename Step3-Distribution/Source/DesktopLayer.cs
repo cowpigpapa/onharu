@@ -28,13 +28,13 @@ namespace FamilyPlanner
 {
     public static class DesktopLayer
     {
-        const int GWLP_HWNDPARENT = -8;
         const int GWL_EXSTYLE = -20;
         const int WS_EX_TRANSPARENT = 0x20;
         const long WS_EX_NOACTIVATE = 0x08000000L;
         const int WM_HOTKEY = 0x0312;
         const int WM_NCLBUTTONDOWN = 0x00A1;
         const int HTBOTTOMRIGHT = 17;
+        const int SHELL_SPAWN_WORKER = 0x052C;
         const uint MOD_CONTROL = 0x0002;
         const uint MOD_ALT = 0x0001;
         const uint VK_F = 0x46;
@@ -44,6 +44,11 @@ namespace FamilyPlanner
         static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr FindWindow(string className, string windowName);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string className, string windowName);
+        delegate bool EnumWindowsCallback(IntPtr window, IntPtr parameter);
+        [DllImport("user32.dll")] static extern bool EnumWindows(EnumWindowsCallback callback, IntPtr parameter);
+        [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetParent(IntPtr child, IntPtr parent);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr SendMessageTimeout(IntPtr window, uint message, IntPtr wParam, IntPtr lParam, uint flags, uint timeout, out IntPtr result);
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
         static extern IntPtr SetWindowLongPtr64(IntPtr window, int index, IntPtr value);
         [DllImport("user32.dll", EntryPoint = "SetWindowLong", SetLastError = true)]
@@ -57,12 +62,6 @@ namespace FamilyPlanner
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool SetWindowPos(IntPtr window, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
-
-        static void SetOwner(IntPtr window, IntPtr owner)
-        {
-            if (IntPtr.Size == 8) SetWindowLongPtr64(window, GWLP_HWNDPARENT, owner);
-            else SetWindowLong32(window, GWLP_HWNDPARENT, owner.ToInt32());
-        }
 
         static long GetStyle(IntPtr window)
         {
@@ -96,9 +95,9 @@ namespace FamilyPlanner
         public static void Attach(Window window)
         {
             var handle = new WindowInteropHelper(window).Handle;
-            var desktop = FindWindow("Progman", null);
+            var desktop = BackgroundWorker();
             if (handle == IntPtr.Zero || desktop == IntPtr.Zero) return;
-            SetOwner(handle, desktop);
+            SetParent(handle, desktop);
             SetStyle(handle, GetStyle(handle) | WS_EX_NOACTIVATE);
             window.Topmost = false;
             window.ShowInTaskbar = false;
@@ -109,7 +108,7 @@ namespace FamilyPlanner
         {
             var handle = new WindowInteropHelper(window).Handle;
             if (handle == IntPtr.Zero) return;
-            SetOwner(handle, IntPtr.Zero);
+            SetParent(handle, IntPtr.Zero);
             window.Topmost = false;
             window.ShowInTaskbar = true;
         }
@@ -119,6 +118,21 @@ namespace FamilyPlanner
             var handle = new WindowInteropHelper(window).Handle;
             if (handle != IntPtr.Zero)
                 SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+
+        static IntPtr BackgroundWorker()
+        {
+            var progman = FindWindow("Progman", null);
+            IntPtr ignored;
+            if (progman != IntPtr.Zero) SendMessageTimeout(progman, SHELL_SPAWN_WORKER, IntPtr.Zero, IntPtr.Zero, 0, 1000, out ignored);
+            var background = IntPtr.Zero;
+            EnumWindows(delegate(IntPtr top, IntPtr parameter)
+            {
+                if (FindWindowEx(top, IntPtr.Zero, "SHELLDLL_DefView", null) == IntPtr.Zero) return true;
+                background = FindWindowEx(IntPtr.Zero, top, "WorkerW", null);
+                return background == IntPtr.Zero;
+            }, IntPtr.Zero);
+            return background != IntPtr.Zero ? background : progman;
         }
 
         public static void BeginResize(Window window)

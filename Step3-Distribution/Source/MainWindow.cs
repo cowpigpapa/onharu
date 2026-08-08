@@ -594,7 +594,8 @@ namespace FamilyPlanner
 
         async void AddItem(object sender, RoutedEventArgs e)
         {
-            var window = new AddItemWindow(selectedDate, null, settings.GoogleCalendars, GoogleCalendar.IsConnected) { Owner = this };
+            var window = new AddItemWindow(selectedDate, null, settings.GoogleCalendars, GoogleCalendar.IsConnected);
+            PlaceCalendarDialog(window);
             if (window.ShowDialog() == true)
             {
                 items.Add(window.Result);
@@ -635,7 +636,8 @@ namespace FamilyPlanner
             }
             var oldRecurrence = item.RecurrenceFrequency; var oldMode = item.RecurrenceMode; var oldDays = item.RecurrenceDays; var oldUntil = item.RecurrenceUntil;
             var originalSeriesStart = string.IsNullOrWhiteSpace(item.SeriesId) ? item.Start : items.Where(x => x.SeriesId == item.SeriesId).Min(x => x.Start);
-            var window = new AddItemWindow(item.Start.Date, item, settings.GoogleCalendars, GoogleCalendar.IsConnected) { Owner = this };
+            var window = new AddItemWindow(item.Start.Date, item, settings.GoogleCalendars, GoogleCalendar.IsConnected);
+            PlaceCalendarDialog(window);
             if (window.ShowDialog() != true) return;
             if (window.DeleteRequested)
             {
@@ -941,6 +943,14 @@ namespace FamilyPlanner
             lockButton.Background = positionLocked ? Brush("#DCFCE7") : Brushes.White;
             lockButton.Foreground = positionLocked ? Brush("#15803D") : Brush("#475569");
             if (resizeHandle != null) resizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        void PlaceCalendarDialog(Window window)
+        {
+            window.Owner = null;
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Left = Left + Math.Max(20, (ActualWidth - window.Width) / 2);
+            window.Top = Top + 36;
         }
 
         void CreateTrayIcon()
