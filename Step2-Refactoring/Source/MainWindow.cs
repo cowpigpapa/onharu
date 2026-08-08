@@ -724,7 +724,7 @@ namespace FamilyPlanner
             }
             catch
             {
-                ShowGoogleStatus("Google 로그인 실패 또는 취소", 2000); return false;
+                ShowGoogleStatus("Google 로그인 실패 또는 취소", UiRound.ErrorNoticeMilliseconds); return false;
             }
             finally { googleConnecting = false; UpdateGoogleButton(); }
         }
@@ -770,7 +770,7 @@ namespace FamilyPlanner
                 if (showSuccess)
                 {
                     googleStatus.Text = syncProblem + " · " + ShortGoogleError(ex.Message); googleStatus.Visibility = Visibility.Visible;
-                    var hideStatus = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                    var hideStatus = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(UiRound.ErrorNoticeMilliseconds) };
                     hideStatus.Tick += delegate { hideStatus.Stop(); googleStatus.Visibility = Visibility.Hidden; googleStatus.Text = "동기화가 완료되었습니다"; };
                     hideStatus.Start();
                 }
@@ -871,7 +871,7 @@ namespace FamilyPlanner
         {
             itemNoticeId = item.Id; itemNoticeText = message; var version = ++itemNoticeVersion;
             selectedDate = item.Start.Date; RenderDetail();
-            await Task.Delay(2000);
+            await Task.Delay(UiRound.ErrorNoticeMilliseconds);
             if (version != itemNoticeVersion) return;
             itemNoticeId = null; itemNoticeText = null; RenderDetail();
         }
