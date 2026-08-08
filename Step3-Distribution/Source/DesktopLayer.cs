@@ -28,6 +28,7 @@ namespace FamilyPlanner
 {
     public static class DesktopLayer
     {
+        const int GWLP_HWNDPARENT = -8;
         const int GWL_EXSTYLE = -20;
         const int WS_EX_TRANSPARENT = 0x20;
         const long WS_EX_NOACTIVATE = 0x08000000L;
@@ -43,8 +44,6 @@ namespace FamilyPlanner
         static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr FindWindow(string className, string windowName);
-        [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string className, string windowName);
-        [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetParent(IntPtr child, IntPtr parent);
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
         static extern IntPtr SetWindowLongPtr64(IntPtr window, int index, IntPtr value);
         [DllImport("user32.dll", EntryPoint = "SetWindowLong", SetLastError = true)]
@@ -58,6 +57,12 @@ namespace FamilyPlanner
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool SetWindowPos(IntPtr window, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
+
+        static void SetOwner(IntPtr window, IntPtr owner)
+        {
+            if (IntPtr.Size == 8) SetWindowLongPtr64(window, GWLP_HWNDPARENT, owner);
+            else SetWindowLong32(window, GWLP_HWNDPARENT, owner.ToInt32());
+        }
 
         static long GetStyle(IntPtr window)
         {
@@ -91,20 +96,20 @@ namespace FamilyPlanner
         public static void Attach(Window window)
         {
             var handle = new WindowInteropHelper(window).Handle;
-            IntPtr desktop, icons;
-            if (handle == IntPtr.Zero || !DesktopIconLayer(out desktop, out icons)) return;
-            SetParent(handle, desktop);
+            var desktop = FindWindow("Progman", null);
+            if (handle == IntPtr.Zero || desktop == IntPtr.Zero) return;
+            SetOwner(handle, desktop);
             SetStyle(handle, GetStyle(handle) | WS_EX_NOACTIVATE);
             window.Topmost = false;
             window.ShowInTaskbar = false;
-            SetWindowPos(handle, icons, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            Lower(window);
         }
 
         public static void Detach(Window window)
         {
             var handle = new WindowInteropHelper(window).Handle;
             if (handle == IntPtr.Zero) return;
-            SetParent(handle, IntPtr.Zero);
+            SetOwner(handle, IntPtr.Zero);
             window.Topmost = false;
             window.ShowInTaskbar = true;
         }
@@ -112,25 +117,8 @@ namespace FamilyPlanner
         public static void Lower(Window window)
         {
             var handle = new WindowInteropHelper(window).Handle;
-            if (handle == IntPtr.Zero) return;
-            IntPtr desktop, icons;
-            SetWindowPos(handle, DesktopIconLayer(out desktop, out icons) ? icons : HWND_BOTTOM,
-                0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        }
-
-        static bool DesktopIconLayer(out IntPtr host, out IntPtr icons)
-        {
-            var progman = FindWindow("Progman", null);
-            icons = progman == IntPtr.Zero ? IntPtr.Zero : FindWindowEx(progman, IntPtr.Zero, "SHELLDLL_DefView", null);
-            if (icons != IntPtr.Zero) { host = progman; return true; }
-            var worker = IntPtr.Zero;
-            while ((worker = FindWindowEx(IntPtr.Zero, worker, "WorkerW", null)) != IntPtr.Zero)
-            {
-                icons = FindWindowEx(worker, IntPtr.Zero, "SHELLDLL_DefView", null);
-                if (icons != IntPtr.Zero) { host = worker; return true; }
-            }
-            host = IntPtr.Zero;
-            return false;
+            if (handle != IntPtr.Zero)
+                SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
         public static void BeginResize(Window window)
