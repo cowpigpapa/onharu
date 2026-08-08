@@ -940,7 +940,8 @@ namespace FamilyPlanner
 
         void CreateTrayIcon()
         {
-            trayIcon = new Forms.NotifyIcon { Icon = Drawing.SystemIcons.Application, Text = "온하루", Visible = true };
+            var appIcon = Drawing.Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
+            trayIcon = new Forms.NotifyIcon { Icon = appIcon ?? Drawing.SystemIcons.Application, Text = "온하루", Visible = true };
             var menu = new Forms.ContextMenuStrip();
             menu.Items.Add("편집 모드 열기", null, delegate
             {

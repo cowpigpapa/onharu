@@ -4,9 +4,11 @@ $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $framework = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319'
 $wpf = Join-Path $framework 'WPF'
 $output = Join-Path $PSScriptRoot $OutputName
+$icon = Join-Path $PSScriptRoot 'Assets\onharu.ico'
+if (-not (Test-Path -LiteralPath $icon)) { throw 'ONHARU icon is missing. Run Assets\create-icon.ps1 first.' }
 
 $arguments = @(
-  '/nologo', '/target:winexe', '/optimize+', "/out:$output",
+  '/nologo', '/target:winexe', '/optimize+', "/out:$output", "/win32icon:$icon",
   ('/reference:' + (Join-Path $wpf 'PresentationCore.dll')),
   ('/reference:' + (Join-Path $wpf 'PresentationFramework.dll')),
   ('/reference:' + (Join-Path $wpf 'WindowsBase.dll')),
