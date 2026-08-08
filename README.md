@@ -247,9 +247,10 @@ Google Tasks에서 가져온 항목은 Calendar API 제한 때문에 완료 상�
 
 ## 13. 직접 빌드하기
 
-PowerShell에서 프로젝트 폴더로 이동한 뒤 실행합니다.
+PowerShell에서 소스 폴더로 이동한 뒤 실행합니다.
 
 ```powershell
+cd .\Step2-Refactoring\Source
 .\build.ps1 -OutputName Onharu-test.exe
 ```
 
@@ -257,20 +258,21 @@ Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하�
 
 현재 소스 구조는 다음과 같습니다.
 
-- `Program.cs`: 앱 시작과 단일 실행 제어
-- `MainWindow.cs`: 메인 달력 UI와 화면 동작
-- `*Window.cs`: 일정, 설정, 검색 등 각 팝업 UI
-- `DesktopLayer.cs`: Windows 바탕화면 레이어와 단축키
-- `UiRound.cs`: 공통 버튼·스크롤 모양
-- `PlannerItem.cs`, `PlannerSettings.cs`: 일정과 설정 데이터
-- `RecurrenceService.cs`: 반복 일정 계산
-- `LocalStorage.cs`: 로컬 저장과 백업
-- `GoogleApiModels.cs`, `GoogleCalendarService.cs`: Google Calendar 연동
+- `Step2-Refactoring/Source/Program.cs`: 앱 시작과 단일 실행 제어
+- `Step2-Refactoring/Source/MainWindow.cs`: 메인 달력 UI와 화면 동작
+- `Step2-Refactoring/Source/*Window.cs`: 일정, 설정, 검색 등 각 팝업 UI
+- `Step2-Refactoring/Source/DesktopLayer.cs`: Windows 바탕화면 레이어와 단축키
+- `Step2-Refactoring/Source/UiRound.cs`: 공통 버튼·스크롤 모양
+- `Step2-Refactoring/Source/PlannerItem.cs`, `PlannerSettings.cs`: 일정과 설정 데이터
+- `Step2-Refactoring/Source/RecurrenceService.cs`: 반복 일정 계산
+- `Step2-Refactoring/Source/LocalStorage.cs`: 로컬 저장과 백업
+- `Step2-Refactoring/Source/GoogleApiModels.cs`, `GoogleCalendarService.cs`: Google Calendar 연동
 
 반복 일정 계산 검사는 다음처럼 실행할 수 있습니다.
 
 ```powershell
-.\recurrence-check.ps1 -Exe .\Step2-Refactoring\Onharu-step90-refactor.exe
+cd .\Step2-Refactoring\Source
+.\recurrence-check.ps1
 ```
 
 ## 개발 결과물 폴더

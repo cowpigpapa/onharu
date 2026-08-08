@@ -12,7 +12,7 @@
 
 - step87 배포 준비: 하단 표기를 `made by Juan.HJ · ONHARU (step87)`로 변경하고, Google OAuth client secret을 소스에서 제거하여 `ONHARU_GOOGLE_CLIENT_SECRET` Windows 환경변수로 분리했다. 정식 배포부터는 `ver. x.x.x` 형식을 사용한다.
 
-> 이 문서는 사용자와 Codex가 나눈 전체 개발 대화를 기능 결정 중심으로 재구성한 기록이다. 세부 구현의 최종 기준은 `PRD.md`와 현재 `Program.cs`다.
+> 이 문서는 사용자와 Codex가 나눈 전체 개발 대화를 기능 결정 중심으로 재구성한 기록이다. 세부 구현의 최종 기준은 `PRD.md`와 `Step2-Refactoring\Source`의 현재 소스다.
 
 ## 1. 출발점
 
@@ -178,4 +178,4 @@
 - 리팩토링 중간·최종 실행 파일은 `Step2-Refactoring`에 보관한다.
 - 설치 프로그램과 최종 배포 파일은 `Step3-Distribution`에 보관한다.
 - 현재 기능 비교 기준은 `Step2-Refactoring\Onharu-step90-refactor.exe`이다.
-- 소스와 빌드 스크립트는 정상 빌드를 위해 프로젝트 루트에 유지한다.
+- 리팩토링 소스와 빌드·검사 스크립트는 `Step2-Refactoring\Source`에 함께 보관한다.

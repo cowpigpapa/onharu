@@ -1,4 +1,4 @@
-param([string]$Exe = '.\Step2-Refactoring\Onharu-step90-refactor.exe')
+param([string]$Exe = '..\Onharu-step90-refactor.exe')
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $service = $assembly.GetType('FamilyPlanner.RecurrenceService')
 $method = $service.GetMethod('NextOccurrence', [Reflection.BindingFlags]'Public,Static')
