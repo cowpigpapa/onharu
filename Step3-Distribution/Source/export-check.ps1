@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-ver1.0.0-category-preview.exe')
+param([string]$Exe = '..\ONHARU-ver1.0.0-category-fix-preview.exe')
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $itemType = $assembly.GetType('FamilyPlanner.PlannerItem')
@@ -29,7 +29,8 @@ try {
     if (-not $csvText.Contains('"Family Team"')) { throw 'Google calendar category was not exported to CSV.' }
     if (-not $icsText.Contains('BEGIN:VCALENDAR') -or -not $icsText.Contains('SUMMARY:Meeting\, "Review"')) { throw 'ICS format validation failed.' }
     if (-not $icsText.Contains('CATEGORIES:Family Team')) { throw 'Google calendar category was not exported to ICS.' }
-    if ((Get-Item $json).Length -eq 0) { throw 'JSON export is empty.' }
+    $jsonText = [IO.File]::ReadAllText($json)
+    if (-not $jsonText.Contains('"Category":"Family Team"')) { throw 'Google calendar category was not exported to JSON.' }
 }
 finally { if ([IO.Directory]::Exists($folder)) { [IO.Directory]::Delete($folder, $true) } }
 

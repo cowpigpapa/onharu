@@ -12,8 +12,9 @@ namespace FamilyPlanner
     {
         public static void Json(string path, List<PlannerItem> items)
         {
+            var exported = items.Select(CloneForExport).ToList();
             using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
-                new DataContractJsonSerializer(typeof(List<PlannerItem>)).WriteObject(stream, items);
+                new DataContractJsonSerializer(typeof(List<PlannerItem>)).WriteObject(stream, exported);
         }
 
         public static void Csv(string path, List<PlannerItem> items)
@@ -59,6 +60,13 @@ namespace FamilyPlanner
         }
 
         static string Q(string value) { return "\"" + (value ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\""; }
+        static PlannerItem CloneForExport(PlannerItem item)
+        {
+            var clone = new PlannerItem();
+            foreach (var field in typeof(PlannerItem).GetFields()) field.SetValue(clone, field.GetValue(item));
+            clone.Category = ExportCategory(item);
+            return clone;
+        }
         static string ExportCategory(PlannerItem item) { return string.IsNullOrWhiteSpace(item.GoogleCalendarName) ? item.Category : item.GoogleCalendarName; }
         static string Escape(string value) { return (value ?? "").Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\r", "\\n"); }
     }
