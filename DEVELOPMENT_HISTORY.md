@@ -1,5 +1,7 @@
 # 온하루 개발 기록
 
+- step88: 하단 크레딧을 `MADE BY JUAN.HJLEE · ONHARU (step88)`로 변경하고, 검정색보다 부드러운 진한 슬레이트 색과 SemiBold 굵기를 적용했다.
+
 - step87 배포 준비: 하단 표기를 `made by Juan.HJ · ONHARU (step87)`로 변경하고, Google OAuth client secret을 소스에서 제거하여 `ONHARU_GOOGLE_CLIENT_SECRET` Windows 환경변수로 분리했다. 정식 배포부터는 `ver. x.x.x` 형식을 사용한다.
 
 > 이 문서는 사용자와 Codex가 나눈 전체 개발 대화를 기능 결정 중심으로 재구성한 기록이다. 세부 구현의 최종 기준은 `PRD.md`와 현재 `Program.cs`다.

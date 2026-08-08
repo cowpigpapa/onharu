@@ -1,8 +1,8 @@
 # 온하루(ONHARU) 제품 요구사항 문서
 
 문서 상태: 개발 기준 문서  
-기준 빌드: step87  
-개발판 표기: `made by Juan.HJ · ONHARU (step87)`  
+기준 빌드: step88  
+개발판 표기: `MADE BY JUAN.HJLEE · ONHARU (step88)`  
 정식 배포판 표기: `made by Juan.HJ · ONHARU (ver. x.x.x)`  
 대상 운영체제: Windows 전용
 

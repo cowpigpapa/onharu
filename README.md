@@ -1,6 +1,6 @@
 # 온하루 · ONHARU 사용자 설명서
 
-개발판 화면 하단은 `made by Juan.HJ · ONHARU (step87)`로 표시합니다. 정식 배포부터는 `ver. 1.0.0` 형식의 버전을 사용합니다.
+개발판 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (step88)`로 표시합니다. 정식 배포부터는 `ver. 1.0.0` 형식의 버전을 사용합니다.
 
 직접 빌드해 Google Calendar를 연결하려면 Windows 환경변수 `ONHARU_GOOGLE_CLIENT_SECRET`에 본인의 Google OAuth 클라이언트 보안 비밀번호를 설정해야 합니다. 이 값은 소스와 GitHub에 올리지 마세요.
 
@@ -8,7 +8,7 @@
 
 ## 1. 실행하기
 
-1. `Onharu-step87.exe`를 실행합니다.
+1. `Onharu-step88.exe`를 실행합니다.
 2. 온하루는 작업표시줄의 일반 창이 아니라 바탕화면 레이어에 표시됩니다.
 3. 화면 오른쪽 아래 알림 영역에도 온하루 아이콘이 생깁니다.
 4. 종료하려면 달력 오른쪽 위 `×` 또는 트레이 메뉴의 종료를 사용합니다.
