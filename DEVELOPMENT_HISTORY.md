@@ -190,3 +190,4 @@
 - 실제 Google 로그인·토큰 갱신·계정 전환은 사용자 실사용 확인 후 안정판으로 확정한다.
 - 기존 OAuth 클라이언트가 `client_secret is missing`을 반환해 Google Cloud에서 새 Desktop 앱 클라이언트를 생성했다.
 - Step3는 새 Desktop Client ID와 `google-v3.token`/`google-account-v3.dat`를 사용하며 Step2의 기존 v2 토큰은 보존한다.
+- 새 Desktop 클라이언트도 실제 토큰 교환에서 `client_secret is missing`을 반환했다. 새 Secret은 `OAuthCredentials.local.cs`에만 저장하고 `.gitignore`로 제외했으며, 공개 소스에는 값을 남기지 않는다.

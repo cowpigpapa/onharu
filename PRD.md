@@ -271,8 +271,8 @@
 
 ## 11. 배포용 Google OAuth
 
-- Windows 데스크톱 앱은 OAuth client secret을 안전하게 숨길 수 없으므로 배포 실행 파일과 설치 파일에 포함하지 않는다.
+- Windows 데스크톱 앱은 OAuth client secret을 안전한 비밀로 간주할 수 없다. Google 토큰 서버가 요구하는 Desktop client credential은 Git에서 제외한 로컬 빌드 파일로 관리하며 공개 저장소와 진단 로그에는 포함하지 않는다.
 - 인증 코드 교환은 매 로그인마다 생성한 PKCE `code_verifier`와 S256 `code_challenge`를 사용한다.
 - 로컬 리디렉션 응답의 `state`를 검증한 뒤에만 인증 코드를 교환한다.
-- 토큰 갱신에는 client ID와 암호화해 저장한 refresh token만 사용한다.
+- 토큰 교환과 갱신에는 Desktop client credential을 사용하며 사용자 refresh token은 DPAPI로 암호화해 저장한다.
 - 기존 DPAPI 토큰 저장, 계정 분리, 로그아웃 및 계정 전환 동작을 유지한다.

@@ -16,6 +16,7 @@ namespace FamilyPlanner
     static class GoogleCalendar
     {
         const string ClientId = "397166784516-g8l18umimg4uvp3l4tjcnlguedoa4c1j.apps.googleusercontent.com";
+        const string ClientSecret = OAuthCredentials.ClientSecret;
         const string Scope = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly";
         static readonly string TokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-v3.token");
         static readonly string AccountPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-account-v3.dat");
@@ -54,7 +55,7 @@ namespace FamilyPlanner
             await context.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length); context.Response.Close(); listener.Stop(); pendingListener = null;
             if (query["error"] != null) throw new InvalidOperationException(query["error"]);
             if (query["state"] != state) throw new InvalidOperationException("Google 로그인 응답을 확인할 수 없습니다.");
-            var token = await TokenRequest("code=" + E(query["code"]) + "&client_id=" + E(ClientId) +
+            var token = await TokenRequest("code=" + E(query["code"]) + "&client_id=" + E(ClientId) + "&client_secret=" + E(ClientSecret) +
                 "&redirect_uri=" + E(redirect) + "&grant_type=authorization_code&code_verifier=" + E(verifier));
             if (string.IsNullOrWhiteSpace(token.RefreshToken)) throw new InvalidOperationException("Google 갱신 토큰을 받지 못했습니다.");
             SaveRefreshToken(token.RefreshToken); SetAccessToken(token);
@@ -177,7 +178,7 @@ namespace FamilyPlanner
         {
             if (!string.IsNullOrWhiteSpace(accessToken) && expiresAt > DateTime.UtcNow.AddMinutes(1)) return;
             if (!IsConnected) throw new InvalidOperationException("Google 캘린더가 연결되지 않았습니다.");
-            var token = await TokenRequest("client_id=" + E(ClientId) + "&refresh_token=" + E(LoadRefreshToken()) + "&grant_type=refresh_token");
+            var token = await TokenRequest("client_id=" + E(ClientId) + "&client_secret=" + E(ClientSecret) + "&refresh_token=" + E(LoadRefreshToken()) + "&grant_type=refresh_token");
             SetAccessToken(token);
         }
 
