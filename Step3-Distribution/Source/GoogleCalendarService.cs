@@ -19,6 +19,7 @@ namespace FamilyPlanner
         const string Scope = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly";
         static readonly string TokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-v3.token");
         static readonly string AccountPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "google-account-v3.dat");
+        static readonly string OAuthErrorPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FamilyPlanner", "oauth-error.log");
         static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         static string accessToken;
         static DateTime expiresAt;
@@ -184,7 +185,18 @@ namespace FamilyPlanner
         {
             var response = await Http.PostAsync("https://oauth2.googleapis.com/token", new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded"));
             var token = Read<GoogleToken>(await response.Content.ReadAsStringAsync());
-            if (!response.IsSuccessStatusCode) throw new InvalidOperationException(token.ErrorDescription ?? token.Error ?? "Google 로그인에 실패했습니다.");
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = token.ErrorDescription ?? token.Error ?? "Google 로그인에 실패했습니다.";
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(OAuthErrorPath));
+                    File.WriteAllText(OAuthErrorPath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
+                        "HTTP " + (int)response.StatusCode + Environment.NewLine + (token.Error ?? "unknown_error") + Environment.NewLine + message, Encoding.UTF8);
+                }
+                catch { }
+                throw new InvalidOperationException(message);
+            }
             return token;
         }
 
