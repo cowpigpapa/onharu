@@ -257,7 +257,11 @@ Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하�
 
 현재 소스 구조는 다음과 같습니다.
 
-- `Program.cs`: 앱 시작, 메인 달력 및 팝업 UI
+- `Program.cs`: 앱 시작과 단일 실행 제어
+- `MainWindow.cs`: 메인 달력 UI와 화면 동작
+- `*Window.cs`: 일정, 설정, 검색 등 각 팝업 UI
+- `DesktopLayer.cs`: Windows 바탕화면 레이어와 단축키
+- `UiRound.cs`: 공통 버튼·스크롤 모양
 - `PlannerItem.cs`, `PlannerSettings.cs`: 일정과 설정 데이터
 - `RecurrenceService.cs`: 반복 일정 계산
 - `LocalStorage.cs`: 로컬 저장과 백업

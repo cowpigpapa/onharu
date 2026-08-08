@@ -266,4 +266,5 @@
 - 로컬 반복 생성과 Google RRULE 생성은 `RecurrenceService`를 단일 기준으로 사용한다.
 - Google OAuth와 Calendar API 통신은 `GoogleCalendarService.cs`의 `GoogleCalendar` 클래스에서 담당한다.
 - UI 동작을 바꾸는 리팩토링은 구조 분리와 같은 변경에 섞지 않는다.
-- `MainWindow`와 팝업 창 분리는 자동 검사와 실사용 회귀 테스트 범위를 먼저 확보한 뒤 별도 단계로 진행한다.
+- 각 팝업은 `*Window.cs`, 메인 달력은 `MainWindow.cs`, Windows 레이어 제어는 `DesktopLayer.cs`에서 관리한다.
+- 창 파일 분리 이후에도 팝업 디자인과 메인 달력의 동작 규칙은 동일하게 유지한다.
