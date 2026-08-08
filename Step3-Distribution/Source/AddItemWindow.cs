@@ -431,7 +431,7 @@ namespace FamilyPlanner
         async void ShowValidation()
         {
             validationMessage.Visibility = Visibility.Visible; title.Focus();
-            await Task.Delay(2000);
+            await Task.Delay(UiRound.ErrorNoticeMilliseconds);
             validationMessage.Visibility = Visibility.Collapsed;
         }
 

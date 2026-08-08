@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-step3-oauth4.exe')
+param([string]$Exe = '..\ONHARU-step3-oauth5.exe')
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $service = $assembly.GetType('FamilyPlanner.RecurrenceService')
 $method = $service.GetMethod('NextOccurrence', [Reflection.BindingFlags]'Public,Static')

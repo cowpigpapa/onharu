@@ -28,6 +28,8 @@ namespace FamilyPlanner
 {
     static class UiRound
     {
+        public const int ErrorNoticeMilliseconds = 5000;
+
         public static void Apply(Button button, double radius)
         {
             var border = new FrameworkElementFactory(typeof(Border));
