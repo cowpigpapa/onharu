@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-ver1.0.0-log-preview.exe')
+param([string]$Exe = '..\ONHARU-ver1.0.0-export-preview.exe')
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 $path = (Resolve-Path $Exe).Path

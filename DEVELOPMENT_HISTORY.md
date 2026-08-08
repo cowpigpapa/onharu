@@ -200,3 +200,10 @@
 - 날짜별 오류 로그를 `%LOCALAPPDATA%\FamilyPlanner\logs`에 기록하고 최근 14개만 보관하는 `ErrorLog`를 추가했다.
 - 오류 로그는 Client Secret, access/refresh token과 이메일 주소를 자동으로 가리며 일정 제목·메모를 기록하지 않는다.
 - `error-log-check.ps1`로 민감정보 가림을 자동 검증한다.
+
+## 16. 일정 내보내기 추가 (2026-08-08)
+
+- 설정에 `일정 내보내기`를 추가하고 JSON, CSV, ICS 저장 형식을 제공했다.
+- JSON은 온하루 전체 보관, CSV는 Excel 확인, ICS는 다른 캘린더 가져오기 용도로 구분했다.
+- 기존 일정은 변경하지 않으며 저장 실패는 5초 안내와 개인정보 보호 오류 기록으로 처리한다.
+- `export-check.ps1`로 CSV 인용, ICS 기본 구조, JSON 생성을 자동 검증한다.

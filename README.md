@@ -283,4 +283,14 @@ cd .\Step2-Refactoring\Source
 
 현재 기능 확인의 기준 파일은 `Step2-Refactoring\Onharu-step90-refactor.exe`입니다.
 
-배포 작업은 `Step3-Distribution\Source`에서 진행하며, 현재 시험 파일은 `Step3-Distribution\ONHARU-ver1.0.0-log-preview.exe`입니다.
+배포 작업은 `Step3-Distribution\Source`에서 진행하며, 현재 시험 파일은 `Step3-Distribution\ONHARU-ver1.0.0-export-preview.exe`입니다.
+
+### 일정 내보내기
+
+설정의 `일정 내보내기`에서 현재 계정에 표시된 일정을 저장할 수 있습니다.
+
+- JSON: 온하루 데이터와 동기화 정보를 포함한 전체 보관용
+- CSV: Excel 등에서 목록을 확인하고 정리하는 용도
+- ICS: Google Calendar, Outlook 등 다른 캘린더로 가져오는 용도
+
+내보내기는 원본 일정을 변경하지 않습니다. 저장 실패 안내는 5초 동안 표시되며 오류 기록에도 남습니다.

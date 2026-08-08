@@ -48,6 +48,7 @@ namespace FamilyPlanner
         public bool LogoutGoogleAccount;
         public bool ImportLocalItems;
         public bool RestoreBackup;
+        public bool ExportItems;
         bool selectedPastelStyle;
         readonly StackPanel fontOptions = new StackPanel { Orientation = Orientation.Horizontal };
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
@@ -235,6 +236,9 @@ namespace FamilyPlanner
                     Background = Brush("#EEF2FF"), Foreground = Brush("#4338CA"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 6, 0, 0), Cursor = Cursors.Hand };
                 Round(restore, 10); restore.Click += delegate { RestoreBackup = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }; panel.Children.Add(restore);
             }
+            var export = new Button { Content = "⇩  일정 내보내기  ·  JSON · CSV · ICS", Height = 34,
+                Background = Brush("#ECFDF5"), Foreground = Brush("#047857"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 6, 0, 0), Cursor = Cursors.Hand };
+            Round(export, 10); export.Click += delegate { ExportItems = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }; panel.Children.Add(export);
             var logout = new Button { Content = "로그아웃", Height = 44, Background = Brush("#F1F5F9"), Foreground = Brush("#64748B"),
                 BorderThickness = new Thickness(0), Margin = new Thickness(0, 10, 4, 0), Cursor = Cursors.Hand };
             Round(logout, 13);

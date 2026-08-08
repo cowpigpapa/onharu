@@ -557,6 +557,8 @@ namespace FamilyPlanner
                 if (backup.ShowDialog() == true)
                 { items.Clear(); items.AddRange(Store.Restore(backup.SelectedPath)); RenderAll(); }
             }
+            if (window.ExportItems)
+                new ExportWindow(items.OrderBy(x => x.Start).ToList()) { Owner = this }.ShowDialog();
             if (window.ChangeGoogleAccount || window.LogoutGoogleAccount)
             {
                 GoogleCalendar.Disconnect();

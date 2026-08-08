@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-ver1.0.0-log-preview.exe')
+param([string]$Exe = '..\ONHARU-ver1.0.0-export-preview.exe')
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $type = $assembly.GetType('FamilyPlanner.ErrorLog')
