@@ -267,7 +267,7 @@ namespace FamilyPlanner
             sidebarButton.Margin = new Thickness(0, 8, 3, 0); sidebarButton.Visibility = settings.SidebarVisible ? Visibility.Collapsed : Visibility.Visible;
             Grid.SetColumn(sidebarButton, 1); Panel.SetZIndex(sidebarButton, 30); body.Children.Add(sidebarButton);
             Grid.SetRow(body, 1); body.Margin = new Thickness(12, 0, 12, 30); root.Children.Add(body);
-            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (step88)", FontSize = 10,
+            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 1.0.0)", FontSize = 10,
                 FontWeight = FontWeights.SemiBold, Foreground = Brush("#475569"),
                 HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 50, 5) };

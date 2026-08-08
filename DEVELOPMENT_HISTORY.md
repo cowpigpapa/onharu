@@ -193,3 +193,5 @@
 - 새 Desktop 클라이언트도 실제 토큰 교환에서 `client_secret is missing`을 반환했다. 새 Secret은 `OAuthCredentials.local.cs`에만 저장하고 `.gitignore`로 제외했으며, 공개 소스에는 값을 남기지 않는다.
 - 빨간색 오류·실패·입력 경고가 너무 빨리 사라지지 않도록 공통 노출 시간을 5초로 통일하고 성공 안내 시간은 유지했다.
 - 동일한 5초 오류 안내를 Step1 단일 소스와 Step2 리팩토링 소스에도 반영하고 각 단계별 확인 EXE를 별도로 생성했다.
+- Step3 화면 표기를 `ver. 1.0.0`으로 전환하고 Windows 파일 속성에 제품명, 제작자, 파일·제품 버전을 추가했다.
+- `version-check.ps1`로 배포 EXE의 제품명 `ONHARU`, 제작자 `JUAN.HJLEE`, 버전 `1.0.0`을 자동 확인한다.
