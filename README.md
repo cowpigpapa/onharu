@@ -253,4 +253,18 @@ PowerShell에서 프로젝트 폴더로 이동한 뒤 실행합니다.
 .\build.ps1 -OutputName Onharu-test.exe
 ```
 
-Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용합니다. 주요 소스는 `Program.cs` 한 파일이며 외부 패키지는 사용하지 않습니다.
+Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하며 외부 패키지는 사용하지 않습니다.
+
+현재 소스 구조는 다음과 같습니다.
+
+- `Program.cs`: 앱 시작, 메인 달력 및 팝업 UI
+- `PlannerItem.cs`, `PlannerSettings.cs`: 일정과 설정 데이터
+- `RecurrenceService.cs`: 반복 일정 계산
+- `LocalStorage.cs`: 로컬 저장과 백업
+- `GoogleApiModels.cs`, `GoogleCalendarService.cs`: Google Calendar 연동
+
+반복 일정 계산 검사는 다음처럼 실행할 수 있습니다.
+
+```powershell
+.\recurrence-check.ps1 -Exe .\Onharu-step88-refactor.exe
+```

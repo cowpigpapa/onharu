@@ -16,7 +16,13 @@ $arguments = @(
   ('/reference:' + (Join-Path $framework 'System.Security.dll')),
   ('/reference:' + (Join-Path $framework 'System.Windows.Forms.dll')),
   ('/reference:' + (Join-Path $framework 'System.Drawing.dll')),
-  (Join-Path $PSScriptRoot 'Program.cs')
+  (Join-Path $PSScriptRoot 'Program.cs'),
+  (Join-Path $PSScriptRoot 'PlannerItem.cs'),
+  (Join-Path $PSScriptRoot 'PlannerSettings.cs'),
+  (Join-Path $PSScriptRoot 'GoogleApiModels.cs'),
+  (Join-Path $PSScriptRoot 'RecurrenceService.cs'),
+  (Join-Path $PSScriptRoot 'LocalStorage.cs'),
+  (Join-Path $PSScriptRoot 'GoogleCalendarService.cs')
 )
 & $csc $arguments
 

@@ -148,3 +148,17 @@
 - Google 읽기 전용 일정과 Google Tasks의 API 제한을 우회해 수정하지 않는다.
 - 디자인은 둥근 사각형, 파스텔 카드, 일정한 여백, 동일한 닫기 버튼 위치를 유지한다.
 - 새 기능은 `PRD.md`의 데이터·동기화 규칙과 충돌하지 않는지 먼저 확인한다.
+
+## 12. step88 안정판 보존 및 1차 리팩토링 (2026-08-08)
+
+- Google 로그인, 반복 옵션 창 안정화, 팝업 이동 기능까지 확인된 소스를 `step88-stable` Git 태그로 보존했다.
+- 사용자 기능과 저장 형식을 바꾸지 않고 단일 `Program.cs`에서 다음 책임을 분리했다.
+  - `PlannerItem.cs`: 일정 데이터 모델
+  - `PlannerSettings.cs`: 앱 및 Google 캘린더 설정 모델
+  - `GoogleApiModels.cs`: Google API JSON 응답 모델
+  - `RecurrenceService.cs`: 로컬 반복 계산과 Google RRULE 생성
+  - `LocalStorage.cs`: 계정별 JSON 저장, 설정, 백업 및 복원
+  - `GoogleCalendarService.cs`: OAuth, Calendar API 및 동기화
+- `%LOCALAPPDATA%\FamilyPlanner`, `items-{account}.json`, 설정 파일, 백업 폴더 및 파일 잠금 이름은 기존과 동일하게 유지했다.
+- 평일, 복수 요일, 매월 마지막 날, 매월 마지막 요일 및 Google RRULE 검사를 자동화해 통과했다.
+- UI 창과 `MainWindow` 분리는 결합도가 높고 실사용 회귀 위험이 커서 이번 단계에서는 진행하지 않았다.
