@@ -9,4 +9,10 @@
 - 제거 및 업데이트 확인용 자료
 - 배포 전 점검 결과
 
-현재는 Google OAuth 배포 구조를 정리하기 전이므로 비어 있습니다.
+## 현재 진행 상태
+
+- `Source`: Step2 안정판에서 복사한 배포용 작업 소스
+- `ONHARU-step3-oauth.exe`: client secret 없이 PKCE로 로그인하는 1차 시험판
+- `Source\oauth-check.ps1`: client secret 제거와 PKCE 필수 항목 검사
+
+아직 설치 프로그램이 아닌 내부 시험판입니다. Google 로그인과 계정 전환을 확인한 뒤 다음 배포 작업을 진행합니다.

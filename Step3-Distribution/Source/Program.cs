@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Diagnostics;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Markup;
+using System.Windows.Media;
+using System.Windows.Threading;
+using Forms = System.Windows.Forms;
+using Drawing = System.Drawing;
+
+namespace FamilyPlanner
+{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static class Program
+    {
+        [STAThread]
+        public static void Main()
+        {
+            bool first;
+            using (var singleInstance = new Mutex(true, "Local\\OnharuSingleInstance", out first))
+            {
+                if (!first) return;
+                try { var app = new Application(); app.Run(new MainWindow()); }
+                finally { singleInstance.ReleaseMutex(); }
+            }
+        }
+    }
+}

@@ -180,3 +180,11 @@
 - 현재 기능 비교 기준은 `Step2-Refactoring\Onharu-step90-refactor.exe`이다.
 - 리팩토링 소스와 빌드·검사 스크립트는 `Step2-Refactoring\Source`에 함께 보관한다.
 - 리팩토링 전 단일 파일 원본은 `Step1-Development\Source\Program.cs`에 별도로 보관하며 `step88-stable` 태그와 동일하다.
+
+## 15. Step3 배포용 OAuth 시작 (2026-08-08)
+
+- Step2 최종 소스를 `Step3-Distribution\Source`로 복사해 배포 작업을 분리했다.
+- 기존 PKCE S256과 `state` 검증을 유지하고 OAuth 요청에서 `client_secret` 및 `ONHARU_GOOGLE_CLIENT_SECRET` 환경변수 의존성을 제거했다.
+- secret 금지 문자열과 PKCE 필수 항목을 확인하는 `oauth-check.ps1`을 추가했다.
+- `ONHARU-step3-oauth.exe` 빌드와 고급 반복 일정 자동 검사를 통과했다.
+- 실제 Google 로그인·토큰 갱신·계정 전환은 사용자 실사용 확인 후 안정판으로 확정한다.

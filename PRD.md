@@ -268,3 +268,11 @@
 - UI 동작을 바꾸는 리팩토링은 구조 분리와 같은 변경에 섞지 않는다.
 - 각 팝업은 `*Window.cs`, 메인 달력은 `MainWindow.cs`, Windows 레이어 제어는 `DesktopLayer.cs`에서 관리한다.
 - 창 파일 분리 이후에도 팝업 디자인과 메인 달력의 동작 규칙은 동일하게 유지한다.
+
+## 11. 배포용 Google OAuth
+
+- Windows 데스크톱 앱은 OAuth client secret을 안전하게 숨길 수 없으므로 배포 실행 파일과 설치 파일에 포함하지 않는다.
+- 인증 코드 교환은 매 로그인마다 생성한 PKCE `code_verifier`와 S256 `code_challenge`를 사용한다.
+- 로컬 리디렉션 응답의 `state`를 검증한 뒤에만 인증 코드를 교환한다.
+- 토큰 갱신에는 client ID와 암호화해 저장한 refresh token만 사용한다.
+- 기존 DPAPI 토큰 저장, 계정 분리, 로그아웃 및 계정 전환 동작을 유지한다.
