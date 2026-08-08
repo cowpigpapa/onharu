@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-ver1.0.0-export-preview.exe')
+param([string]$Exe = '..\ONHARU-ver1.0.0-category-preview.exe')
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $itemType = $assembly.GetType('FamilyPlanner.PlannerItem')
@@ -9,6 +9,12 @@ $item.Id = 'export-check'; $item.Title = 'Meeting, "Review"'; $item.Notes = "Fir
 $item.Category = 'Business'; $item.Start = [datetime]'2026-08-10 09:00'; $item.End = [datetime]'2026-08-10 10:00'
 $item.SnoozeUntil = [datetime]'2000-01-01'; $item.RecurrenceUntil = [datetime]'2026-08-10'
 $items.Add($item)
+$googleItem = [Activator]::CreateInstance($itemType)
+$googleItem.Id = 'google-category-check'; $googleItem.Title = 'Family dinner'; $googleItem.Category = 'Personal'
+$googleItem.GoogleCalendarId = 'family'; $googleItem.GoogleCalendarName = 'Family Team'; $googleItem.AllDay = $true
+$googleItem.Start = [datetime]'2026-08-11'; $googleItem.End = [datetime]'2026-08-12'
+$googleItem.SnoozeUntil = [datetime]'2000-01-01'; $googleItem.RecurrenceUntil = [datetime]'2026-08-11'
+$items.Add($googleItem)
 $service = $assembly.GetType('FamilyPlanner.ExportService')
 $folder = Join-Path ([IO.Path]::GetTempPath()) ('onharu-export-check-' + [guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($folder) | Out-Null
@@ -20,7 +26,9 @@ try {
     $service.GetMethod('Json').Invoke($null, [object[]]@([string]$json, $items.PSObject.BaseObject)) | Out-Null
     $csvText = [IO.File]::ReadAllText($csv); $icsText = [IO.File]::ReadAllText($ics)
     if (-not $csvText.Contains('"Meeting, ""Review"""')) { throw 'CSV quote escaping failed.' }
+    if (-not $csvText.Contains('"Family Team"')) { throw 'Google calendar category was not exported to CSV.' }
     if (-not $icsText.Contains('BEGIN:VCALENDAR') -or -not $icsText.Contains('SUMMARY:Meeting\, "Review"')) { throw 'ICS format validation failed.' }
+    if (-not $icsText.Contains('CATEGORIES:Family Team')) { throw 'Google calendar category was not exported to ICS.' }
     if ((Get-Item $json).Length -eq 0) { throw 'JSON export is empty.' }
 }
 finally { if ([IO.Directory]::Exists($folder)) { [IO.Directory]::Delete($folder, $true) } }

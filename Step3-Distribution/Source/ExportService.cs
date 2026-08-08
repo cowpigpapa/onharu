@@ -21,7 +21,7 @@ namespace FamilyPlanner
             var lines = new List<string> { "날짜,제목,카테고리,하루종일,시작,종료,할일,완료,중요,메모,출처" };
             foreach (var item in items.OrderBy(x => x.Start).ThenBy(x => x.Title))
                 lines.Add(string.Join(",", new[] {
-                    Q(item.Start.ToString("yyyy-MM-dd")), Q(item.Title), Q(item.Category), Q(item.AllDay ? "예" : "아니오"),
+                    Q(item.Start.ToString("yyyy-MM-dd")), Q(item.Title), Q(ExportCategory(item)), Q(item.AllDay ? "예" : "아니오"),
                     Q(item.AllDay ? "" : item.Start.ToString("yyyy-MM-dd HH:mm")), Q(item.AllDay ? "" : item.End.ToString("yyyy-MM-dd HH:mm")),
                     Q(item.IsTodo ? "예" : "아니오"), Q(item.Completed ? "예" : "아니오"), Q(item.Important ? "예" : "아니오"),
                     Q(item.Notes), Q(string.IsNullOrWhiteSpace(item.GoogleCalendarId) ? "온하루" : "Google Calendar") }));
@@ -48,7 +48,7 @@ namespace FamilyPlanner
                 }
                 lines.Add("SUMMARY:" + Escape(item.Title));
                 if (!string.IsNullOrWhiteSpace(item.Notes)) lines.Add("DESCRIPTION:" + Escape(item.Notes));
-                if (!string.IsNullOrWhiteSpace(item.Category)) lines.Add("CATEGORIES:" + Escape(item.Category));
+                if (!string.IsNullOrWhiteSpace(ExportCategory(item))) lines.Add("CATEGORIES:" + Escape(ExportCategory(item)));
                 if (item.Important) lines.Add("PRIORITY:1");
                 if (item.Completed) lines.Add("X-ONHARU-COMPLETED:TRUE");
                 if (!string.IsNullOrWhiteSpace(item.RecurrenceFrequency)) lines.Add(RecurrenceService.GoogleRecurrenceRule(item));
@@ -59,6 +59,7 @@ namespace FamilyPlanner
         }
 
         static string Q(string value) { return "\"" + (value ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\""; }
+        static string ExportCategory(PlannerItem item) { return string.IsNullOrWhiteSpace(item.GoogleCalendarName) ? item.Category : item.GoogleCalendarName; }
         static string Escape(string value) { return (value ?? "").Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\r", "\\n"); }
     }
 }
