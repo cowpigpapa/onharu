@@ -191,8 +191,8 @@ namespace FamilyPlanner
             var durationRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 2) };
             endDateButton.Content = endDateInclusive.ToString("yyyy.MM.dd"); Round(endDateButton, 9);
             multiDay.IsEnabled = true; multiDay.IsChecked = endDateInclusive > selectedDate; endDateButton.IsEnabled = multiDay.IsChecked == true;
-            multiDay.Checked += delegate { if (endDateInclusive <= selectedDate) endDateInclusive = selectedDate.AddDays(1); UpdateEndDateButton(); endDateButton.IsEnabled = true; };
-            multiDay.Unchecked += delegate { endDateInclusive = selectedDate; UpdateEndDateButton(); endDateButton.IsEnabled = false; };
+            multiDay.Checked += delegate { if (endDateInclusive <= selectedDate) endDateInclusive = selectedDate.AddDays(1); UpdateEndDateButton(); endDateButton.IsEnabled = true; UpdateRecurrenceAvailability(); };
+            multiDay.Unchecked += delegate { endDateInclusive = selectedDate; UpdateEndDateButton(); endDateButton.IsEnabled = false; UpdateRecurrenceAvailability(); };
             durationRow.Children.Add(multiDay); durationRow.Children.Add(new TextBlock { Text = "종료 날짜", FontSize = 11, Foreground = Brush("#64748B"),
                 VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) }); durationRow.Children.Add(endDateButton);
             timeCardContent.Children.Add(durationRow); timeCardContent.Children.Add(hourGrid);
@@ -253,6 +253,7 @@ namespace FamilyPlanner
             }
             if (editingSeries) { editSingleOccurrence.Margin = new Thickness(8, 0, 0, 5); recurrenceOptions.Children.Add(editSingleOccurrence); }
             recurrenceLine.Children.Add(recurrenceOptions); recurrenceAdvancedCard.Child = recurrenceAdvanced; recurrenceLine.Children.Add(recurrenceAdvancedCard); panel.Children.Add(recurrenceLine);
+            UpdateRecurrenceAvailability();
             var recurrenceCalendar = new System.Windows.Controls.Calendar { SelectedDate = recurrenceUntilDate, DisplayDate = recurrenceUntilDate,
                 SelectionMode = CalendarSelectionMode.SingleDate, FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center,
                 LayoutTransform = new ScaleTransform(1.20, 1.20) };
@@ -358,6 +359,17 @@ namespace FamilyPlanner
             endDateButton.Content = endDateInclusive.ToString("yyyy.MM.dd");
         }
 
+        void UpdateRecurrenceAvailability()
+        {
+            var enabled = multiDay.IsChecked != true;
+            recurrenceOptions.IsEnabled = enabled;
+            if (enabled) return;
+            var none = recurrenceOptions.Children.OfType<RadioButton>().FirstOrDefault(x => x.Tag != null && string.IsNullOrWhiteSpace(x.Tag.ToString()));
+            if (none != null) none.IsChecked = true;
+            recurrenceUntilButton.IsEnabled = false;
+            recurrenceAdvancedCard.Visibility = Visibility.Collapsed;
+        }
+
         static void Detach(UIElement element)
         {
             var parent = VisualTreeHelper.GetParent(element) as Panel;
@@ -384,7 +396,7 @@ namespace FamilyPlanner
             var target = selectedOption.Tag.ToString();
             var selectedSource = target.StartsWith("google:") ? googleSources.FirstOrDefault(x => "google:" + x.Id == target) : null;
             var selectedCategory = target == "local:business" ? "업무일정" : "개인일정";
-            var recurrenceFrequency = recurrenceOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
+            var recurrenceFrequency = multiDay.IsChecked == true ? "" : recurrenceOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
             var recurrenceMode = recurrenceFrequency == "daily" ? (dailyWeekdays.IsChecked == true ? "weekdays" : "daily") :
                 recurrenceFrequency == "monthly" ? (monthlyLast.IsChecked == true ? "monthly_last" : monthlyNth.IsChecked == true ? "monthly_nth" : "monthly_date") : recurrenceFrequency;
             var recurrenceDays = recurrenceFrequency == "weekly" ? string.Join(",", weeklyDays.Where(x => x.IsChecked == true).Select(x => x.Tag.ToString())) :
@@ -455,7 +467,7 @@ namespace FamilyPlanner
             if (item.AllDay)
             {
                 allDay.IsChecked = true; endDateInclusive = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
-                multiDay.IsChecked = endDateInclusive > item.Start.Date; UpdateEndDateButton(); return;
+                multiDay.IsChecked = endDateInclusive > item.Start.Date; UpdateEndDateButton(); UpdateRecurrenceAvailability(); return;
             }
             var hour = item.Start.Hour; afternoon.IsChecked = hour >= 12; morning.IsChecked = hour < 12;
             var displayHour = hour % 12; if (displayHour == 0) displayHour = 12;
