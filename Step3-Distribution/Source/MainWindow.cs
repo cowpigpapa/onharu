@@ -250,7 +250,7 @@ namespace FamilyPlanner
             oppositeResizeHandle.MouseLeftButtonUp += delegate(object sender, MouseButtonEventArgs e)
             { resizing = false; oppositeResizeHandle.ReleaseMouseCapture(); e.Handled = true; };
             oppositeResizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
-            oppositeResizeHandle.Margin = new Thickness(3, 3, 0, 0); Grid.SetRow(oppositeResizeHandle, 1);
+            oppositeResizeHandle.Margin = new Thickness(3, -12, 0, 0); Grid.SetRow(oppositeResizeHandle, 1);
             Panel.SetZIndex(oppositeResizeHandle, 20); root.Children.Add(oppositeResizeHandle);
 
             var body = new Grid(); body.ColumnDefinitions.Add(new ColumnDefinition());
