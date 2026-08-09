@@ -789,7 +789,7 @@ namespace FamilyPlanner
         void RebuildLocalSeries(PlannerItem edited, DateTime originalStart)
         {
             var seriesId = edited.SeriesId; var duration = edited.End - edited.Start; items.RemoveAll(x => x.SeriesId == seriesId && x.Id != edited.Id);
-            edited.Start = originalStart.Date.Add(edited.Start.TimeOfDay); edited.End = edited.Start.Add(edited.AllDay ? TimeSpan.FromDays(1) : duration);
+            edited.Start = originalStart.Date.Add(edited.Start.TimeOfDay); edited.End = edited.Start.Add(duration);
             if (!string.IsNullOrWhiteSpace(edited.RecurrenceFrequency)) ExpandLocalRecurrence(edited);
         }
 

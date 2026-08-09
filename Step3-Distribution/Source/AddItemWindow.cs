@@ -34,11 +34,15 @@ namespace FamilyPlanner
         readonly TextBlock validationMessage = new TextBlock { Text = "제목을 입력해 주세요.", Foreground = new SolidColorBrush(Color.FromRgb(220, 38, 38)),
             FontSize = 12, FontWeight = FontWeights.SemiBold, Height = 18, Margin = new Thickness(4, 0, 0, 6), Visibility = Visibility.Collapsed };
         DateTime selectedDate;
+        DateTime endDateInclusive;
         readonly RadioButton allDay = new RadioButton { Content = "하루 종일", GroupName = "TimeMode", IsChecked = true, Margin = new Thickness(0, 0, 18, 0) };
         readonly RadioButton morning = new RadioButton { Content = "오전", GroupName = "TimeMode", Margin = new Thickness(0, 0, 18, 0) };
         readonly RadioButton afternoon = new RadioButton { Content = "오후", GroupName = "TimeMode" };
         readonly UniformGrid hourGrid = new UniformGrid { Columns = 6, Margin = new Thickness(0, 8, 0, 12), IsEnabled = false };
         readonly UniformGrid minuteGrid = new UniformGrid { Columns = 4, Margin = new Thickness(0, 5, 0, 10), IsEnabled = false };
+        readonly CheckBox multiDay = new CheckBox { Content = "여러 날 일정", Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly Button endDateButton = new Button { Height = 32, Width = 118, IsEnabled = false, Background = Brushes.White,
+            Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235)), BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
         readonly RadioButton noRollover = new RadioButton { Content = "이월 안 함", GroupName = "Rollover", IsChecked = true, Margin = new Thickness(0, 0, 10, 0), FontSize = 12 };
         readonly RadioButton nextDayRollover = new RadioButton { Content = "다음 날", Tag = "next_day", GroupName = "Rollover", Margin = new Thickness(0, 0, 10, 0), FontSize = 12 };
         readonly RadioButton nextWeekRollover = new RadioButton { Content = "다음 주 같은 요일", Tag = "next_week", GroupName = "Rollover", Margin = new Thickness(0, 0, 10, 0), FontSize = 12 };
@@ -76,6 +80,7 @@ namespace FamilyPlanner
             editingItem = existing;
             googleSources = sources ?? new List<GoogleCalendarSetting>();
             selectedDate = selected.Date;
+            endDateInclusive = existing != null && existing.AllDay && existing.End > existing.Start ? existing.End.AddTicks(-1).Date : selectedDate;
             editingSeries = existing != null && (!string.IsNullOrWhiteSpace(existing.SeriesId) || !string.IsNullOrWhiteSpace(existing.GoogleRecurringEventId) || !string.IsNullOrWhiteSpace(existing.RecurrenceFrequency));
             recurrenceUntilDate = selectedDate.AddYears(1);
             Title = existing == null ? "새 일정" : "일정 수정";
@@ -91,9 +96,9 @@ namespace FamilyPlanner
             foreach (var minute in new[] { 0, 15, 30, 45 })
                 minuteGrid.Children.Add(new RadioButton { Content = minute + "분", Tag = minute, GroupName = "Minute",
                     IsChecked = minute == 0, Margin = new Thickness(2, 4, 2, 4) });
-            allDay.Checked += delegate { hourGrid.IsEnabled = false; minuteGrid.IsEnabled = false; rolloverOptions.IsEnabled = false; };
-            morning.Checked += delegate { hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; };
-            afternoon.Checked += delegate { hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; };
+            allDay.Checked += delegate { hourGrid.IsEnabled = false; minuteGrid.IsEnabled = false; rolloverOptions.IsEnabled = false; multiDay.IsEnabled = true; endDateButton.IsEnabled = multiDay.IsChecked == true; };
+            morning.Checked += delegate { hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; multiDay.IsEnabled = false; endDateButton.IsEnabled = false; };
+            afternoon.Checked += delegate { hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; multiDay.IsEnabled = false; endDateButton.IsEnabled = false; };
             categories.Children.Add(new TextBlock { Text = "온하루 · 로컬 전용", Foreground = Brush("#64748B"), FontSize = 11, Margin = new Thickness(0, 0, 0, 5) });
             var localChoices = new WrapPanel();
             AddCategoryChoice(localChoices, "업무일정", "local:business", true, true);
@@ -158,7 +163,7 @@ namespace FamilyPlanner
                 inlineCalendar.PreviewMouseDoubleClick += delegate(object sender, MouseButtonEventArgs e)
                 {
                     if (HasDayButtonParent(e.OriginalSource as DependencyObject))
-                    { selectedDate = pendingDate; editableDateText.Text = FormatDate(selectedDate); UpdateRecurrenceOptions(); datePopup.IsOpen = false; e.Handled = true; }
+                    { selectedDate = pendingDate; NormalizeEndDate(); editableDateText.Text = FormatDate(selectedDate); UpdateRecurrenceOptions(); datePopup.IsOpen = false; e.Handled = true; }
                 };
                 changeDateButton.Click += delegate
                 {
@@ -170,7 +175,7 @@ namespace FamilyPlanner
                     datePopup.IsOpen = !datePopup.IsOpen;
                 };
                 datePopup.Closed += delegate
-                { selectedDate = pendingDate; editableDateText.Text = FormatDate(selectedDate); UpdateRecurrenceOptions(); };
+                { selectedDate = pendingDate; NormalizeEndDate(); editableDateText.Text = FormatDate(selectedDate); UpdateRecurrenceOptions(); };
                 Grid.SetColumn(changeDateButton, 1); dateRow.Children.Add(changeDateButton); dateCard.Child = dateRow;
             }
             panel.Children.Add(dateCard);
@@ -182,7 +187,15 @@ namespace FamilyPlanner
                 Foreground = Brush("#64748B"), Margin = new Thickness(0, 0, 0, 8) });
             var timeModes = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 7, 0, 2) };
             timeModes.Children.Add(allDay); timeModes.Children.Add(morning); timeModes.Children.Add(afternoon);
-            timeCardContent.Children.Add(timeModes); timeCardContent.Children.Add(hourGrid);
+            timeCardContent.Children.Add(timeModes);
+            var durationRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 2) };
+            endDateButton.Content = endDateInclusive.ToString("yyyy.MM.dd"); Round(endDateButton, 9);
+            multiDay.IsEnabled = true; multiDay.IsChecked = endDateInclusive > selectedDate; endDateButton.IsEnabled = multiDay.IsChecked == true;
+            multiDay.Checked += delegate { if (endDateInclusive <= selectedDate) endDateInclusive = selectedDate.AddDays(1); UpdateEndDateButton(); endDateButton.IsEnabled = true; };
+            multiDay.Unchecked += delegate { endDateInclusive = selectedDate; UpdateEndDateButton(); endDateButton.IsEnabled = false; };
+            durationRow.Children.Add(multiDay); durationRow.Children.Add(new TextBlock { Text = "종료 날짜", FontSize = 11, Foreground = Brush("#64748B"),
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) }); durationRow.Children.Add(endDateButton);
+            timeCardContent.Children.Add(durationRow); timeCardContent.Children.Add(hourGrid);
             timeCardContent.Children.Add(new TextBlock { Text = "분", FontSize = 11, Foreground = Brush("#64748B") });
             timeCardContent.Children.Add(minuteGrid);
             rolloverOptions.Children.Add(noRollover); rolloverOptions.Children.Add(nextDayRollover);
@@ -192,6 +205,30 @@ namespace FamilyPlanner
             panel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#CBD5E1"),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 12, 14, 6),
                 Margin = new Thickness(0, 2, 0, 12), Child = timeCardContent });
+            var endCalendar = new System.Windows.Controls.Calendar { SelectedDate = endDateInclusive, DisplayDate = endDateInclusive,
+                SelectionMode = CalendarSelectionMode.SingleDate, FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center,
+                LayoutTransform = new ScaleTransform(1.20, 1.20) };
+            StyleCalendar(endCalendar);
+            var endPopup = new Popup { PlacementTarget = endDateButton, Placement = PlacementMode.Bottom,
+                AllowsTransparency = true, StaysOpen = false, PopupAnimation = PopupAnimation.Fade, VerticalOffset = 6, Child = endCalendar };
+            endCalendar.SelectedDatesChanged += delegate
+            {
+                if (!endCalendar.SelectedDate.HasValue) return;
+                endDateInclusive = endCalendar.SelectedDate.Value.Date < selectedDate ? selectedDate : endCalendar.SelectedDate.Value.Date;
+                UpdateEndDateButton();
+            };
+            endCalendar.PreviewMouseDoubleClick += delegate(object sender, MouseButtonEventArgs e)
+            { if (HasDayButtonParent(e.OriginalSource as DependencyObject)) { endPopup.IsOpen = false; e.Handled = true; } };
+            endDateButton.Click += delegate
+            {
+                if (!endPopup.IsOpen)
+                {
+                    endCalendar.DisplayDateStart = selectedDate; endCalendar.DisplayDate = endDateInclusive; endCalendar.SelectedDate = endDateInclusive;
+                    endCalendar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    endPopup.HorizontalOffset = endDateButton.ActualWidth - endCalendar.DesiredSize.Width + 120;
+                }
+                endPopup.IsOpen = !endPopup.IsOpen;
+            };
             var categoryContent = new StackPanel();
             categoryContent.Children.Add(categories);
             panel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#CBD5E1"),
@@ -309,6 +346,18 @@ namespace FamilyPlanner
                 recurrenceAdvanced.Children.Add(new TextBlock { Text = "매년 " + selectedDate.Month + "월 " + selectedDate.Day + "일", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(2, 0, 0, 4) });
         }
 
+        void NormalizeEndDate()
+        {
+            if (endDateInclusive < selectedDate) endDateInclusive = selectedDate;
+            if (multiDay.IsChecked != true) endDateInclusive = selectedDate;
+            UpdateEndDateButton();
+        }
+
+        void UpdateEndDateButton()
+        {
+            endDateButton.Content = endDateInclusive.ToString("yyyy.MM.dd");
+        }
+
         static void Detach(UIElement element)
         {
             var parent = VisualTreeHelper.GetParent(element) as Panel;
@@ -342,7 +391,7 @@ namespace FamilyPlanner
                 recurrenceMode == "monthly_nth" ? RecurrenceService.MonthlyNthCode(selectedDate) : null;
             if (recurrenceFrequency == "weekly" && string.IsNullOrWhiteSpace(recurrenceDays)) recurrenceDays = RecurrenceService.DayCode(selectedDate.DayOfWeek);
             Result = new PlannerItem { Id = editingItem == null ? Guid.NewGuid().ToString() : editingItem.Id, Title = title.Text.Trim(), Start = start,
-                End = allDay.IsChecked == true ? start.AddDays(1) : start.AddMinutes(30),
+                End = allDay.IsChecked == true ? (multiDay.IsChecked == true ? endDateInclusive.AddDays(1) : start.AddDays(1)) : start.AddMinutes(30),
                 AllDay = allDay.IsChecked == true, IsTodo = allDay.IsChecked != true,
                 Category = selectedCategory, Notes = notes.Text.Trim(),
                 GoogleEventId = editingItem == null ? null : editingItem.GoogleEventId,
@@ -403,7 +452,11 @@ namespace FamilyPlanner
             var target = !string.IsNullOrWhiteSpace(item.GoogleCalendarId) ? "google:" + item.GoogleCalendarId :
                 item.Category == "업무일정" ? "local:business" : "local:personal";
             foreach (var radio in categoryOptions) radio.IsChecked = radio.Tag.ToString() == target;
-            if (item.AllDay) { allDay.IsChecked = true; return; }
+            if (item.AllDay)
+            {
+                allDay.IsChecked = true; endDateInclusive = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
+                multiDay.IsChecked = endDateInclusive > item.Start.Date; UpdateEndDateButton(); return;
+            }
             var hour = item.Start.Hour; afternoon.IsChecked = hour >= 12; morning.IsChecked = hour < 12;
             var displayHour = hour % 12; if (displayHour == 0) displayHour = 12;
             foreach (var radio in hourGrid.Children.OfType<RadioButton>()) radio.IsChecked = (int)radio.Tag == displayHour;
