@@ -138,7 +138,7 @@ namespace FamilyPlanner
             root.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
             {
                 if (!positionLocked && e.GetPosition(root).Y <= 72 && !HasInteractiveParent(e.OriginalSource as DependencyObject))
-                    DragMove();
+                { DragMove(); DesktopLayer.Lower(this); }
             };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition());
@@ -339,7 +339,7 @@ namespace FamilyPlanner
             stack.Children.Add(dateHeader);
             foreach (var item in dateItems.Where(x => x.Category != "국경일").Take(6))
             {
-                var eventText = new TextBlock { Text = (item.IsTodo ? (item.Completed ? "✓ " : "□ ") : "") + (item.AllDay ? "" : item.Start.ToString("HH:mm ")) + (item.Important ? "★ " : "") + item.Title,
+                var eventText = new TextBlock { Text = (item.IsTodo ? (item.Completed ? "✓ " : "□ ") : "") + CalendarTimeText(item, date) + (item.Important ? "★ " : "") + item.Title,
                     FontSize = Ui(11), Foreground = item.Important ? Brush("#F20D7A") : settings.PastelEventStyle ? Brush("#1F2937") : Brushes.White,
                     FontWeight = item.Important ? FontWeights.Bold : FontWeights.Normal,
                     Padding = new Thickness(4, 2, 3, 2), TextTrimming = TextTrimming.CharacterEllipsis,
@@ -393,7 +393,7 @@ namespace FamilyPlanner
                         FontWeight = item.Important ? FontWeights.Bold : FontWeights.SemiBold,
                         Foreground = item.Important ? Brush("#F20D7A") : item.Category == "국경일" ? Brush("#EF4444") : Brush("#1E293B"),
                         TextDecorations = item.Completed ? TextDecorations.Strikethrough : null });
-                    text.Children.Add(new TextBlock { Text = item.AllDay ? "하루 종일" : item.Start.ToString("HH:mm"),
+                    text.Children.Add(new TextBlock { Text = DetailTimeText(item, selectedDate),
                         FontSize = Ui(11), Foreground = Brush(ItemColor(item)) });
                     if (!string.IsNullOrWhiteSpace(item.Notes))
                         text.Children.Add(new TextBlock { Text = item.Notes, FontSize = Ui(11), Foreground = Brush("#64748B"),
@@ -417,10 +417,31 @@ namespace FamilyPlanner
 
         IEnumerable<PlannerItem> VisibleItems(DateTime date)
         {
-            var day = items.Where(x => x.Start.Date == date.Date && IsItemVisible(x));
+            var day = items.Where(x => OccursOnDate(x, date) && IsItemVisible(x));
             if (settings.CalendarOrderMode == "time")
                 return day.OrderBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
             return day.OrderBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+        }
+
+        internal static bool OccursOnDate(PlannerItem item, DateTime date)
+        {
+            var last = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
+            return date.Date >= item.Start.Date && date.Date <= last;
+        }
+
+        static string CalendarTimeText(PlannerItem item, DateTime date)
+        {
+            if (item.AllDay) return "";
+            var last = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
+            if (date.Date == item.Start.Date) return item.Start.ToString("HH:mm ");
+            return date.Date == last ? "→" + item.End.ToString("HH:mm ") : "계속 ";
+        }
+
+        static string DetailTimeText(PlannerItem item, DateTime date)
+        {
+            if (item.AllDay) return "하루 종일";
+            if (item.Start.Date == (item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date)) return item.Start.ToString("HH:mm");
+            return item.Start.ToString("M/d HH:mm") + " – " + item.End.ToString("M/d HH:mm");
         }
 
         bool IsItemVisible(PlannerItem item)
