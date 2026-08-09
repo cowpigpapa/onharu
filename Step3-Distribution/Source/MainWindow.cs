@@ -226,7 +226,7 @@ namespace FamilyPlanner
             resizeHandle.MouseLeftButtonUp += delegate(object sender, MouseButtonEventArgs e)
             { resizing = false; resizeHandle.ReleaseMouseCapture(); e.Handled = true; };
             resizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
-            resizeHandle.Margin = new Thickness(0, 0, 3, -14); Grid.SetRow(resizeHandle, 1);
+            resizeHandle.Margin = new Thickness(0, 0, 3, 16); Grid.SetRow(resizeHandle, 1);
             Panel.SetZIndex(resizeHandle, 20); root.Children.Add(resizeHandle);
 
             oppositeResizeHandle = new Border { Width = 24, Height = 24, Background = Brush("#D9E0F2FE"),

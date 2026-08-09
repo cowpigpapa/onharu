@@ -12,7 +12,7 @@
 ## 현재 진행 상태
 
 - `Source`: Step2 안정판에서 복사한 배포용 작업 소스
-- `ONHARU-ver1.0.0-palette-draft-preview.exe`: 팔레트 이름·색의 1차 저장과 설정 최종 저장을 분리한 최신 시험판
+- `ONHARU-ver1.0.0-settings-layout-preview.exe`: 색상 저장 흐름과 설정 버튼 배치를 다듬은 최신 시험판
 - `Installer\ONHARU.iss`: 설치·삭제, 바로가기와 선택형 자동 실행을 구성하는 Inno Setup 설정
 - `Installer\build-installer.ps1`: `Installer\Output\ONHARU-Setup-1.0.0.exe` 생성 스크립트
 

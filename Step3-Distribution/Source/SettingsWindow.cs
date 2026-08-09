@@ -92,7 +92,7 @@ namespace FamilyPlanner
             Grid.SetColumn(paletteName, 1); nameLayout.Children.Add(paletteName);
             var nameBox = new Border { Height = 36, Background = Brushes.White, BorderBrush = Brush("#C7D2FE"),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Child = nameLayout };
-            var saveMyPalette = new Button { Content = "♡  1차 저장", Height = 36,
+            var saveMyPalette = new Button { Content = "♡  색상 저장", Height = 36,
                 Background = Brush("#EEF2FF"), Foreground = Brush("#4F46E5"), BorderBrush = Brush("#C7D2FE"),
                 BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
@@ -101,11 +101,20 @@ namespace FamilyPlanner
                 Foreground = Brush("#64748B"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
             Round(resetPalettes, 11);
+            resetPalettes.IsEnabled = PaletteNames.Any(x => !string.IsNullOrWhiteSpace(x)) || SavedPalettes.Any(x => !string.IsNullOrWhiteSpace(x)) || CustomPalette.Count >= 2;
+            resetPalettes.Opacity = resetPalettes.IsEnabled ? 1 : .45;
+            var swap = new Button { Content = "⇄  색상 교환", Height = 36, Background = Brush("#FCE7F3"),
+                Foreground = Brush("#BE185D"), BorderBrush = Brush("#FBCFE8"), BorderThickness = new Thickness(1),
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
+            Round(swap, 11);
             var paletteSaveRow = new Grid { Margin = new Thickness(0, 7, 0, 4) };
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition()); paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(172) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition());
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(104) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
             paletteSaveRow.Children.Add(nameBox); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette);
-            Grid.SetColumn(resetPalettes, 2); paletteSaveRow.Children.Add(resetPalettes); panel.Children.Add(paletteSaveRow);
+            Grid.SetColumn(resetPalettes, 2); paletteSaveRow.Children.Add(resetPalettes);
+            Grid.SetColumn(swap, 3); paletteSaveRow.Children.Add(swap); panel.Children.Add(paletteSaveRow);
             var presets = new UniformGrid { Columns = 5, Margin = new Thickness(0, 3, 0, 14) };
             var names = new[] { "오션", "핫 핑크", "라임 블루", "선셋", "내 설정", "로즈 밀크", "라벤더", "민트", "피치 스카이", "Google 기본" };
             var palettes = new[] {
@@ -150,7 +159,12 @@ namespace FamilyPlanner
                 option.Checked += delegate
                 {
                     selectedPaletteIndex = index;
-                    paletteName.Text = names[index];
+                    var googleDefault = index == names.Length - 1;
+                    paletteName.IsReadOnly = googleDefault;
+                    paletteName.Text = googleDefault ? "Google 기본 (변경 불가)" : names[index];
+                    nameBox.Background = googleDefault ? Brush("#F1F5F9") : Brushes.White;
+                    paletteName.Foreground = googleDefault ? Brush("#94A3B8") : Brush("#4338CA");
+                    saveMyPalette.IsEnabled = !googleDefault; saveMyPalette.Opacity = googleDefault ? .45 : 1;
                     if (index == names.Length - 1)
                     {
                         foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
@@ -173,6 +187,9 @@ namespace FamilyPlanner
             foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
                 colorGrid.Children.Add(ColorEditor(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.Color) ? "#E9799A" : editor.Item2.Color, editor.Item2.Name));
             panel.Children.Add(colorGrid);
+            paletteName.TextChanged += delegate { if (!paletteName.IsReadOnly) { resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1; } };
+            foreach (var slider in sliders.Values.SelectMany(x => x))
+                slider.ValueChanged += delegate { resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1; };
             saveMyPalette.Click += delegate
             {
                 if (selectedPaletteIndex == names.Length - 1) return;
@@ -187,9 +204,10 @@ namespace FamilyPlanner
                 palettes[selectedPaletteIndex] = currentColors.ToArray();
                 if (selectedPaletteIndex == 4) CustomPalette = currentColors.ToList();
                 CustomPalettePastelStyle = selectedPastelStyle;
-                saveMyPalette.Content = "✓  1차 저장 완료";
+                saveMyPalette.Content = "✓  색상 저장 완료";
                 saveMyPalette.Background = Brush("#ECFDF5"); saveMyPalette.Foreground = Brush("#047857");
                 saveMyPalette.BorderBrush = Brush("#A7F3D0");
+                resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1;
             };
             paletteName.KeyDown += delegate(object sender, KeyEventArgs e)
             {
@@ -202,10 +220,8 @@ namespace FamilyPlanner
                 for (var i = 0; i < 9; i++) { names[i] = initialNames[i]; palettes[i] = initialPalettes[i].ToArray(); paletteOptions[i].Content = names[i]; }
                 paletteOptions[4].IsChecked = false; paletteOptions[4].IsChecked = true; paletteName.Text = names[4];
                 resetPalettes.Content = "✓  초기화 완료";
+                resetPalettes.IsEnabled = false; resetPalettes.Opacity = .45;
             };
-            var swap = new Button { Content = "선택한 두 색상 교환", Height = 32, Background = Brush("#FCE7F3"),
-                Foreground = Brush("#BE185D"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 2, 0, 10), Cursor = Cursors.Hand };
-            Round(swap, 9);
             swap.Click += delegate
             {
                 var selected = colorSelections.Where(x => x.IsChecked == true).Select(x => x.Tag.ToString()).ToList();
@@ -213,7 +229,6 @@ namespace FamilyPlanner
                 var first = Hex(selected[0]); SetHex(selected[0], Hex(selected[1])); SetHex(selected[1], first);
                 foreach (var check in colorSelections) check.IsChecked = false;
             };
-            panel.Children.Add(swap);
             foreach (var editor in sourceEditors.Where(x => IsHoliday(x.Item2))) panel.Children.Add(FixedHolidayColor(editor.Item2.Name));
             panel.Children.Add(new TextBlock { Text = "글자 크기", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 6) });
             foreach (var option in new[] { new { Name = "작게", Size = 11.0 }, new { Name = "보통", Size = 12.0 }, new { Name = "크게", Size = 14.0 } })
@@ -319,15 +334,19 @@ namespace FamilyPlanner
                 importLocal.Click += delegate { ImportLocalItems = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); };
                 panel.Children.Add(importLocal);
             }
+            var dataActions = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+            dataActions.ColumnDefinitions.Add(new ColumnDefinition()); dataActions.ColumnDefinitions.Add(new ColumnDefinition());
             if (backupCount > 0)
             {
                 var restore = new Button { Content = "↶  백업 복원  ·  최근 " + backupCount + "개", Height = 34,
-                    Background = Brush("#EEF2FF"), Foreground = Brush("#4338CA"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 6, 0, 0), Cursor = Cursors.Hand };
-                Round(restore, 10); restore.Click += delegate { RestoreBackup = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }; panel.Children.Add(restore);
+                    Background = Brush("#EEF2FF"), Foreground = Brush("#4338CA"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 0, 4, 0), Cursor = Cursors.Hand };
+                Round(restore, 10); restore.Click += delegate { RestoreBackup = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }; dataActions.Children.Add(restore);
             }
             var export = new Button { Content = "⇩  일정 내보내기  ·  JSON · CSV · ICS", Height = 34,
-                Background = Brush("#ECFDF5"), Foreground = Brush("#047857"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 6, 0, 0), Cursor = Cursors.Hand };
-            Round(export, 10); export.Click += delegate { ExportItems = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }; panel.Children.Add(export);
+                Background = Brush("#ECFDF5"), Foreground = Brush("#047857"), BorderThickness = new Thickness(0), Margin = new Thickness(4, 0, 0, 0), Cursor = Cursors.Hand };
+            Round(export, 10); export.Click += delegate { ExportItems = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); };
+            if (backupCount > 0) Grid.SetColumn(export, 1); else Grid.SetColumnSpan(export, 2);
+            dataActions.Children.Add(export); panel.Children.Add(dataActions);
             var logout = new Button { Content = "로그아웃", Height = 44, Background = Brush("#F1F5F9"), Foreground = Brush("#64748B"),
                 BorderThickness = new Thickness(0), Margin = new Thickness(0, 10, 4, 0), Cursor = Cursors.Hand };
             Round(logout, 13);
