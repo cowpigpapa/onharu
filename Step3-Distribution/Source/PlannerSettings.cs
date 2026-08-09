@@ -34,6 +34,8 @@ namespace FamilyPlanner
         [DataMember] public bool ShowLunar;
         [DataMember] public string CategoryOrderPreset = "business";
         [DataMember] public List<string> CategoryOrder = new List<string>();
+        [DataMember] public List<string> CustomPalette = new List<string>();
+        [DataMember] public bool CustomPalettePastelStyle;
     }
 
     [DataContract]

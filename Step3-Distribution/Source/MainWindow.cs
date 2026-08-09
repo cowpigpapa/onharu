@@ -567,10 +567,14 @@ namespace FamilyPlanner
             var allLocalItems = Store.LoadLocal();
             var localItems = allLocalItems.Where(x => !items.Any(y => y.Id == x.Id)).ToList();
             if (localItems.Count != allLocalItems.Count) Store.SaveLocal(localItems);
+            var persistedSettings = Store.LoadSettings();
+            settings.CustomPalette = persistedSettings.CustomPalette;
+            settings.CustomPalettePastelStyle = persistedSettings.CustomPalettePastelStyle;
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], settings.FontSize,
                 settings.CalendarOrderMode, settings.MultiDayFirst, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
-                GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, Store.Backups().Length, settings.CategoryOrder) { Owner = this };
+                GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, Store.Backups().Length, settings.CategoryOrder,
+                settings.CustomPalette, settings.CustomPalettePastelStyle) { Owner = this };
             if (window.ShowDialog() != true) return;
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
@@ -578,6 +582,8 @@ namespace FamilyPlanner
             settings.MultiDayFirst = window.MultiDayFirst;
             settings.Use24HourTime = window.Use24HourTime;
             settings.CategoryOrder = window.CategoryOrder;
+            settings.CustomPalette = window.CustomPalette;
+            settings.CustomPalettePastelStyle = window.CustomPalettePastelStyle;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule;
             settings.ShowLunar = window.ShowLunar;
             settings.PastelEventStyle = window.PastelEventStyle;

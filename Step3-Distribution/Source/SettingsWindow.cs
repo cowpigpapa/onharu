@@ -51,15 +51,20 @@ namespace FamilyPlanner
         public bool ImportLocalItems;
         public bool RestoreBackup;
         public bool ExportItems;
+        public List<string> CustomPalette;
+        public bool CustomPalettePastelStyle;
         bool selectedPastelStyle;
         readonly StackPanel fontOptions = new StackPanel { Orientation = Orientation.Horizontal };
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
         readonly Dictionary<string, CheckBox> editBoxes = new Dictionary<string, CheckBox>();
 
         public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool use24HourTime, bool showWeeks,
-            string weekRule, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, int backupCount, List<string> categoryOrder)
+            string weekRule, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, int backupCount, List<string> categoryOrder,
+            List<string> customPalette, bool customPalettePastelStyle)
         {
             selectedPastelStyle = pastelEventStyle;
+            CustomPalette = customPalette == null ? new List<string>() : customPalette.ToList();
+            CustomPalettePastelStyle = customPalettePastelStyle;
             Title = "온하루 설정"; Width = 620; SizeToContent = SizeToContent.Height; ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
             AllowsTransparency = true; Background = Brushes.Transparent;
@@ -76,8 +81,13 @@ namespace FamilyPlanner
             panel.Children.Add(new TextBlock { Text = "추천 색상 조합", Foreground = Brush("#475569"), FontSize = 12 });
             panel.Children.Add(new TextBlock { Text = "위 5개 · 선명한 조합     아래 4개 · 파스텔 조합     Google 기본 · 원래 색상",
                 Foreground = Brush("#94A3B8"), FontSize = 10, Margin = new Thickness(0, 3, 0, 2) });
+            var saveMyPalette = new Button { Content = "♡  현재 설정 저장  →  내 설정", Height = 34,
+                Background = Brush("#EEF2FF"), Foreground = Brush("#4F46E5"), BorderBrush = Brush("#C7D2FE"),
+                BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 7, 0, 4), Cursor = Cursors.Hand };
+            Round(saveMyPalette, 11); panel.Children.Add(saveMyPalette);
             var presets = new UniformGrid { Columns = 5, Margin = new Thickness(0, 3, 0, 14) };
-            var names = new[] { "오션", "핫 핑크", "라임 블루", "선셋", "네온 베리", "로즈 밀크", "라벤더", "민트", "피치 스카이", "Google 기본" };
+            var names = new[] { "오션", "핫 핑크", "라임 블루", "선셋", "내 설정", "로즈 밀크", "라벤더", "민트", "피치 스카이", "Google 기본" };
             var palettes = new[] {
                 new[] { "#2563EB", "#DB2777", "#059669", "#D97706", "#0F766E", "#7C3AED", "#0284C7", "#C2410C", "#4F46E5", "#BE185D" },
                 new[] { "#F20D7A", "#FF3D9A", "#7C3AED", "#EC4899", "#2563EB", "#E11D48", "#9333EA", "#0891B2", "#DB2777", "#EA580C" },
@@ -88,6 +98,7 @@ namespace FamilyPlanner
                 new[] { "#A78BFA", "#F0A6CA", "#7EA6E0", "#F4A27C", "#8FCB9B", "#D7A1E5", "#79C8C3", "#E8BD73", "#9CB7E8", "#E58FAE" },
                 new[] { "#64B5A6", "#8FC7B5", "#78A7C8", "#D9A66C", "#B795C9", "#E29A9A", "#8BBE87", "#D6B66D", "#89A6D5", "#C58AAF" },
                 new[] { "#F4A38C", "#F7C58B", "#8EC5D6", "#B7A0D8", "#8FCB9B", "#E78DB0", "#78BFB3", "#DDA76D", "#91A9DC", "#C58FC2" } };
+            if (CustomPalette.Count >= 2) palettes[4] = CustomPalette.ToArray();
             var activeSources = (sources ?? new List<GoogleCalendarSetting>())
                 .OrderBy(x => IsHoliday(x) ? 2 : x.Primary ? 0 : 1).ThenBy(x => x.Name).ToList();
             for (var i = 0; i < activeSources.Count; i++) sourceEditors.Add(Tuple.Create("google_" + i, activeSources[i]));
@@ -107,7 +118,7 @@ namespace FamilyPlanner
                             SetHex(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.OriginalColor) ? editor.Item2.Color : editor.Item2.OriginalColor);
                         return;
                     }
-                    selectedPastelStyle = index >= 5;
+                    selectedPastelStyle = index == 4 ? CustomPalettePastelStyle : index >= 5;
                     SetHex("업무일정", palettes[index][0]);
                     SetHex("개인일정", palettes[index][1]);
                     var colorIndex = 2;
@@ -123,6 +134,20 @@ namespace FamilyPlanner
             foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
                 colorGrid.Children.Add(ColorEditor(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.Color) ? "#E9799A" : editor.Item2.Color, editor.Item2.Name));
             panel.Children.Add(colorGrid);
+            saveMyPalette.Click += delegate
+            {
+                CustomPalette = new List<string> { Hex("업무일정"), Hex("개인일정") };
+                CustomPalette.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
+                CustomPalettePastelStyle = selectedPastelStyle;
+                palettes[4] = CustomPalette.ToArray();
+                var saved = Store.LoadSettings();
+                saved.CustomPalette = CustomPalette.ToList();
+                saved.CustomPalettePastelStyle = CustomPalettePastelStyle;
+                Store.SaveSettings(saved);
+                saveMyPalette.Content = "✓  현재 색상을 내 설정에 저장했습니다";
+                saveMyPalette.Background = Brush("#ECFDF5"); saveMyPalette.Foreground = Brush("#047857");
+                saveMyPalette.BorderBrush = Brush("#A7F3D0");
+            };
             var swap = new Button { Content = "선택한 두 색상 교환", Height = 32, Background = Brush("#FCE7F3"),
                 Foreground = Brush("#BE185D"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 2, 0, 10), Cursor = Cursors.Hand };
             Round(swap, 9);
