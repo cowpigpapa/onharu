@@ -36,6 +36,8 @@ namespace FamilyPlanner
         [DataMember] public List<string> CategoryOrder = new List<string>();
         [DataMember] public List<string> CustomPalette = new List<string>();
         [DataMember] public bool CustomPalettePastelStyle;
+        [DataMember] public List<string> PaletteNames = new List<string>();
+        [DataMember] public List<string> SavedPalettes = new List<string>();
     }
 
     [DataContract]

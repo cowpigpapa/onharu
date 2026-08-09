@@ -12,7 +12,7 @@
 ## 현재 진행 상태
 
 - `Source`: Step2 안정판에서 복사한 배포용 작업 소스
-- `ONHARU-ver1.0.0-custom-palette-preview.exe`: `내 설정` 색상 조합 저장 기능까지 적용한 최신 시험판
+- `ONHARU-ver1.0.0-palette-slots-preview.exe`: 양쪽 대각선 크기 조절과 이름 변경 가능한 팔레트 저장 기능을 적용한 최신 시험판
 - `Installer\ONHARU.iss`: 설치·삭제, 바로가기와 선택형 자동 실행을 구성하는 Inno Setup 설정
 - `Installer\build-installer.ps1`: `Installer\Output\ONHARU-Setup-1.0.0.exe` 생성 스크립트
 

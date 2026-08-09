@@ -42,6 +42,7 @@ namespace FamilyPlanner
         bool positionLocked;
         Button lockButton;
         Border resizeHandle;
+        Border oppositeResizeHandle;
         Border sidebarPanel;
         ColumnDefinition sidebarColumn;
         Button sidebarButton;
@@ -63,6 +64,8 @@ namespace FamilyPlanner
         Point resizeStart;
         double resizeWidth;
         double resizeHeight;
+        double resizeLeft;
+        double resizeTop;
         Forms.NotifyIcon trayIcon;
         readonly PlannerSettings settings;
 
@@ -225,6 +228,30 @@ namespace FamilyPlanner
             resizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
             resizeHandle.Margin = new Thickness(0, 0, 3, 3); Grid.SetRow(resizeHandle, 1);
             Panel.SetZIndex(resizeHandle, 20); root.Children.Add(resizeHandle);
+
+            oppositeResizeHandle = new Border { Width = 24, Height = 24, Background = Brush("#D9E0F2FE"),
+                CornerRadius = new CornerRadius(8), HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNWSE, ToolTip = "창 크기 조절" };
+            oppositeResizeHandle.Child = new TextBlock { Text = "◤", Foreground = Brush("#64748B"), FontSize = 13,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            oppositeResizeHandle.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (positionLocked) return;
+                resizing = true; resizeStart = PointToScreen(e.GetPosition(this)); resizeWidth = Width; resizeHeight = Height;
+                resizeLeft = Left; resizeTop = Top; oppositeResizeHandle.CaptureMouse(); e.Handled = true;
+            };
+            oppositeResizeHandle.MouseMove += delegate(object sender, MouseEventArgs e)
+            {
+                if (!resizing || !oppositeResizeHandle.IsMouseCaptured) return;
+                var point = PointToScreen(e.GetPosition(this));
+                Width = Math.Max(MinWidth, resizeWidth - point.X + resizeStart.X); Left = resizeLeft + resizeWidth - Width;
+                Height = Math.Max(MinHeight, resizeHeight - point.Y + resizeStart.Y); Top = resizeTop + resizeHeight - Height;
+            };
+            oppositeResizeHandle.MouseLeftButtonUp += delegate(object sender, MouseButtonEventArgs e)
+            { resizing = false; oppositeResizeHandle.ReleaseMouseCapture(); e.Handled = true; };
+            oppositeResizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
+            oppositeResizeHandle.Margin = new Thickness(3, 3, 0, 0); Grid.SetRow(oppositeResizeHandle, 1);
+            Panel.SetZIndex(oppositeResizeHandle, 20); root.Children.Add(oppositeResizeHandle);
 
             var body = new Grid(); body.ColumnDefinitions.Add(new ColumnDefinition());
             sidebarColumn = new ColumnDefinition { Width = settings.SidebarVisible ? new GridLength(310) : new GridLength(34) };
@@ -570,11 +597,13 @@ namespace FamilyPlanner
             var persistedSettings = Store.LoadSettings();
             settings.CustomPalette = persistedSettings.CustomPalette;
             settings.CustomPalettePastelStyle = persistedSettings.CustomPalettePastelStyle;
+            settings.PaletteNames = persistedSettings.PaletteNames;
+            settings.SavedPalettes = persistedSettings.SavedPalettes;
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], settings.FontSize,
                 settings.CalendarOrderMode, settings.MultiDayFirst, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
                 GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, Store.Backups().Length, settings.CategoryOrder,
-                settings.CustomPalette, settings.CustomPalettePastelStyle) { Owner = this };
+                settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes) { Owner = this };
             if (window.ShowDialog() != true) return;
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
@@ -584,6 +613,8 @@ namespace FamilyPlanner
             settings.CategoryOrder = window.CategoryOrder;
             settings.CustomPalette = window.CustomPalette;
             settings.CustomPalettePastelStyle = window.CustomPalettePastelStyle;
+            settings.PaletteNames = window.PaletteNames;
+            settings.SavedPalettes = window.SavedPalettes;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule;
             settings.ShowLunar = window.ShowLunar;
             settings.PastelEventStyle = window.PastelEventStyle;
@@ -1002,6 +1033,7 @@ namespace FamilyPlanner
             lockButton.Background = positionLocked ? Brush("#DCFCE7") : Brushes.White;
             lockButton.Foreground = positionLocked ? Brush("#15803D") : Brush("#475569");
             if (resizeHandle != null) resizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
+            if (oppositeResizeHandle != null) oppositeResizeHandle.Visibility = positionLocked ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void PlaceCalendarDialog(Window window)

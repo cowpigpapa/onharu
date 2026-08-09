@@ -53,6 +53,8 @@ namespace FamilyPlanner
         public bool ExportItems;
         public List<string> CustomPalette;
         public bool CustomPalettePastelStyle;
+        public List<string> PaletteNames;
+        public List<string> SavedPalettes;
         bool selectedPastelStyle;
         readonly StackPanel fontOptions = new StackPanel { Orientation = Orientation.Horizontal };
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
@@ -60,11 +62,13 @@ namespace FamilyPlanner
 
         public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool use24HourTime, bool showWeeks,
             string weekRule, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, int backupCount, List<string> categoryOrder,
-            List<string> customPalette, bool customPalettePastelStyle)
+            List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes)
         {
             selectedPastelStyle = pastelEventStyle;
             CustomPalette = customPalette == null ? new List<string>() : customPalette.ToList();
             CustomPalettePastelStyle = customPalettePastelStyle;
+            PaletteNames = paletteNames == null ? new List<string>() : paletteNames.ToList();
+            SavedPalettes = savedPalettes == null ? new List<string>() : savedPalettes.ToList();
             Title = "온하루 설정"; Width = 620; SizeToContent = SizeToContent.Height; ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
             AllowsTransparency = true; Background = Brushes.Transparent;
@@ -81,11 +85,18 @@ namespace FamilyPlanner
             panel.Children.Add(new TextBlock { Text = "추천 색상 조합", Foreground = Brush("#475569"), FontSize = 12 });
             panel.Children.Add(new TextBlock { Text = "위 5개 · 선명한 조합     아래 4개 · 파스텔 조합     Google 기본 · 원래 색상",
                 Foreground = Brush("#94A3B8"), FontSize = 10, Margin = new Thickness(0, 3, 0, 2) });
-            var saveMyPalette = new Button { Content = "♡  현재 설정 저장  →  내 설정", Height = 34,
+            var paletteName = new TextBox { Text = "내 설정", Height = 34, Padding = new Thickness(10, 6, 10, 5),
+                Background = Brushes.White, BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1),
+                FontWeight = FontWeights.SemiBold, Foreground = Brush("#4338CA"), VerticalContentAlignment = VerticalAlignment.Center };
+            var saveMyPalette = new Button { Content = "♡  현재 설정 저장", Height = 34,
                 Background = Brush("#EEF2FF"), Foreground = Brush("#4F46E5"), BorderBrush = Brush("#C7D2FE"),
                 BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(0, 7, 0, 4), Cursor = Cursors.Hand };
-            Round(saveMyPalette, 11); panel.Children.Add(saveMyPalette);
+                Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
+            Round(saveMyPalette, 11);
+            var paletteSaveRow = new Grid { Margin = new Thickness(0, 7, 0, 4) };
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition());
+            paletteSaveRow.Children.Add(paletteName); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette); panel.Children.Add(paletteSaveRow);
             var presets = new UniformGrid { Columns = 5, Margin = new Thickness(0, 3, 0, 14) };
             var names = new[] { "오션", "핫 핑크", "라임 블루", "선셋", "내 설정", "로즈 밀크", "라벤더", "민트", "피치 스카이", "Google 기본" };
             var palettes = new[] {
@@ -99,19 +110,36 @@ namespace FamilyPlanner
                 new[] { "#64B5A6", "#8FC7B5", "#78A7C8", "#D9A66C", "#B795C9", "#E29A9A", "#8BBE87", "#D6B66D", "#89A6D5", "#C58AAF" },
                 new[] { "#F4A38C", "#F7C58B", "#8EC5D6", "#B7A0D8", "#8FCB9B", "#E78DB0", "#78BFB3", "#DDA76D", "#91A9DC", "#C58FC2" } };
             if (CustomPalette.Count >= 2) palettes[4] = CustomPalette.ToArray();
+            for (var i = 0; i < Math.Min(9, PaletteNames.Count); i++) if (!string.IsNullOrWhiteSpace(PaletteNames[i])) names[i] = PaletteNames[i];
+            for (var i = 0; i < Math.Min(9, SavedPalettes.Count); i++)
+            {
+                var savedColors = (SavedPalettes[i] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                if (savedColors.Length >= 2) palettes[i] = savedColors;
+            }
             var activeSources = (sources ?? new List<GoogleCalendarSetting>())
                 .OrderBy(x => IsHoliday(x) ? 2 : x.Primary ? 0 : 1).ThenBy(x => x.Name).ToList();
             for (var i = 0; i < activeSources.Count; i++) sourceEditors.Add(Tuple.Create("google_" + i, activeSources[i]));
+            if (CustomPalette.Count < 2)
+            {
+                var currentColors = new List<string> { business, personal };
+                currentColors.AddRange(activeSources.Where(x => !IsHoliday(x)).Select(x => string.IsNullOrWhiteSpace(x.Color) ? "#E9799A" : x.Color));
+                palettes[4] = currentColors.ToArray();
+            }
             var orderEntries = new List<Tuple<string, string>> { Tuple.Create("local:business", "업무일정"), Tuple.Create("local:personal", "개인일정") };
             orderEntries.AddRange(activeSources.Select(x => Tuple.Create("google:" + x.Id, "Google · " + x.Name)));
             var savedOrder = categoryOrder ?? new List<string>();
             orderEntries = orderEntries.OrderBy(x => { var p = savedOrder.IndexOf(x.Item1); return p < 0 ? 999 : p; }).ThenBy(x => x.Item2).ToList();
             CategoryOrder = orderEntries.Select(x => x.Item1).ToList();
+            var paletteOptions = new List<RadioButton>();
+            var selectedPaletteIndex = 4;
             for (var i = 0; i < names.Length; i++)
             {
-                var index = i; var option = new RadioButton { Content = names[i], GroupName = "Palette", Margin = new Thickness(2, 5, 8, 5) };
+                var index = i; var option = new RadioButton { Content = names[i], GroupName = "Palette", Margin = new Thickness(2, 5, 8, 5), IsChecked = index == 4 };
+                paletteOptions.Add(option);
                 option.Checked += delegate
                 {
+                    selectedPaletteIndex = index;
+                    paletteName.Text = names[index];
                     if (index == names.Length - 1)
                     {
                         foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
@@ -136,15 +164,25 @@ namespace FamilyPlanner
             panel.Children.Add(colorGrid);
             saveMyPalette.Click += delegate
             {
-                CustomPalette = new List<string> { Hex("업무일정"), Hex("개인일정") };
-                CustomPalette.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
+                if (selectedPaletteIndex == names.Length - 1) return;
+                var savedName = string.IsNullOrWhiteSpace(paletteName.Text) ? names[selectedPaletteIndex] : paletteName.Text.Trim();
+                var currentColors = new List<string> { Hex("업무일정"), Hex("개인일정") };
+                currentColors.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
+                names[selectedPaletteIndex] = savedName; paletteOptions[selectedPaletteIndex].Content = savedName;
+                while (PaletteNames.Count < 9) PaletteNames.Add("");
+                while (SavedPalettes.Count < 9) SavedPalettes.Add("");
+                PaletteNames[selectedPaletteIndex] = savedName;
+                SavedPalettes[selectedPaletteIndex] = string.Join(",", currentColors);
+                palettes[selectedPaletteIndex] = currentColors.ToArray();
+                if (selectedPaletteIndex == 4) CustomPalette = currentColors.ToList();
                 CustomPalettePastelStyle = selectedPastelStyle;
-                palettes[4] = CustomPalette.ToArray();
                 var saved = Store.LoadSettings();
                 saved.CustomPalette = CustomPalette.ToList();
                 saved.CustomPalettePastelStyle = CustomPalettePastelStyle;
+                saved.PaletteNames = PaletteNames.ToList();
+                saved.SavedPalettes = SavedPalettes.ToList();
                 Store.SaveSettings(saved);
-                saveMyPalette.Content = "✓  현재 색상을 내 설정에 저장했습니다";
+                saveMyPalette.Content = "✓  " + savedName + "에 저장했습니다";
                 saveMyPalette.Background = Brush("#ECFDF5"); saveMyPalette.Foreground = Brush("#047857");
                 saveMyPalette.BorderBrush = Brush("#A7F3D0");
             };

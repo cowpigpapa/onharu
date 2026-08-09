@@ -125,6 +125,8 @@ namespace FamilyPlanner
                     if (settings.Version < 5) { settings.Use24HourTime = true; settings.Version = 5; }
                     if (settings.GoogleCalendars == null) settings.GoogleCalendars = new List<GoogleCalendarSetting>();
                     if (settings.CustomPalette == null) settings.CustomPalette = new List<string>();
+                    if (settings.PaletteNames == null) settings.PaletteNames = new List<string>();
+                    if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
                     if (settings.GoogleOptionsVersion == 0)
                     {
                         foreach (var source in settings.GoogleCalendars) source.Editable = source.Primary;
