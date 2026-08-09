@@ -1,19 +1,19 @@
 # 온하루 · ONHARU 사용자 설명서
 
-개발판 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (step88)`로 표시합니다. 정식 배포부터는 `ver. 1.0.0` 형식의 버전을 사용합니다.
+정식 배포판 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 1.0.0)`으로 표시합니다.
 
-Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. Client Secret은 소스에 넣지 않고 해당 Windows 사용자 환경에만 보관합니다.
+Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격 증명은 공개 저장소에 올리지 않고 로컬 빌드 전용 파일에서 주입합니다.
 
 온하루는 Windows 바탕화면에 계속 보이는 월간 달력입니다. 하루 종일 일정, 시간별 Todo, 업무/개인 일정과 Google Calendar를 한 화면에서 관리할 수 있습니다.
 
 ## 1. 실행하기
 
-1. `Onharu-step88.exe`를 실행합니다.
+1. `ONHARU-Setup-1.0.0.exe`를 실행해 설치합니다.
 2. 온하루는 작업표시줄의 일반 창이 아니라 바탕화면 레이어에 표시됩니다.
 3. 화면 오른쪽 아래 알림 영역에도 온하루 아이콘이 생깁니다.
 4. 종료하려면 달력 오른쪽 위 `×` 또는 트레이 메뉴의 종료를 사용합니다.
 
-개발판은 아직 설치 프로그램과 자동 업데이트를 제공하지 않습니다. EXE 하나로 실행되지만 Google OAuth 보안 구조와 코드 서명이 완료되기 전에는 불특정 다수 배포용이 아닙니다.
+설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 자동 업데이트와 Windows 코드 서명은 1.0.0에 포함되지 않습니다.
 
 파일명이 다른 이전/새 버전 EXE를 함께 실행할 수 없습니다. 온하루는 계정·설정·Google 토큰을 안전하게 관리하기 위해 Windows 사용자당 한 창만 실행됩니다.
 
@@ -61,7 +61,7 @@ Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. Client Secre
 
 ### 클릭 통과와 편집
 
-- 클릭 통과 상태에서는 온하루 뒤의 바탕화면 폴더와 아이콘을 조작할 수 있습니다.
+- 클릭 통과 상태에서는 온하루 뒤의 바탕화면 아이콘을 조작할 수 있습니다. 아이콘은 시각적으로 온하루보다 아래에 표시되는 현재 Windows/WPF 한계가 있습니다.
 - 편집 상태에서는 날짜와 일정을 더블클릭할 수 있습니다.
 - 달력의 일정 막대를 한 번 클릭하면 해당 칸의 날짜가 선택되고, 두 번 클릭하면 기존처럼 일정 수정창이 열립니다.
 - `Ctrl + Alt + F`로 클릭 통과/편집 상태를 전환할 수 있습니다.
@@ -257,7 +257,7 @@ Google Tasks에서 가져온 항목은 Calendar API 제한 때문에 완료 상�
 PowerShell에서 소스 폴더로 이동한 뒤 실행합니다.
 
 ```powershell
-cd .\Step2-Refactoring\Source
+cd .\Step3-Distribution\Source
 .\build.ps1 -OutputName Onharu-test.exe
 ```
 
@@ -265,20 +265,20 @@ Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하�
 
 현재 소스 구조는 다음과 같습니다.
 
-- `Step2-Refactoring/Source/Program.cs`: 앱 시작과 단일 실행 제어
-- `Step2-Refactoring/Source/MainWindow.cs`: 메인 달력 UI와 화면 동작
-- `Step2-Refactoring/Source/*Window.cs`: 일정, 설정, 검색 등 각 팝업 UI
-- `Step2-Refactoring/Source/DesktopLayer.cs`: Windows 바탕화면 레이어와 단축키
-- `Step2-Refactoring/Source/UiRound.cs`: 공통 버튼·스크롤 모양
-- `Step2-Refactoring/Source/PlannerItem.cs`, `PlannerSettings.cs`: 일정과 설정 데이터
-- `Step2-Refactoring/Source/RecurrenceService.cs`: 반복 일정 계산
-- `Step2-Refactoring/Source/LocalStorage.cs`: 로컬 저장과 백업
-- `Step2-Refactoring/Source/GoogleApiModels.cs`, `GoogleCalendarService.cs`: Google Calendar 연동
+- `Step3-Distribution/Source/Program.cs`: 앱 시작과 단일 실행 제어
+- `Step3-Distribution/Source/MainWindow.cs`: 메인 달력 UI와 화면 동작
+- `Step3-Distribution/Source/*Window.cs`: 일정, 설정, 검색 등 각 팝업 UI
+- `Step3-Distribution/Source/DesktopLayer.cs`: Windows 바탕화면 레이어와 단축키
+- `Step3-Distribution/Source/UiRound.cs`: 공통 버튼·스크롤 모양
+- `Step3-Distribution/Source/PlannerItem.cs`, `PlannerSettings.cs`: 일정과 설정 데이터
+- `Step3-Distribution/Source/RecurrenceService.cs`: 반복 일정 계산
+- `Step3-Distribution/Source/LocalStorage.cs`: 로컬 저장과 백업
+- `Step3-Distribution/Source/GoogleApiModels.cs`, `GoogleCalendarService.cs`: Google Calendar 연동
 
 반복 일정 계산 검사는 다음처럼 실행할 수 있습니다.
 
 ```powershell
-cd .\Step2-Refactoring\Source
+cd .\Step3-Distribution\Source
 .\recurrence-check.ps1
 ```
 
@@ -288,9 +288,15 @@ cd .\Step2-Refactoring\Source
 - `Step2-Refactoring`: 모델 분리부터 step90 리팩토링 실행 파일
 - `Step3-Distribution`: 설치 프로그램과 최종 배포 파일
 
-현재 기능 확인의 기준 파일은 `Step2-Refactoring\Onharu-step90-refactor.exe`입니다.
+최종 소스는 `Step3-Distribution\Source`, 공식 실행 파일은 `Step3-Distribution\Release\ONHARU.exe`, 설치 파일은 `Step3-Distribution\Installer\Output\ONHARU-Setup-1.0.0.exe`입니다.
 
-배포 작업은 `Step3-Distribution\Source`에서 진행하며, 현재 시험 파일은 `Step3-Distribution\ONHARU-ver1.0.0-time-display-preview.exe`입니다.
+### 설치와 제거
+
+- 설치 위치: `%LOCALAPPDATA%\Programs\ONHARU`
+- 제거: Windows 설정의 `설치된 앱` 또는 시작 메뉴의 ONHARU 제거 프로그램
+- 제거 후에도 일정·설정·Google 연결 데이터는 `%LOCALAPPDATA%\FamilyPlanner`에 보존됩니다.
+- 사용자 데이터까지 완전히 지우려면 먼저 일정 내보내기와 백업을 확인한 뒤 해당 폴더를 사용자가 직접 삭제해야 합니다.
+- 코드 서명 전 설치 파일은 Windows SmartScreen 경고가 나타날 수 있습니다.
 
 ### 일정 내보내기
 

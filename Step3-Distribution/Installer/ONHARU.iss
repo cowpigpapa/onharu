@@ -8,6 +8,10 @@ AppId={{C43E8BF2-2B16-4CC7-A85B-D18C2AA7D706}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
+AppPublisherURL=https://github.com/cowpigpapa/onharu
+AppSupportURL=https://github.com/cowpigpapa/onharu/issues
+AppUpdatesURL=https://github.com/cowpigpapa/onharu/releases
+VersionInfoVersion=1.0.0.0
 DefaultDirName={localappdata}\Programs\ONHARU
 DefaultGroupName=ONHARU
 DisableProgramGroupPage=yes
@@ -30,7 +34,8 @@ Name: "desktopicon"; Description: "바탕화면 바로가기 만들기"; GroupDe
 Name: "startup"; Description: "Windows 시작 시 온하루 자동 실행"; GroupDescription: "자동 실행:"; Flags: unchecked
 
 [Files]
-Source: "..\ONHARU-ver1.0.0-category-fix-preview.exe"; DestDir: "{app}"; DestName: "{#AppExeName}"; Flags: ignoreversion
+Source: "..\Release\ONHARU.exe"; DestDir: "{app}"; DestName: "{#AppExeName}"; Flags: ignoreversion
+Source: "..\..\README.md"; DestDir: "{app}"; DestName: "ONHARU-사용설명서.md"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\ONHARU"; Filename: "{app}\{#AppExeName}"

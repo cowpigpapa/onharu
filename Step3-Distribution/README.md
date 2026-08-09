@@ -1,22 +1,29 @@
-# Step 3 — 배포 준비 단계
+# Step 3 — ONHARU 1.0.0 배포
 
-지인 배포를 위한 결과물을 보관할 폴더입니다.
+이 폴더는 지인 배포용 최종 결과물과 배포 소스를 관리합니다.
 
-앞으로 다음 파일이 들어갑니다.
+## 공식 결과물
 
-- 배포용 ONHARU 실행 파일
-- `ONHARU-Setup.exe` 설치 프로그램
-- 제거 및 업데이트 확인용 자료
-- 배포 전 점검 결과
+- `Release\ONHARU.exe`: 설치 없이 실행하는 단일 파일
+- `Installer\Output\ONHARU-Setup-1.0.0.exe`: 권장 설치 파일과 제거 프로그램
+- `Release\SHA256SUMS.txt`: 배포 파일 무결성 확인값
+- `DISTRIBUTION_GUIDE.md`: Google OAuth와 배포 전 사용자 작업
 
-## 현재 진행 상태
+## 폴더 구조
 
-- `Source`: Step2 안정판에서 복사한 배포용 작업 소스
-- `ONHARU-ver1.0.0-local-multiday-preview.exe`: 신규·수정창에서 로컬 및 Google 연속 일정 등록을 지원하는 최신 시험판
-- `Installer\ONHARU.iss`: 설치·삭제, 바로가기와 선택형 자동 실행을 구성하는 Inno Setup 설정
-- `Installer\build-installer.ps1`: `Installer\Output\ONHARU-Setup-1.0.0.exe` 생성 스크립트
+- `Source`: ONHARU 1.0.0 최종 C# WPF 소스와 자동검사
+- `Release`: 최종 실행 파일만 보관
+- `Installer`: Inno Setup 설정과 설치 결과물
+- `Archive`: 개발 중 생성한 이전 시험판 보관
 
-설치 제거 시 `%LOCALAPPDATA%\FamilyPlanner`의 사용자 일정과 설정은 자동 삭제하지 않는다. 재설치 복구와 실수로 인한 데이터 손실을 막기 위한 정책이다.
-- `Source\oauth-check.ps1`: client secret 제거와 PKCE 필수 항목 검사
+## 빌드
 
-아직 설치 프로그램이 아닌 내부 시험판입니다. Google 로그인과 계정 전환을 확인한 뒤 다음 배포 작업을 진행합니다.
+PowerShell에서 다음을 실행합니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Step3-Distribution\build-release.ps1
+```
+
+이 스크립트는 EXE 빌드, 버전·OAuth·반복·로그·내보내기·연속 일정 검사, 설치 설정 검사, 설치 파일 생성과 SHA-256 계산을 순서대로 수행합니다.
+
+설치 제거 시 `%LOCALAPPDATA%\FamilyPlanner`의 일정과 설정은 자동 삭제하지 않습니다. 재설치 복구와 실수로 인한 데이터 손실을 막기 위한 정책입니다.
