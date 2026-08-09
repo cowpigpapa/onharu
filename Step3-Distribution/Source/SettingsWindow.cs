@@ -108,9 +108,9 @@ namespace FamilyPlanner
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
             Round(swap, 11);
             var paletteSaveRow = new Grid { Margin = new Thickness(0, 7, 0, 4) };
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(172) });
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition());
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(104) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(216) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
             paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
             paletteSaveRow.Children.Add(nameBox); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette);
             Grid.SetColumn(resetPalettes, 2); paletteSaveRow.Children.Add(resetPalettes);
