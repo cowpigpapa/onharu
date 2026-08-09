@@ -83,20 +83,29 @@ namespace FamilyPlanner
                 VerticalAlignment = VerticalAlignment.Center });
             header.MouseLeftButtonDown += delegate { if (Mouse.LeftButton == MouseButtonState.Pressed) DragMove(); };
             panel.Children.Add(new TextBlock { Text = "추천 색상 조합", Foreground = Brush("#475569"), FontSize = 12 });
-            panel.Children.Add(new TextBlock { Text = "위 5개 · 선명한 조합     아래 4개 · 파스텔 조합     Google 기본 · 원래 색상",
-                Foreground = Brush("#94A3B8"), FontSize = 10, Margin = new Thickness(0, 3, 0, 2) });
-            var paletteName = new TextBox { Text = "내 설정", Height = 34, Padding = new Thickness(10, 6, 10, 5),
-                Background = Brushes.White, BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1),
+            var paletteName = new TextBox { Text = "내 설정", Height = 32, Padding = new Thickness(4, 5, 8, 4),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
                 FontWeight = FontWeights.SemiBold, Foreground = Brush("#4338CA"), VerticalContentAlignment = VerticalAlignment.Center };
-            var saveMyPalette = new Button { Content = "♡  현재 설정 저장", Height = 34,
+            var nameLayout = new Grid(); nameLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) }); nameLayout.ColumnDefinitions.Add(new ColumnDefinition());
+            nameLayout.Children.Add(new TextBlock { Text = "✎", FontSize = 15, Foreground = Brush("#6366F1"),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+            Grid.SetColumn(paletteName, 1); nameLayout.Children.Add(paletteName);
+            var nameBox = new Border { Height = 36, Background = Brushes.White, BorderBrush = Brush("#C7D2FE"),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Child = nameLayout };
+            var saveMyPalette = new Button { Content = "♡  1차 저장", Height = 36,
                 Background = Brush("#EEF2FF"), Foreground = Brush("#4F46E5"), BorderBrush = Brush("#C7D2FE"),
                 BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
             Round(saveMyPalette, 11);
+            var resetPalettes = new Button { Content = "↺  초기 설정", Height = 36, Background = Brush("#F8FAFC"),
+                Foreground = Brush("#64748B"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
+            Round(resetPalettes, 11);
             var paletteSaveRow = new Grid { Margin = new Thickness(0, 7, 0, 4) };
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition());
-            paletteSaveRow.Children.Add(paletteName); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette); panel.Children.Add(paletteSaveRow);
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition()); paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
+            paletteSaveRow.Children.Add(nameBox); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette);
+            Grid.SetColumn(resetPalettes, 2); paletteSaveRow.Children.Add(resetPalettes); panel.Children.Add(paletteSaveRow);
             var presets = new UniformGrid { Columns = 5, Margin = new Thickness(0, 3, 0, 14) };
             var names = new[] { "오션", "핫 핑크", "라임 블루", "선셋", "내 설정", "로즈 밀크", "라벤더", "민트", "피치 스카이", "Google 기본" };
             var palettes = new[] {
@@ -104,11 +113,13 @@ namespace FamilyPlanner
                 new[] { "#F20D7A", "#FF3D9A", "#7C3AED", "#EC4899", "#2563EB", "#E11D48", "#9333EA", "#0891B2", "#DB2777", "#EA580C" },
                 new[] { "#65A30D", "#0284C7", "#7C3AED", "#EA580C", "#0891B2", "#DB2777", "#0F766E", "#4F46E5", "#CA8A04", "#C026D3" },
                 new[] { "#E11D48", "#F97316", "#7C2D12", "#C026D3", "#0F766E", "#2563EB", "#CA8A04", "#9333EA", "#0891B2", "#BE123C" },
-                new[] { "#FF1493", "#6D28D9", "#00A6A6", "#FF6B00", "#2563EB", "#E11D48", "#65A30D", "#C026D3", "#0891B2", "#D97706" },
+                new[] { "#E8798E", "#F2A65A", "#B3DC6C", "#FBE983", "#D06B64", "#B99AFF", "#9A9CFF", "#F691B2", "#8EA8D8", "#C394B7" },
                 new[] { "#E8798E", "#F2A65A", "#69A6A6", "#8196D1", "#B58AC8", "#D98CA3", "#78B6A4", "#E0B36A", "#8EA8D8", "#C394B7" },
                 new[] { "#A78BFA", "#F0A6CA", "#7EA6E0", "#F4A27C", "#8FCB9B", "#D7A1E5", "#79C8C3", "#E8BD73", "#9CB7E8", "#E58FAE" },
                 new[] { "#64B5A6", "#8FC7B5", "#78A7C8", "#D9A66C", "#B795C9", "#E29A9A", "#8BBE87", "#D6B66D", "#89A6D5", "#C58AAF" },
                 new[] { "#F4A38C", "#F7C58B", "#8EC5D6", "#B7A0D8", "#8FCB9B", "#E78DB0", "#78BFB3", "#DDA76D", "#91A9DC", "#C58FC2" } };
+            var initialNames = names.ToArray();
+            var initialPalettes = palettes.Select(x => x.ToArray()).ToArray();
             if (CustomPalette.Count >= 2) palettes[4] = CustomPalette.ToArray();
             for (var i = 0; i < Math.Min(9, PaletteNames.Count); i++) if (!string.IsNullOrWhiteSpace(PaletteNames[i])) names[i] = PaletteNames[i];
             for (var i = 0; i < Math.Min(9, SavedPalettes.Count); i++)
@@ -176,15 +187,21 @@ namespace FamilyPlanner
                 palettes[selectedPaletteIndex] = currentColors.ToArray();
                 if (selectedPaletteIndex == 4) CustomPalette = currentColors.ToList();
                 CustomPalettePastelStyle = selectedPastelStyle;
-                var saved = Store.LoadSettings();
-                saved.CustomPalette = CustomPalette.ToList();
-                saved.CustomPalettePastelStyle = CustomPalettePastelStyle;
-                saved.PaletteNames = PaletteNames.ToList();
-                saved.SavedPalettes = SavedPalettes.ToList();
-                Store.SaveSettings(saved);
-                saveMyPalette.Content = "✓  " + savedName + "에 저장했습니다";
+                saveMyPalette.Content = "✓  1차 저장 완료";
                 saveMyPalette.Background = Brush("#ECFDF5"); saveMyPalette.Foreground = Brush("#047857");
                 saveMyPalette.BorderBrush = Brush("#A7F3D0");
+            };
+            paletteName.KeyDown += delegate(object sender, KeyEventArgs e)
+            {
+                if (e.Key != Key.Enter) return;
+                saveMyPalette.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); e.Handled = true;
+            };
+            resetPalettes.Click += delegate
+            {
+                PaletteNames.Clear(); SavedPalettes.Clear(); CustomPalette.Clear(); CustomPalettePastelStyle = true;
+                for (var i = 0; i < 9; i++) { names[i] = initialNames[i]; palettes[i] = initialPalettes[i].ToArray(); paletteOptions[i].Content = names[i]; }
+                paletteOptions[4].IsChecked = false; paletteOptions[4].IsChecked = true; paletteName.Text = names[4];
+                resetPalettes.Content = "✓  초기화 완료";
             };
             var swap = new Button { Content = "선택한 두 색상 교환", Height = 32, Background = Brush("#FCE7F3"),
                 Foreground = Brush("#BE185D"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 2, 0, 10), Cursor = Cursors.Hand };
