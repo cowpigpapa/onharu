@@ -24,6 +24,7 @@ namespace FamilyPlanner
         [DataMember] public List<GoogleCalendarSetting> GoogleCalendars = new List<GoogleCalendarSetting>();
         [DataMember] public int GoogleOptionsVersion = 1;
         [DataMember] public string CalendarOrderMode = "category";
+        [DataMember] public bool MultiDayFirst;
         [DataMember] public bool ShowWeekNumbers;
         [DataMember] public string WeekNumberRule = "iso";
         [DataMember] public bool PastelEventStyle;

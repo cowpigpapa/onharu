@@ -353,9 +353,14 @@ namespace FamilyPlanner
             var weekEnd = weekStart.AddDays(6);
             var weekItems = items.Where(x => x.Category != "국경일" && IsItemVisible(x) &&
                 x.Start.Date <= weekEnd && (x.End > x.Start ? x.End.AddTicks(-1).Date : x.Start.Date) >= weekStart);
-            weekItems = settings.CalendarOrderMode == "time"
-                ? weekItems.OrderBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title)
-                : weekItems.OrderBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+            if (settings.CalendarOrderMode == "time")
+                weekItems = settings.MultiDayFirst
+                    ? weekItems.OrderByDescending(IsMultiDay).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title)
+                    : weekItems.OrderBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
+            else
+                weekItems = settings.MultiDayFirst
+                    ? weekItems.OrderByDescending(IsMultiDay).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start)
+                    : weekItems.OrderBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
             var laneEnds = new List<DateTime>();
             foreach (var item in weekItems)
             {
@@ -448,6 +453,11 @@ namespace FamilyPlanner
         {
             var last = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
             return date.Date >= item.Start.Date && date.Date <= last;
+        }
+
+        static bool IsMultiDay(PlannerItem item)
+        {
+            return item.Start.Date != (item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date);
         }
 
         static string CalendarTimeText(PlannerItem item, DateTime date)
@@ -559,13 +569,14 @@ namespace FamilyPlanner
             var localItems = allLocalItems.Where(x => !items.Any(y => y.Id == x.Id)).ToList();
             if (localItems.Count != allLocalItems.Count) Store.SaveLocal(localItems);
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], settings.FontSize,
-                settings.CalendarOrderMode, settings.ShowWeekNumbers, settings.WeekNumberRule,
+                settings.CalendarOrderMode, settings.MultiDayFirst, settings.ShowWeekNumbers, settings.WeekNumberRule,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
                 GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, Store.Backups().Length, settings.CategoryOrder) { Owner = this };
             if (window.ShowDialog() != true) return;
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
             settings.FontSize = window.SelectedFontSize; settings.CalendarOrderMode = window.OrderMode;
+            settings.MultiDayFirst = window.MultiDayFirst;
             settings.CategoryOrder = window.CategoryOrder;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule;
             settings.ShowLunar = window.ShowLunar;
