@@ -122,6 +122,7 @@ namespace FamilyPlanner
                     if (settings.Version == 0) { settings.BusinessVisible = true; settings.PersonalVisible = true; settings.HolidayVisible = true; settings.Version = 1; }
                     if (settings.Version < 2) { settings.FontSize = 12; settings.Opacity = .95; settings.Version = 2; }
                     if (settings.Version < 3) { settings.SidebarVisible = true; settings.Version = 3; }
+                    if (settings.Version < 5) { settings.Use24HourTime = true; settings.Version = 5; }
                     if (settings.GoogleCalendars == null) settings.GoogleCalendars = new List<GoogleCalendarSetting>();
                     if (settings.GoogleOptionsVersion == 0)
                     {

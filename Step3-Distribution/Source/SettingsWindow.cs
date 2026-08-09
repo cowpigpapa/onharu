@@ -38,6 +38,7 @@ namespace FamilyPlanner
         public double SelectedFontSize;
         public string OrderMode;
         public bool MultiDayFirst;
+        public bool Use24HourTime;
         public string CategoryOrderPreset;
         public List<string> CategoryOrder;
         public bool ShowWeekNumbers;
@@ -55,7 +56,7 @@ namespace FamilyPlanner
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
         readonly Dictionary<string, CheckBox> editBoxes = new Dictionary<string, CheckBox>();
 
-        public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool showWeeks,
+        public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool use24HourTime, bool showWeeks,
             string weekRule, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, int backupCount, List<string> categoryOrder)
         {
             selectedPastelStyle = pastelEventStyle;
@@ -160,10 +161,12 @@ namespace FamilyPlanner
                 if (window.ShowDialog() == true) CategoryOrder = window.Result;
             };
             Grid.SetColumn(categoryOrderButton, 1); orderRow.Children.Add(categoryOrderButton); panel.Children.Add(orderRow);
-            var multiDayTop = new CheckBox { Content = "연속 일정은 항상 위에 표시", IsChecked = multiDayFirst,
-                Margin = new Thickness(0, -5, 0, 14), ToolTip = "체크하지 않으면 카테고리 또는 시간 설정 순서를 따릅니다." };
-            panel.Children.Add(multiDayTop);
             panel.Children.Add(new TextBlock { Text = "표시 옵션", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 7) });
+            var eventDisplayOptions = new Grid(); eventDisplayOptions.ColumnDefinitions.Add(new ColumnDefinition()); eventDisplayOptions.ColumnDefinitions.Add(new ColumnDefinition());
+            var multiDayTop = new CheckBox { Content = "연속 일정은 항상 위에 표시", IsChecked = multiDayFirst,
+                Margin = new Thickness(0, 0, 0, 7), ToolTip = "체크하지 않으면 카테고리 또는 시간 설정 순서를 따릅니다." };
+            var use24Hour = new CheckBox { Content = "24시간제로 시간 표시", IsChecked = use24HourTime, Margin = new Thickness(0, 0, 0, 7) };
+            eventDisplayOptions.Children.Add(multiDayTop); Grid.SetColumn(use24Hour, 1); eventDisplayOptions.Children.Add(use24Hour); panel.Children.Add(eventDisplayOptions);
             var displayOptions = new Grid(); displayOptions.ColumnDefinitions.Add(new ColumnDefinition()); displayOptions.ColumnDefinitions.Add(new ColumnDefinition());
             var showWeek = new CheckBox { Content = "달력 왼쪽에 주차 표시", IsChecked = showWeeks, Margin = new Thickness(0, 0, 0, 7) };
             var lunar = new CheckBox { Content = "날짜 아래에 음력 표시", IsChecked = showLunar, Margin = new Thickness(0, 0, 0, 7) };
@@ -214,6 +217,7 @@ namespace FamilyPlanner
                 SelectedFontSize = (double)fontOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
                 OrderMode = orderOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 MultiDayFirst = multiDayTop.IsChecked == true;
+                Use24HourTime = use24Hour.IsChecked == true;
                 ShowWeekNumbers = showWeek.IsChecked == true;
                 ShowLunar = lunar.IsChecked == true;
                 WeekRule = weekRules.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();

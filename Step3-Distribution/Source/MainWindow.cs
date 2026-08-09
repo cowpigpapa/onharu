@@ -371,7 +371,8 @@ namespace FamilyPlanner
                 if (lane < 0) { lane = laneEnds.Count; laneEnds.Add(segmentEnd); } else laneEnds[lane] = segmentEnd;
                 if (lane >= 6) continue;
                 var spansDays = item.Start.Date != itemEnd;
-                var prefix = item.IsTodo ? (item.Completed ? "✓ " : "□ ") : !item.AllDay && !spansDays ? item.Start.ToString("HH:mm ") : "";
+                var prefix = item.IsTodo ? (item.Completed ? "✓ " : "□ ") : "";
+                if (!item.AllDay && !spansDays) prefix += TimeText(item.Start) + " ";
                 var text = new TextBlock { Text = prefix + (item.Important ? "★ " : "") + item.Title,
                     FontSize = Ui(11), Foreground = item.Important ? Brush("#F20D7A") : settings.PastelEventStyle ? Brush("#1F2937") : Brushes.White,
                     FontWeight = item.Important ? FontWeights.Bold : FontWeights.Normal, Padding = new Thickness(5, 1, 4, 1),
@@ -415,12 +416,13 @@ namespace FamilyPlanner
                         DockPanel.SetDock(check, Dock.Left); row.Children.Add(check);
                     }
                     var text = new StackPanel();
-                    text.Children.Add(new TextBlock { Text = (item.Important ? "★ " : "") + item.Title,
+                    text.Children.Add(new TextBlock { Text = (item.Important ? "★ " : "") + (item.AllDay ? "" : TimeText(item.Start) + " ") + item.Title,
                         FontWeight = item.Important ? FontWeights.Bold : FontWeights.SemiBold,
                         Foreground = item.Important ? Brush("#F20D7A") : item.Category == "국경일" ? Brush("#EF4444") : Brush("#1E293B"),
                         TextDecorations = item.Completed ? TextDecorations.Strikethrough : null });
-                    text.Children.Add(new TextBlock { Text = DetailTimeText(item, selectedDate),
-                        FontSize = Ui(11), Foreground = Brush(ItemColor(item)) });
+                    if (item.AllDay || IsMultiDay(item))
+                        text.Children.Add(new TextBlock { Text = DetailTimeText(item, selectedDate),
+                            FontSize = Ui(11), Foreground = Brush(ItemColor(item)) });
                     if (!string.IsNullOrWhiteSpace(item.Notes))
                         text.Children.Add(new TextBlock { Text = item.Notes, FontSize = Ui(11), Foreground = Brush("#64748B"),
                             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
@@ -460,19 +462,16 @@ namespace FamilyPlanner
             return item.Start.Date != (item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date);
         }
 
-        static string CalendarTimeText(PlannerItem item, DateTime date)
+        string TimeText(DateTime value)
         {
-            if (item.AllDay) return "";
-            var last = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
-            if (date.Date == item.Start.Date) return item.Start.ToString("HH:mm ");
-            return date.Date == last ? "→" + item.End.ToString("HH:mm ") : "계속 ";
+            return settings.Use24HourTime ? value.ToString("HH:mm") : value.ToString("tt h:mm", new CultureInfo("ko-KR"));
         }
 
-        static string DetailTimeText(PlannerItem item, DateTime date)
+        string DetailTimeText(PlannerItem item, DateTime date)
         {
             if (item.AllDay) return "하루 종일";
-            if (item.Start.Date == (item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date)) return item.Start.ToString("HH:mm");
-            return item.Start.ToString("M/d HH:mm") + " – " + item.End.ToString("M/d HH:mm");
+            if (!IsMultiDay(item)) return TimeText(item.Start);
+            return item.Start.ToString("M/d ") + TimeText(item.Start) + " – " + item.End.ToString("M/d ") + TimeText(item.End);
         }
 
         bool IsItemVisible(PlannerItem item)
@@ -569,7 +568,7 @@ namespace FamilyPlanner
             var localItems = allLocalItems.Where(x => !items.Any(y => y.Id == x.Id)).ToList();
             if (localItems.Count != allLocalItems.Count) Store.SaveLocal(localItems);
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], settings.FontSize,
-                settings.CalendarOrderMode, settings.MultiDayFirst, settings.ShowWeekNumbers, settings.WeekNumberRule,
+                settings.CalendarOrderMode, settings.MultiDayFirst, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
                 GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, Store.Backups().Length, settings.CategoryOrder) { Owner = this };
             if (window.ShowDialog() != true) return;
@@ -577,6 +576,7 @@ namespace FamilyPlanner
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
             settings.FontSize = window.SelectedFontSize; settings.CalendarOrderMode = window.OrderMode;
             settings.MultiDayFirst = window.MultiDayFirst;
+            settings.Use24HourTime = window.Use24HourTime;
             settings.CategoryOrder = window.CategoryOrder;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule;
             settings.ShowLunar = window.ShowLunar;

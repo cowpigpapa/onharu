@@ -12,7 +12,7 @@
 ## 현재 진행 상태
 
 - `Source`: Step2 안정판에서 복사한 배포용 작업 소스
-- `ONHARU-ver1.0.0-continuous-order-preview.exe`: 연속 일정 막대와 `항상 위/설정 순서` 옵션을 적용한 시험판
+- `ONHARU-ver1.0.0-time-display-preview.exe`: 연속 일정 순서, 24시간제와 오른쪽 패널의 `시간 + 일정` 표시를 적용한 시험판
 - `Installer\ONHARU.iss`: 설치·삭제, 바로가기와 선택형 자동 실행을 구성하는 Inno Setup 설정
 - `Installer\build-installer.ps1`: `Installer\Output\ONHARU-Setup-1.0.0.exe` 생성 스크립트
 

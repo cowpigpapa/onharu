@@ -6,7 +6,7 @@ namespace FamilyPlanner
     [DataContract]
     public class PlannerSettings
     {
-        [DataMember] public int Version = 3;
+        [DataMember] public int Version = 5;
         [DataMember] public bool HasPosition;
         [DataMember] public double Left;
         [DataMember] public double Top;
@@ -25,6 +25,7 @@ namespace FamilyPlanner
         [DataMember] public int GoogleOptionsVersion = 1;
         [DataMember] public string CalendarOrderMode = "category";
         [DataMember] public bool MultiDayFirst;
+        [DataMember] public bool Use24HourTime = true;
         [DataMember] public bool ShowWeekNumbers;
         [DataMember] public string WeekNumberRule = "iso";
         [DataMember] public bool PastelEventStyle;
