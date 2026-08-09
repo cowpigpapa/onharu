@@ -312,6 +312,7 @@ namespace FamilyPlanner
                     Grid.SetRow(week, r + 1); calendar.Children.Add(week);
                 }
             for (var i = 0; i < 42; i++) AddDayCell(first.AddDays(i), i / 7 + 1, i % 7 + weekOffset);
+            for (var r = 0; r < 6; r++) AddWeekEventBars(first.AddDays(r * 7), r + 1, weekOffset);
             RenderDetail();
         }
 
@@ -337,20 +338,6 @@ namespace FamilyPlanner
                     FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(3, 1, 2, 2), TextTrimming = TextTrimming.CharacterEllipsis });
             stack.Children.Add(dateHeader);
-            foreach (var item in dateItems.Where(x => x.Category != "국경일").Take(6))
-            {
-                var eventText = new TextBlock { Text = (item.IsTodo ? (item.Completed ? "✓ " : "□ ") : "") + CalendarTimeText(item, date) + (item.Important ? "★ " : "") + item.Title,
-                    FontSize = Ui(11), Foreground = item.Important ? Brush("#F20D7A") : settings.PastelEventStyle ? Brush("#1F2937") : Brushes.White,
-                    FontWeight = item.Important ? FontWeights.Bold : FontWeights.Normal,
-                    Padding = new Thickness(4, 2, 3, 2), TextTrimming = TextTrimming.CharacterEllipsis,
-                    TextDecorations = item.Completed ? TextDecorations.Strikethrough : null };
-                var eventBorder = new Border { Child = eventText, CornerRadius = new CornerRadius(4),
-                    Background = item.Important ? Brush("#FFF1F7") : settings.PastelEventStyle ? PastelBrush(ItemColor(item), .72) : Brush(ItemColor(item)),
-                    Margin = new Thickness(3, 1, 3, 0), Cursor = Cursors.Hand, ToolTip = "더블클릭하여 수정" };
-                eventBorder.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
-                { if (e.ClickCount == 2) { selectedDate = date; OpenEdit(item); e.Handled = true; } };
-                stack.Children.Add(eventBorder);
-            }
             var border = new Border { Child = stack, BorderBrush = Brush("#99CBD5E1"), BorderThickness = new Thickness(.5),
                 Background = date == DateTime.Today ? Brush("#CCFCE7F3") : date == selectedDate ? Brush("#CCDBEAFE") : Brush("#99FFFFFF"), Cursor = Cursors.Hand };
             border.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
@@ -359,6 +346,40 @@ namespace FamilyPlanner
                 if (e.ClickCount == 2) AddItem(sender, e); else RenderAll();
             };
             Grid.SetRow(border, row); Grid.SetColumn(border, col); calendar.Children.Add(border);
+        }
+
+        void AddWeekEventBars(DateTime weekStart, int row, int weekOffset)
+        {
+            var weekEnd = weekStart.AddDays(6);
+            var weekItems = items.Where(x => x.Category != "국경일" && IsItemVisible(x) &&
+                x.Start.Date <= weekEnd && (x.End > x.Start ? x.End.AddTicks(-1).Date : x.Start.Date) >= weekStart);
+            weekItems = settings.CalendarOrderMode == "time"
+                ? weekItems.OrderBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title)
+                : weekItems.OrderBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+            var laneEnds = new List<DateTime>();
+            foreach (var item in weekItems)
+            {
+                var itemEnd = item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date;
+                var segmentStart = item.Start.Date < weekStart ? weekStart : item.Start.Date;
+                var segmentEnd = itemEnd > weekEnd ? weekEnd : itemEnd;
+                var lane = laneEnds.FindIndex(x => x < segmentStart);
+                if (lane < 0) { lane = laneEnds.Count; laneEnds.Add(segmentEnd); } else laneEnds[lane] = segmentEnd;
+                if (lane >= 6) continue;
+                var spansDays = item.Start.Date != itemEnd;
+                var prefix = item.IsTodo ? (item.Completed ? "✓ " : "□ ") : !item.AllDay && !spansDays ? item.Start.ToString("HH:mm ") : "";
+                var text = new TextBlock { Text = prefix + (item.Important ? "★ " : "") + item.Title,
+                    FontSize = Ui(11), Foreground = item.Important ? Brush("#F20D7A") : settings.PastelEventStyle ? Brush("#1F2937") : Brushes.White,
+                    FontWeight = item.Important ? FontWeights.Bold : FontWeights.Normal, Padding = new Thickness(5, 1, 4, 1),
+                    TextTrimming = TextTrimming.CharacterEllipsis, TextDecorations = item.Completed ? TextDecorations.Strikethrough : null };
+                var bar = new Border { Child = text, Height = Ui(19), CornerRadius = new CornerRadius(4),
+                    Background = item.Important ? Brush("#FFF1F7") : settings.PastelEventStyle ? PastelBrush(ItemColor(item), .72) : Brush(ItemColor(item)),
+                    Margin = new Thickness(2, Ui(29 + lane * 20), 2, 0), VerticalAlignment = VerticalAlignment.Top,
+                    Cursor = Cursors.Hand, ToolTip = "더블클릭하여 수정" };
+                bar.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+                { if (e.ClickCount == 2) { selectedDate = item.Start.Date; OpenEdit(item); e.Handled = true; } };
+                Grid.SetRow(bar, row); Grid.SetColumn(bar, (segmentStart - weekStart).Days + weekOffset);
+                Grid.SetColumnSpan(bar, (segmentEnd - segmentStart).Days + 1); Panel.SetZIndex(bar, 5); calendar.Children.Add(bar);
+            }
         }
 
         void RenderDetail()

@@ -283,7 +283,7 @@ cd .\Step2-Refactoring\Source
 
 현재 기능 확인의 기준 파일은 `Step2-Refactoring\Onharu-step90-refactor.exe`입니다.
 
-배포 작업은 `Step3-Distribution\Source`에서 진행하며, 현재 시험 파일은 `Step3-Distribution\ONHARU-ver1.0.0-multiday-preview.exe`입니다.
+배포 작업은 `Step3-Distribution\Source`에서 진행하며, 현재 시험 파일은 `Step3-Distribution\ONHARU-ver1.0.0-continuous-preview.exe`입니다.
 
 ### 일정 내보내기
 
