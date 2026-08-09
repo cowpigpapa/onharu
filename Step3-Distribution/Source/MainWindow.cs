@@ -407,9 +407,15 @@ namespace FamilyPlanner
                 var bar = new Border { Child = text, Height = Ui(19), CornerRadius = new CornerRadius(4),
                     Background = item.Important ? Brush("#FFF1F7") : settings.PastelEventStyle ? PastelBrush(ItemColor(item), .72) : Brush(ItemColor(item)),
                     Margin = new Thickness(2, Ui(29 + lane * 20), 2, 0), VerticalAlignment = VerticalAlignment.Top,
-                    Cursor = Cursors.Hand, ToolTip = "더블클릭하여 수정" };
+                    Cursor = Cursors.Hand, ToolTip = "클릭하여 날짜 선택 · 더블클릭하여 수정" };
                 bar.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
-                { if (e.ClickCount == 2) { selectedDate = item.Start.Date; OpenEdit(item); e.Handled = true; } };
+                {
+                    var days = (segmentEnd - segmentStart).Days + 1;
+                    var clickedDay = bar.ActualWidth <= 0 ? 0 : Math.Min(days - 1, Math.Max(0, (int)(e.GetPosition(bar).X / bar.ActualWidth * days)));
+                    selectedDate = segmentStart.AddDays(clickedDay);
+                    if (e.ClickCount == 2) OpenEdit(item); else RenderAll();
+                    e.Handled = true;
+                };
                 Grid.SetRow(bar, row); Grid.SetColumn(bar, (segmentStart - weekStart).Days + weekOffset);
                 Grid.SetColumnSpan(bar, (segmentEnd - segmentStart).Days + 1); Panel.SetZIndex(bar, 5); calendar.Children.Add(bar);
             }
