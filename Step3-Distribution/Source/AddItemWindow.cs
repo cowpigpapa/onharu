@@ -97,8 +97,8 @@ namespace FamilyPlanner
                 minuteGrid.Children.Add(new RadioButton { Content = minute + "분", Tag = minute, GroupName = "Minute",
                     IsChecked = minute == 0, Margin = new Thickness(2, 4, 2, 4) });
             allDay.Checked += delegate { hourGrid.IsEnabled = false; minuteGrid.IsEnabled = false; rolloverOptions.IsEnabled = false; multiDay.IsEnabled = true; endDateButton.IsEnabled = multiDay.IsChecked == true; };
-            morning.Checked += delegate { hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; multiDay.IsEnabled = false; endDateButton.IsEnabled = false; };
-            afternoon.Checked += delegate { hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; multiDay.IsEnabled = false; endDateButton.IsEnabled = false; };
+            morning.Checked += delegate { multiDay.IsChecked = false; hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; multiDay.IsEnabled = false; endDateButton.IsEnabled = false; };
+            afternoon.Checked += delegate { multiDay.IsChecked = false; hourGrid.IsEnabled = true; minuteGrid.IsEnabled = true; rolloverOptions.IsEnabled = true; multiDay.IsEnabled = false; endDateButton.IsEnabled = false; };
             categories.Children.Add(new TextBlock { Text = "온하루 · 로컬 전용", Foreground = Brush("#64748B"), FontSize = 11, Margin = new Thickness(0, 0, 0, 5) });
             var localChoices = new WrapPanel();
             AddCategoryChoice(localChoices, "업무일정", "local:business", true, true);
@@ -332,6 +332,12 @@ namespace FamilyPlanner
             }
             else if (frequency == "weekly")
             {
+                if (multiDay.IsChecked == true)
+                {
+                    recurrenceAdvanced.Children.Add(new TextBlock { Text = "매주 " + new[] { "일", "월", "화", "수", "목", "금", "토" }[(int)selectedDate.DayOfWeek] + "요일부터 같은 기간",
+                        Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(2, 0, 0, 4) });
+                    return;
+                }
                 if (weeklyDays.Count == 0)
                     foreach (var day in new[] { Tuple.Create("월", "MO", DayOfWeek.Monday), Tuple.Create("화", "TU", DayOfWeek.Tuesday), Tuple.Create("수", "WE", DayOfWeek.Wednesday), Tuple.Create("목", "TH", DayOfWeek.Thursday), Tuple.Create("금", "FR", DayOfWeek.Friday), Tuple.Create("토", "SA", DayOfWeek.Saturday), Tuple.Create("일", "SU", DayOfWeek.Sunday) })
                         weeklyDays.Add(new CheckBox { Content = day.Item1, Tag = day.Item2, IsChecked = day.Item3 == selectedDate.DayOfWeek, Margin = new Thickness(0, 0, 13, 4) });
@@ -361,13 +367,16 @@ namespace FamilyPlanner
 
         void UpdateRecurrenceAvailability()
         {
-            var enabled = multiDay.IsChecked != true;
-            recurrenceOptions.IsEnabled = enabled;
-            if (enabled) return;
-            var none = recurrenceOptions.Children.OfType<RadioButton>().FirstOrDefault(x => x.Tag != null && string.IsNullOrWhiteSpace(x.Tag.ToString()));
-            if (none != null) none.IsChecked = true;
-            recurrenceUntilButton.IsEnabled = false;
-            recurrenceAdvancedCard.Visibility = Visibility.Collapsed;
+            var radios = recurrenceOptions.Children.OfType<RadioButton>().Where(x => x.Tag != null).ToList();
+            var multi = multiDay.IsChecked == true;
+            foreach (var radio in radios) radio.IsEnabled = !multi || string.IsNullOrWhiteSpace(radio.Tag.ToString()) || radio.Tag.ToString() == "weekly";
+            var selected = radios.FirstOrDefault(x => x.IsChecked == true);
+            if (multi && selected != null && !selected.IsEnabled)
+            {
+                radios.First(x => string.IsNullOrWhiteSpace(x.Tag.ToString())).IsChecked = true;
+                recurrenceUntilButton.IsEnabled = false;
+            }
+            UpdateRecurrenceOptions();
         }
 
         static void Detach(UIElement element)
@@ -396,10 +405,11 @@ namespace FamilyPlanner
             var target = selectedOption.Tag.ToString();
             var selectedSource = target.StartsWith("google:") ? googleSources.FirstOrDefault(x => "google:" + x.Id == target) : null;
             var selectedCategory = target == "local:business" ? "업무일정" : "개인일정";
-            var recurrenceFrequency = multiDay.IsChecked == true ? "" : recurrenceOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
+            var recurrenceFrequency = recurrenceOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
             var recurrenceMode = recurrenceFrequency == "daily" ? (dailyWeekdays.IsChecked == true ? "weekdays" : "daily") :
                 recurrenceFrequency == "monthly" ? (monthlyLast.IsChecked == true ? "monthly_last" : monthlyNth.IsChecked == true ? "monthly_nth" : "monthly_date") : recurrenceFrequency;
-            var recurrenceDays = recurrenceFrequency == "weekly" ? string.Join(",", weeklyDays.Where(x => x.IsChecked == true).Select(x => x.Tag.ToString())) :
+            var recurrenceDays = recurrenceFrequency == "weekly" && multiDay.IsChecked == true ? RecurrenceService.DayCode(selectedDate.DayOfWeek) :
+                recurrenceFrequency == "weekly" ? string.Join(",", weeklyDays.Where(x => x.IsChecked == true).Select(x => x.Tag.ToString())) :
                 recurrenceMode == "monthly_nth" ? RecurrenceService.MonthlyNthCode(selectedDate) : null;
             if (recurrenceFrequency == "weekly" && string.IsNullOrWhiteSpace(recurrenceDays)) recurrenceDays = RecurrenceService.DayCode(selectedDate.DayOfWeek);
             Result = new PlannerItem { Id = editingItem == null ? Guid.NewGuid().ToString() : editingItem.Id, Title = title.Text.Trim(), Start = start,
