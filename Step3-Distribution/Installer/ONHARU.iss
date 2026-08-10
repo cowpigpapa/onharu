@@ -1,5 +1,5 @@
 #define AppName "ONHARU"
-#define AppVersion "1.2.0"
+#define AppVersion "1.2.1"
 #define AppPublisher "JUAN.HJLEE"
 #define AppExeName "ONHARU.exe"
 
@@ -11,7 +11,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL=https://github.com/cowpigpapa/onharu
 AppSupportURL=https://github.com/cowpigpapa/onharu/issues
 AppUpdatesURL=https://github.com/cowpigpapa/onharu/releases
-VersionInfoVersion=1.2.0.0
+VersionInfoVersion=1.2.1.0
 DefaultDirName={localappdata}\Programs\ONHARU
 DefaultGroupName=ONHARU
 DisableProgramGroupPage=yes

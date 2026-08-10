@@ -138,7 +138,7 @@ namespace FamilyPlanner
             };
             new DispatcherTimer(TimeSpan.FromMinutes(1), DispatcherPriority.Normal, delegate { Rollover(); }, Dispatcher);
             reminderTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-            reminderTimer.Tick += delegate { CheckReminders(); }; reminderTimer.Start();
+            reminderTimer.Tick += delegate { SafeCheckReminders(); }; reminderTimer.Start();
             syncRetryTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
             syncRetryTimer.Tick += async delegate { if (GoogleCalendar.IsConnected && (syncProblem != null || items.Any(x => x.PendingGoogleSync))) await SyncGoogle(false); };
             syncRetryTimer.Start();
@@ -316,7 +316,7 @@ namespace FamilyPlanner
             sidebarButton.Margin = new Thickness(0, 8, 3, 0); sidebarButton.Visibility = settings.SidebarVisible ? Visibility.Collapsed : Visibility.Visible;
             Grid.SetColumn(sidebarButton, 1); Panel.SetZIndex(sidebarButton, 30); body.Children.Add(sidebarButton);
             Grid.SetRow(body, 1); body.Margin = new Thickness(12, 0, 12, 30); root.Children.Add(body);
-            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 1.2.0)", FontSize = 10,
+            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 1.2.1)", FontSize = 10,
                 FontWeight = FontWeights.SemiBold, Foreground = Brush("#475569"),
                 HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 50, 5) };
@@ -1124,15 +1124,27 @@ namespace FamilyPlanner
             Store.Save(items);
         }
 
+        void SafeCheckReminders()
+        {
+            try { CheckReminders(); }
+            catch (Exception ex) { ErrorLog.Write("Check reminders", ex); }
+        }
+
         void CheckReminders()
         {
             var now = DateTime.Now; var due = new List<PlannerItem>(); var keys = new Dictionary<string, string>();
-            foreach (var item in items.Where(x => x.ReminderConfigured && x.ReminderMinutes >= 0 && !x.Completed))
+            foreach (var item in items.Where(x => x.ReminderConfigured && !x.Completed))
             {
-                var key = item.Id + "|" + item.Start.ToString("o") + "|" + item.ReminderMinutes;
-                if (item.ReminderDismissedKey == key) continue;
-                var target = item.SnoozeUntil > now.AddMinutes(-2) ? item.SnoozeUntil : (item.AllDay ? item.Start.Date.AddHours(9) : item.Start).AddMinutes(-item.ReminderMinutes);
-                if (now >= target && now < target.AddMinutes(2) && shownReminders.Add(key)) { due.Add(item); keys[item.Id] = key; }
+                try
+                {
+                    item.ReminderMinutes = GoogleCalendar.NormalizeReminderMinutes(item.ReminderMinutes, item.AllDay);
+                    if (item.ReminderMinutes < 0) continue;
+                    var key = item.Id + "|" + item.Start.ToString("o") + "|" + item.ReminderMinutes;
+                    if (item.ReminderDismissedKey == key) continue;
+                    var target = item.SnoozeUntil > now.AddMinutes(-2) ? item.SnoozeUntil : (item.AllDay ? item.Start.Date.AddHours(9) : item.Start).AddMinutes(-item.ReminderMinutes);
+                    if (now >= target && now < target.AddMinutes(2) && shownReminders.Add(key)) { due.Add(item); keys[item.Id] = key; }
+                }
+                catch (Exception ex) { ErrorLog.Write("Check reminder item", ex); }
             }
             if (due.Count > 0) new ReminderWindow(due, delegate(int? snooze)
             {

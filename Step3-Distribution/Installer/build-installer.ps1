@@ -11,4 +11,4 @@ if (-not $compiler) {
 
 & $compiler (Join-Path $PSScriptRoot 'ONHARU.iss')
 if ($LASTEXITCODE -ne 0) { throw 'ONHARU 설치 파일 생성에 실패했습니다.' }
-Write-Host "Built: $(Join-Path $PSScriptRoot 'Output\ONHARU-Setup-1.2.0.exe')"
+Write-Host "Built: $(Join-Path $PSScriptRoot 'Output\ONHARU-Setup-1.2.1.exe')"

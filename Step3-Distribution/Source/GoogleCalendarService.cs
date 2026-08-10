@@ -65,8 +65,8 @@ namespace FamilyPlanner
                 "&redirect_uri=" + E(redirect) + "&grant_type=authorization_code&code_verifier=" + E(verifier));
             if (string.IsNullOrWhiteSpace(token.RefreshToken)) throw new InvalidOperationException("Google 갱신 토큰을 받지 못했습니다.");
             SaveRefreshToken(token.RefreshToken); SetAccessToken(token);
-            var calendars = await Send<GoogleCalendarList>(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250", null);
-            var primary = (calendars.Items ?? new List<GoogleCalendarEntry>()).FirstOrDefault(x => x.Primary);
+            var calendars = await ReadCalendarListAsync();
+            var primary = calendars.FirstOrDefault(x => x.Primary);
             if (primary != null) File.WriteAllBytes(AccountPath, Protect(primary.Id));
         }
 
@@ -91,9 +91,9 @@ namespace FamilyPlanner
 
             var from = DateTime.Today.AddYears(-1).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
             var to = DateTime.Today.AddYears(2).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
-            var list = await Send<GoogleCalendarList>(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250", null);
+            var entries = await ReadCalendarListAsync();
             var calendars = new List<GoogleCalendarSetting>();
-            foreach (var entry in (list.Items ?? new List<GoogleCalendarEntry>()).Where(x => !x.Hidden))
+            foreach (var entry in entries.Where(x => !x.Hidden))
             {
                 var old = saved == null ? null : saved.FirstOrDefault(x => x.Id == entry.Id);
                 var holidaySource = (entry.Summary ?? "").Contains("휴일") || (entry.Id ?? "").IndexOf("holiday", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -104,10 +104,9 @@ namespace FamilyPlanner
                     Primary = entry.Primary, AccessRole = entry.AccessRole, Visible = old == null ? entry.Selected || entry.Primary : old.Visible,
                     Editable = canWrite && !holidaySource && (old == null ? entry.Primary : old.Editable) };
                 calendars.Add(calendar);
-                var data = await Send<GoogleEvents>(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/calendars/" + E(entry.Id) +
-                    "/events?singleEvents=true&maxResults=2500&timeMin=" + E(from) + "&timeMax=" + E(to), null);
+                var remoteEvents = await ReadEventsAsync(entry.Id, from, to);
                 var remoteIds = new HashSet<string>();
-                foreach (var remote in (data.Items ?? new List<GoogleEvent>()).Where(x => x.Status != "cancelled" && x.Start != null && x.End != null))
+                foreach (var remote in remoteEvents.Where(x => x.Status != "cancelled" && x.Start != null && x.End != null))
                 {
                     remoteIds.Add(remote.Id);
                     var item = local.FirstOrDefault(x => x.GoogleEventId == remote.Id && (x.GoogleCalendarId == entry.Id || (entry.Primary && string.IsNullOrWhiteSpace(x.GoogleCalendarId))));
@@ -257,15 +256,89 @@ namespace FamilyPlanner
             item.IsTodo = item.GoogleTaskEvent || (p != null && p.TryGetValue("onharuTodo", out value) ? value == "1" : !item.AllDay);
             if (p != null && p.TryGetValue("onharuCompleted", out value)) item.Completed = value == "1";
             int reminder;
-            if (p != null && p.TryGetValue("onharuReminder", out value) && int.TryParse(value, out reminder)) { item.ReminderMinutes = reminder; item.ReminderConfigured = true; }
+            if (p != null && p.TryGetValue("onharuReminder", out value) && int.TryParse(value, out reminder))
+            { item.ReminderMinutes = NormalizeReminderMinutes(reminder, item.AllDay); item.ReminderConfigured = true; }
             else if (!item.ReminderConfigured) { item.ReminderMinutes = item.AllDay ? -1 : 10; item.ReminderConfigured = true; }
             if (p != null && p.TryGetValue("onharuImportant", out value)) item.Important = value == "1";
-            if (p != null && p.TryGetValue("onharuRecurrence", out value) && !string.IsNullOrWhiteSpace(value)) item.RecurrenceFrequency = value;
-            if (p != null && p.TryGetValue("onharuRecurrenceMode", out value)) item.RecurrenceMode = value;
-            if (p != null && p.TryGetValue("onharuRecurrenceDays", out value)) item.RecurrenceDays = value;
-            item.RolloverMode = !item.GoogleTaskEvent && p != null && p.TryGetValue("onharuRolloverMode", out value) && value != "none" ? value : null;
+            item.RecurrenceFrequency = p != null && p.TryGetValue("onharuRecurrence", out value) ? NormalizeRecurrenceFrequency(value) : null;
+            item.RecurrenceMode = p != null && p.TryGetValue("onharuRecurrenceMode", out value) ? NormalizeRecurrenceMode(item.RecurrenceFrequency, value) : null;
+            item.RecurrenceDays = p != null && p.TryGetValue("onharuRecurrenceDays", out value) ? NormalizeRecurrenceDays(item.RecurrenceFrequency, item.RecurrenceMode, value, item.Start) : null;
+            item.RolloverMode = !item.GoogleTaskEvent && p != null && p.TryGetValue("onharuRolloverMode", out value) ? NormalizeRolloverMode(value) : null;
             if (string.IsNullOrWhiteSpace(item.RolloverMode) && !item.GoogleTaskEvent && p != null && p.TryGetValue("onharuRollover", out value) && value == "1") item.RolloverMode = "next_day";
             item.AutoRollover = !string.IsNullOrWhiteSpace(item.RolloverMode);
+        }
+
+        static async Task<List<GoogleCalendarEntry>> ReadCalendarListAsync()
+        {
+            var result = new List<GoogleCalendarEntry>(); var seen = new HashSet<string>(); string token = null;
+            do
+            {
+                var page = await Send<GoogleCalendarList>(HttpMethod.Get, PageUrl("https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250", token), null);
+                result.AddRange(page.Items ?? new List<GoogleCalendarEntry>()); token = page.NextPageToken;
+                if (!string.IsNullOrWhiteSpace(token) && !seen.Add(token)) throw new InvalidOperationException("Google 캘린더 목록 페이지가 반복되었습니다.");
+            } while (!string.IsNullOrWhiteSpace(token));
+            return result;
+        }
+
+        static async Task<List<GoogleEvent>> ReadEventsAsync(string calendarId, string from, string to)
+        {
+            var url = "https://www.googleapis.com/calendar/v3/calendars/" + E(calendarId) +
+                "/events?singleEvents=true&maxResults=2500&timeMin=" + E(from) + "&timeMax=" + E(to);
+            var result = new List<GoogleEvent>(); var seen = new HashSet<string>(); string token = null;
+            do
+            {
+                var page = await Send<GoogleEvents>(HttpMethod.Get, PageUrl(url, token), null);
+                result.AddRange(page.Items ?? new List<GoogleEvent>()); token = page.NextPageToken;
+                if (!string.IsNullOrWhiteSpace(token) && !seen.Add(token)) throw new InvalidOperationException("Google 일정 페이지가 반복되었습니다.");
+            } while (!string.IsNullOrWhiteSpace(token));
+            return result;
+        }
+
+        internal static string PageUrl(string url, string token)
+        {
+            return string.IsNullOrWhiteSpace(token) ? url : url + (url.Contains("?") ? "&" : "?") + "pageToken=" + E(token);
+        }
+
+        internal static int NormalizeReminderMinutes(int value, bool allDay)
+        {
+            return value == -1 || value == 0 || value == 10 || value == 30 || value == 1440 ? value : allDay ? -1 : 10;
+        }
+
+        internal static string NormalizeRolloverMode(string value)
+        {
+            return value == "next_day" || value == "next_week" || value == "next_weekday" ? value : null;
+        }
+
+        internal static string NormalizeRecurrenceFrequency(string value)
+        {
+            return value == "daily" || value == "weekly" || value == "monthly" || value == "yearly" ? value : null;
+        }
+
+        internal static string NormalizeRecurrenceMode(string frequency, string value)
+        {
+            if (frequency == "daily") return value == "weekdays" ? "weekdays" : "daily";
+            if (frequency == "weekly") return "weekly";
+            if (frequency == "monthly") return value == "monthly_last" || value == "monthly_nth" ? value : "monthly_date";
+            return frequency == "yearly" ? "yearly" : null;
+        }
+
+        internal static string NormalizeRecurrenceDays(string frequency, string mode, string value, DateTime start)
+        {
+            var days = new HashSet<string>(new[] { "MO", "TU", "WE", "TH", "FR", "SA", "SU" });
+            if (frequency == "weekly")
+            {
+                var selected = (value ?? "").Split(',').Where(days.Contains).Distinct().ToList();
+                return selected.Count == 0 ? RecurrenceService.DayCode(start.DayOfWeek) : string.Join(",", selected);
+            }
+            if (frequency == "monthly" && mode == "monthly_nth")
+            {
+                var code = string.IsNullOrWhiteSpace(value) || value.Length < 3 ? null : value.Substring(value.Length - 2);
+                int ordinal;
+                if (code == null || !days.Contains(code) || !int.TryParse(value.Substring(0, value.Length - 2), out ordinal) ||
+                    (ordinal != -1 && (ordinal < 1 || ordinal > 5))) return RecurrenceService.MonthlyNthCode(start);
+                return ordinal + code;
+            }
+            return null;
         }
 
         static bool InSyncRange(DateTime value) { return value >= DateTime.Today.AddYears(-1) && value < DateTime.Today.AddYears(2); }

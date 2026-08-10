@@ -17,10 +17,18 @@ namespace FamilyPlanner
     }
 
     [DataContract]
-    class GoogleEvents { [DataMember(Name = "items", EmitDefaultValue = false)] public List<GoogleEvent> Items; }
+    class GoogleEvents
+    {
+        [DataMember(Name = "items", EmitDefaultValue = false)] public List<GoogleEvent> Items;
+        [DataMember(Name = "nextPageToken", EmitDefaultValue = false)] public string NextPageToken;
+    }
 
     [DataContract]
-    class GoogleCalendarList { [DataMember(Name = "items", EmitDefaultValue = false)] public List<GoogleCalendarEntry> Items; }
+    class GoogleCalendarList
+    {
+        [DataMember(Name = "items", EmitDefaultValue = false)] public List<GoogleCalendarEntry> Items;
+        [DataMember(Name = "nextPageToken", EmitDefaultValue = false)] public string NextPageToken;
+    }
 
     [DataContract]
     class GoogleCalendarEntry
