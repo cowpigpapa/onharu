@@ -1,6 +1,6 @@
 # 온하루 · ONHARU 사용자 설명서
 
-정식 배포판 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 1.0.0)`으로 표시합니다.
+정식 배포판 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 1.0.1)`로 표시합니다.
 
 Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격 증명은 공개 저장소에 올리지 않고 로컬 빌드 전용 파일에서 주입합니다.
 
@@ -8,12 +8,12 @@ Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격
 
 ## 1. 실행하기
 
-1. `ONHARU-Setup-1.0.0.exe`를 실행해 설치합니다.
+1. `ONHARU-Setup-1.0.1.exe`를 실행해 설치합니다.
 2. 온하루는 작업표시줄의 일반 창이 아니라 바탕화면 레이어에 표시됩니다.
 3. 화면 오른쪽 아래 알림 영역에도 온하루 아이콘이 생깁니다.
 4. 종료하려면 달력 오른쪽 위 `×` 또는 트레이 메뉴의 종료를 사용합니다.
 
-설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 자동 업데이트와 Windows 코드 서명은 1.0.0에 포함되지 않습니다.
+설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 자동 업데이트와 Windows 코드 서명은 1.0.1에 포함되지 않습니다.
 
 파일명이 다른 이전/새 버전 EXE를 함께 실행할 수 없습니다. 온하루는 계정·설정·Google 토큰을 안전하게 관리하기 위해 Windows 사용자당 한 창만 실행됩니다.
 
@@ -291,7 +291,7 @@ cd .\Step3-Distribution\Source
 - `Step2-Refactoring`: 모델 분리부터 step90 리팩토링 실행 파일
 - `Step3-Distribution`: 설치 프로그램과 최종 배포 파일
 
-최종 소스는 `Step3-Distribution\Source`, 공식 실행 파일은 `Step3-Distribution\Release\ONHARU.exe`, 설치 파일은 `Step3-Distribution\Installer\Output\ONHARU-Setup-1.0.0.exe`입니다.
+최종 소스는 `Step3-Distribution\Source`, 공식 실행 파일은 `Step3-Distribution\Release\ONHARU.exe`, 설치 파일은 `Step3-Distribution\Installer\Output\ONHARU-Setup-1.0.1.exe`입니다.
 
 ### 설치와 제거
 

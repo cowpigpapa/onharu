@@ -1,8 +1,8 @@
-# ONHARU 1.0.0 배포 가이드
+# ONHARU 1.0.1 배포 가이드
 
 ## 공식 배포 파일
 
-- 설치 파일: `Installer\Output\ONHARU-Setup-1.0.0.exe`
+- 설치 파일: `Installer\Output\ONHARU-Setup-1.0.1.exe`
 - 단일 실행 파일: `Release\ONHARU.exe`
 - 무결성 확인: `Release\SHA256SUMS.txt`
 
@@ -35,4 +35,4 @@
 - 자동 업데이트
 - 바탕화면 아이콘보다 아래에 표시되는 네이티브 렌더링
 
-이 세 항목은 ONHARU 1.0.0의 설치·사용을 막지는 않지만, 불특정 다수 공개 배포 전에 별도 작업을 권장한다.
+이 세 항목은 ONHARU 1.0.1의 설치·사용을 막지는 않지만, 불특정 다수 공개 배포 전에 별도 작업을 권장한다.

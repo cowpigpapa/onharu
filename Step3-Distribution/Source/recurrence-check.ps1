@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-ver1.0.0-category-fix-preview.exe')
+param([string]$Exe = '..\Release\ONHARU.exe')
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $service = $assembly.GetType('FamilyPlanner.RecurrenceService')
 $method = $service.GetMethod('NextOccurrence', [Reflection.BindingFlags]'Public,Static')

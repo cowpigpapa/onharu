@@ -1,4 +1,4 @@
-param([string]$Exe = '..\ONHARU-ver1.0.0-multiday-preview.exe')
+param([string]$Exe = '..\Release\ONHARU.exe')
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $itemType = $assembly.GetType('FamilyPlanner.PlannerItem')
