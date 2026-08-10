@@ -10,7 +10,7 @@ New-Item -ItemType Directory -Force -Path $release | Out-Null
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source 'build.ps1') '..\Release\ONHARU.exe'
 if ($LASTEXITCODE -ne 0) { throw 'ONHARU EXE 빌드에 실패했습니다.' }
 
-foreach ($check in @('version-check.ps1', 'oauth-check.ps1', 'recurrence-check.ps1', 'error-log-check.ps1', 'export-check.ps1', 'multi-day-check.ps1')) {
+foreach ($check in @('version-check.ps1', 'oauth-check.ps1', 'recurrence-check.ps1', 'error-log-check.ps1', 'export-check.ps1', 'multi-day-check.ps1', 'window-position-check.ps1')) {
     if ($check -eq 'oauth-check.ps1') { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source $check) }
     else { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source $check) $exe }
     if ($LASTEXITCODE -ne 0) { throw "배포 검사 실패: $check" }

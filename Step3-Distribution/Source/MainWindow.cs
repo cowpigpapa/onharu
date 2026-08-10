@@ -118,12 +118,15 @@ namespace FamilyPlanner
             Activated += delegate { Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(delegate { DesktopLayer.Lower(this); })); };
             Loaded += async delegate
             {
+                EnsureWindowOnScreen(false);
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplaySettingsChanged;
                 CreateTrayIcon(); UpdateModeButtons(); UpdateGoogleButton();
                 if (GoogleCalendar.IsConnected) await SyncGoogle(false);
                 StartAutoSync();
             };
             Closing += delegate
             {
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplaySettingsChanged;
                 Store.Save(items); SaveWindowSettings();
                 if (trayIcon != null) { trayIcon.Visible = false; trayIcon.Dispose(); }
             };
@@ -1050,6 +1053,48 @@ namespace FamilyPlanner
             window.Top = Top + 36;
         }
 
+        void DisplaySettingsChanged(object sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Background,
+                new Action(delegate { EnsureWindowOnScreen(false); DesktopLayer.Lower(this); }));
+        }
+
+        void EnsureWindowOnScreen(bool forcePrimary)
+        {
+            var source = PresentationSource.FromVisual(this);
+            var transform = source != null && source.CompositionTarget != null
+                ? source.CompositionTarget.TransformFromDevice : Matrix.Identity;
+            var areas = Forms.Screen.AllScreens.OrderByDescending(x => x.Primary).Select(screen =>
+            {
+                var topLeft = transform.Transform(new Point(screen.WorkingArea.Left, screen.WorkingArea.Top));
+                var bottomRight = transform.Transform(new Point(screen.WorkingArea.Right, screen.WorkingArea.Bottom));
+                return new Rect(topLeft, bottomRight);
+            }).ToArray();
+            var current = new Rect(Left, Top, ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
+            var fitted = FitWindowToScreens(current, areas, forcePrimary);
+            if (fitted == current) return;
+            Width = fitted.Width; Height = fitted.Height; Left = fitted.Left; Top = fitted.Top;
+            settings.HasPosition = true; settings.Left = Left; settings.Top = Top;
+            settings.Width = Width; settings.Height = Height; Store.SaveSettings(settings);
+        }
+
+        public static Rect FitWindowToScreens(Rect window, Rect[] workAreas, bool forcePrimary)
+        {
+            if (workAreas == null || workAreas.Length == 0) return window;
+            if (!forcePrimary && workAreas.Any(area =>
+            {
+                var overlap = Rect.Intersect(window, area);
+                return !overlap.IsEmpty && overlap.Width >= Math.Min(160, window.Width)
+                    && overlap.Height >= Math.Min(72, window.Height);
+            })) return window;
+
+            var primary = workAreas[0];
+            var width = Math.Min(window.Width > 0 ? window.Width : 1120, Math.Max(820, primary.Width - 32));
+            var height = Math.Min(window.Height > 0 ? window.Height : 700, Math.Max(560, primary.Height - 32));
+            return new Rect(primary.Left + Math.Max(0, (primary.Width - width) / 2),
+                primary.Top + Math.Max(0, (primary.Height - height) / 2), width, height);
+        }
+
         void CreateTrayIcon()
         {
             var appIcon = Drawing.Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
@@ -1058,6 +1103,10 @@ namespace FamilyPlanner
             menu.Items.Add("편집 모드 열기", null, delegate
             {
                 Show(); Activate();
+            });
+            menu.Items.Add("현재 화면으로 가져오기", null, delegate
+            {
+                Show(); EnsureWindowOnScreen(true); Activate(); DesktopLayer.Lower(this);
             });
             menu.Items.Add("종료", null, delegate { Close(); });
             trayIcon.ContextMenuStrip = menu;
