@@ -45,6 +45,8 @@ namespace FamilyPlanner
                     foreach (var item in items)
                     {
                         item.Category = item.Category == "업무" || item.Category == "업무일정" ? "업무일정" : item.Category == "국경일" ? "국경일" : "개인일정";
+                        if (item.AllDay && string.IsNullOrWhiteSpace(item.GoogleCalendarId) &&
+                            (item.Category == "업무일정" || item.Category == "개인일정")) item.IsTodo = true;
                         if (item.AutoRollover && string.IsNullOrWhiteSpace(item.RolloverMode)) item.RolloverMode = "next_day";
                         NormalizeDates(item);
                     }

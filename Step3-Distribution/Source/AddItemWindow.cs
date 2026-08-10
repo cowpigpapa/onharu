@@ -183,7 +183,7 @@ namespace FamilyPlanner
             titleLabelRow.Children.Add(Label("제목")); Grid.SetColumn(important, 1); titleLabelRow.Children.Add(important);
             panel.Children.Add(titleLabelRow); panel.Children.Add(title); panel.Children.Add(validationMessage);
             var timeCardContent = new StackPanel();
-            timeCardContent.Children.Add(new TextBlock { Text = "시간을 지정하면 완료 체크 항목으로 등록됩니다.", FontSize = 11,
+            timeCardContent.Children.Add(new TextBlock { Text = "로컬 일정은 시간 유무와 관계없이 완료 체크할 수 있습니다.", FontSize = 11,
                 Foreground = Brush("#64748B"), Margin = new Thickness(0, 0, 0, 8) });
             var timeModes = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 7, 0, 2) };
             timeModes.Children.Add(allDay); timeModes.Children.Add(morning); timeModes.Children.Add(afternoon);
@@ -414,7 +414,7 @@ namespace FamilyPlanner
             if (recurrenceFrequency == "weekly" && string.IsNullOrWhiteSpace(recurrenceDays)) recurrenceDays = RecurrenceService.DayCode(selectedDate.DayOfWeek);
             Result = new PlannerItem { Id = editingItem == null ? Guid.NewGuid().ToString() : editingItem.Id, Title = title.Text.Trim(), Start = start,
                 End = allDay.IsChecked == true ? (multiDay.IsChecked == true ? endDateInclusive.AddDays(1) : start.AddDays(1)) : start.AddMinutes(30),
-                AllDay = allDay.IsChecked == true, IsTodo = allDay.IsChecked != true,
+                AllDay = allDay.IsChecked == true, IsTodo = UsesCompletionCheck(allDay.IsChecked == true, target.StartsWith("local:")),
                 Category = selectedCategory, Notes = notes.Text.Trim(),
                 GoogleEventId = editingItem == null ? null : editingItem.GoogleEventId,
                 OnharuManaged = editingItem != null && editingItem.OnharuManaged,
@@ -491,6 +491,11 @@ namespace FamilyPlanner
             var radio = new RadioButton { Content = text + (enabled ? "" : " · 읽기 전용"), Tag = tag, GroupName = "CategoryTarget",
                 IsChecked = selected, IsEnabled = enabled, Margin = new Thickness(0, 0, 16, 5) };
             categoryOptions.Add(radio); panel.Children.Add(radio);
+        }
+
+        internal static bool UsesCompletionCheck(bool isAllDay, bool isLocal)
+        {
+            return !isAllDay || isLocal;
         }
 
         static IEnumerable<GoogleCalendarSetting> OrderedSources(IEnumerable<GoogleCalendarSetting> sources)

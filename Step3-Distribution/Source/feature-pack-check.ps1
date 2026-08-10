@@ -25,4 +25,10 @@ if ($settings.Version -ne 6) { throw "Unexpected settings version: $($settings.V
 if (-not $settings.CompletedLast) { throw 'CompletedLast must default to true.' }
 if ($null -eq $settings.DateBackgroundColors) { throw 'DateBackgroundColors must be initialized.' }
 
+$addItem = $assembly.GetType('FamilyPlanner.AddItemWindow', $true)
+$completion = $addItem.GetMethod('UsesCompletionCheck', [Reflection.BindingFlags]'NonPublic,Static')
+if (-not $completion.Invoke($null, @($false, $false))) { throw 'Timed items must use completion checks.' }
+if (-not $completion.Invoke($null, @($true, $true))) { throw 'Local all-day completion check was not enabled.' }
+if ($completion.Invoke($null, @($true, $false))) { throw 'Google all-day item must not enable local completion checks.' }
+
 Write-Host 'Feature pack checks passed.'
