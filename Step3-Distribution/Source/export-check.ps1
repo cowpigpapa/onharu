@@ -15,6 +15,12 @@ $googleItem.GoogleCalendarId = 'family'; $googleItem.GoogleCalendarName = 'Famil
 $googleItem.Start = [datetime]'2026-08-11'; $googleItem.End = [datetime]'2026-08-12'
 $googleItem.SnoozeUntil = [datetime]'2000-01-01'; $googleItem.RecurrenceUntil = [datetime]'2026-08-11'
 $items.Add($googleItem)
+$formulaItem = [Activator]::CreateInstance($itemType)
+$formulaItem.Id = 'csv-formula-check'; $formulaItem.Title = '=HYPERLINK("https://example.invalid","click")'
+$formulaItem.Notes = '  @SUM(1+1)'; $formulaItem.Category = 'Business'
+$formulaItem.Start = [datetime]'2026-08-12 09:00'; $formulaItem.End = [datetime]'2026-08-12 10:00'
+$formulaItem.SnoozeUntil = [datetime]'2000-01-01'; $formulaItem.RecurrenceUntil = [datetime]'2026-08-12'
+$items.Add($formulaItem)
 $service = $assembly.GetType('FamilyPlanner.ExportService')
 $folder = Join-Path ([IO.Path]::GetTempPath()) ('onharu-export-check-' + [guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($folder) | Out-Null
@@ -27,6 +33,8 @@ try {
     $csvText = [IO.File]::ReadAllText($csv); $icsText = [IO.File]::ReadAllText($ics)
     if (-not $csvText.Contains('"Meeting, ""Review"""')) { throw 'CSV quote escaping failed.' }
     if (-not $csvText.Contains('"Family Team"')) { throw 'Google calendar category was not exported to CSV.' }
+    if (-not $csvText.Contains('"''=HYPERLINK(""https://example.invalid"",""click"")"')) { throw 'CSV formula prefix was not neutralized.' }
+    if (-not $csvText.Contains('"''  @SUM(1+1)"')) { throw 'CSV formula prefix after whitespace was not neutralized.' }
     if (-not $icsText.Contains('BEGIN:VCALENDAR') -or -not $icsText.Contains('SUMMARY:Meeting\, "Review"')) { throw 'ICS format validation failed.' }
     if (-not $icsText.Contains('CATEGORIES:Family Team')) { throw 'Google calendar category was not exported to ICS.' }
     $jsonText = [IO.File]::ReadAllText($json)

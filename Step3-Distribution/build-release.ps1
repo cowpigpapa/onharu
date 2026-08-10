@@ -4,7 +4,7 @@ $source = Join-Path $root 'Source'
 $release = Join-Path $root 'Release'
 $installer = Join-Path $root 'Installer'
 $exe = Join-Path $release 'ONHARU.exe'
-$setup = Join-Path $installer 'Output\ONHARU-Setup-1.1.0.exe'
+$setup = Join-Path $installer 'Output\ONHARU-Setup-1.1.1.exe'
 
 New-Item -ItemType Directory -Force -Path $release | Out-Null
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source 'build.ps1') '..\Release\ONHARU.exe'

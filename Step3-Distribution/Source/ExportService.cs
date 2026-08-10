@@ -59,7 +59,13 @@ namespace FamilyPlanner
             File.WriteAllLines(path, lines, new UTF8Encoding(false));
         }
 
-        static string Q(string value) { return "\"" + (value ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\""; }
+        static string Q(string value)
+        {
+            var clean = (value ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ");
+            var formula = clean.TrimStart();
+            if (formula.Length > 0 && "=+-@".IndexOf(formula[0]) >= 0) clean = "'" + clean;
+            return "\"" + clean + "\"";
+        }
         static PlannerItem CloneForExport(PlannerItem item)
         {
             var clone = new PlannerItem();
