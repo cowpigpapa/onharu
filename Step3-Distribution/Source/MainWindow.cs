@@ -50,6 +50,11 @@ namespace FamilyPlanner
         Button googleButton;
         TextBlock googleStatus;
         StackPanel googleFilterPanel;
+        Button selectedDayButton;
+        Button thisWeekButton;
+        Button nextWeekButton;
+        Button dateColorButton;
+        string detailMode = "selected";
         string itemNoticeId;
         string itemNoticeText;
         int itemNoticeVersion;
@@ -75,6 +80,7 @@ namespace FamilyPlanner
         public MainWindow()
         {
             settings = Store.LoadSettings();
+            Store.SetExternalBackupFolder(settings.BackupFolder);
             if (!GoogleCalendar.IsConnected) settings.ActiveGoogleAccountId = null;
             var connectedAccount = GoogleCalendar.ConnectedAccountId;
             if (GoogleCalendar.IsConnected && !string.IsNullOrWhiteSpace(connectedAccount)) settings.ActiveGoogleAccountId = connectedAccount;
@@ -168,7 +174,7 @@ namespace FamilyPlanner
             var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, -3, 0, 0) };
             actions.Children.Add(Button("◀", delegate { shownMonth = shownMonth.AddMonths(-1); RenderAll(); }, 42));
-            actions.Children.Add(Button("오늘", delegate { shownMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1); selectedDate = DateTime.Today; RenderAll(); }, 62));
+            actions.Children.Add(Button("오늘", delegate { shownMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1); selectedDate = DateTime.Today; detailMode = "selected"; RenderAll(); }, 62));
             actions.Children.Add(Button("▶", delegate { shownMonth = shownMonth.AddMonths(1); RenderAll(); }, 42));
             lockButton = Button("📌 고정됨", null, 112);
             lockButton.Click += delegate
@@ -288,16 +294,29 @@ namespace FamilyPlanner
             sideStack.Children.Add(filterRow);
             sideStack.Children.Add(new TextBlock { Text = "Google", Foreground = Brush("#64748B"), FontSize = Ui(11), Margin = new Thickness(0, 0, 0, 7) });
             googleFilterPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 18) };
-            sideStack.Children.Add(googleFilterPanel); BuildGoogleFilters(); sideStack.Children.Add(selectedTitle);
+            sideStack.Children.Add(googleFilterPanel); BuildGoogleFilters();
+            var detailTabs = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            for (var i = 0; i < 3; i++) detailTabs.ColumnDefinitions.Add(new ColumnDefinition());
+            selectedDayButton = DetailTab("선택일", "selected"); thisWeekButton = DetailTab("이번 주", "this_week"); nextWeekButton = DetailTab("다음 주", "next_week");
+            detailTabs.Children.Add(selectedDayButton); Grid.SetColumn(thisWeekButton, 1); detailTabs.Children.Add(thisWeekButton); Grid.SetColumn(nextWeekButton, 2); detailTabs.Children.Add(nextWeekButton);
+            sideStack.Children.Add(detailTabs);
+            var detailHeader = new DockPanel();
+            dateColorButton = Button("◉", null, 32); dateColorButton.Height = 30; dateColorButton.FontSize = 16;
+            dateColorButton.Click += delegate { OpenDateColorPopup(dateColorButton); };
+            dateColorButton.ToolTip = "선택 날짜 배경색"; DockPanel.SetDock(dateColorButton, Dock.Right); detailHeader.Children.Add(dateColorButton);
+            detailHeader.Children.Add(selectedTitle); sideStack.Children.Add(detailHeader);
             sideStack.Children.Add(new Border { Height = 1, Background = Brush("#E2E8F0"), Margin = new Thickness(0, 12, 0, 12) });
-            sideStack.Children.Add(detail); sidebarPanel.Child = sideStack; Grid.SetColumn(sidebarPanel, 1); body.Children.Add(sidebarPanel);
+            var detailScroll = new ScrollViewer { Content = detail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = 400 };
+            detailScroll.Loaded += delegate { UiRound.SoftenScrollBars(detailScroll); };
+            sideStack.Children.Add(detailScroll); sidebarPanel.Child = sideStack; Grid.SetColumn(sidebarPanel, 1); body.Children.Add(sidebarPanel);
             sidebarButton = Button("❮", ToggleSidebar, 28);
             sidebarButton.Height = 32; sidebarButton.FontSize = 20; sidebarButton.ToolTip = settings.SidebarVisible ? "일정 패널 접기" : "일정 패널 펼치기";
             sidebarButton.HorizontalAlignment = HorizontalAlignment.Right; sidebarButton.VerticalAlignment = VerticalAlignment.Top;
             sidebarButton.Margin = new Thickness(0, 8, 3, 0); sidebarButton.Visibility = settings.SidebarVisible ? Visibility.Collapsed : Visibility.Visible;
             Grid.SetColumn(sidebarButton, 1); Panel.SetZIndex(sidebarButton, 30); body.Children.Add(sidebarButton);
             Grid.SetRow(body, 1); body.Margin = new Thickness(12, 0, 12, 30); root.Children.Add(body);
-            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 1.0.1)", FontSize = 10,
+            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 1.1.0)", FontSize = 10,
                 FontWeight = FontWeights.SemiBold, Foreground = Brush("#475569"),
                 HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 50, 5) };
@@ -359,6 +378,10 @@ namespace FamilyPlanner
             if (settings.ShowLunar)
                 dateHeader.Children.Add(new TextBlock { Text = Lunar(date), Foreground = Brush("#8B5CF6"), FontSize = Ui(9),
                     VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 1, 1, 2) });
+            var solarTerm = settings.ShowSolarTerms ? SolarTerm(date) : null;
+            if (!string.IsNullOrWhiteSpace(solarTerm))
+                dateHeader.Children.Add(new TextBlock { Text = solarTerm, Foreground = Brush("#0F766E"), FontSize = Ui(9),
+                    FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 1, 2) });
             var holidays = string.Join(", ", dateItems.Where(x => x.Category == "국경일").Select(x => x.Title).ToArray());
             if (date == DateTime.Today)
                 dateHeader.Children.Add(new TextBlock { Text = "오늘", Foreground = Brush("#2563EB"), FontSize = Ui(10),
@@ -368,11 +391,13 @@ namespace FamilyPlanner
                     FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(3, 1, 2, 2), TextTrimming = TextTrimming.CharacterEllipsis });
             stack.Children.Add(dateHeader);
+            string customBackground = null;
+            var hasCustomBackground = settings.DateBackgroundColors != null && settings.DateBackgroundColors.TryGetValue(DateKey(date), out customBackground);
             var border = new Border { Child = stack, BorderBrush = Brush("#99CBD5E1"), BorderThickness = new Thickness(.5),
-                Background = date == DateTime.Today ? Brush("#CCFCE7F3") : date == selectedDate ? Brush("#CCDBEAFE") : Brush("#99FFFFFF"), Cursor = Cursors.Hand };
+                Background = date == selectedDate ? Brush("#CCDBEAFE") : date == DateTime.Today ? Brush("#CCFCE7F3") : hasCustomBackground ? Brush(customBackground) : Brush("#99FFFFFF"), Cursor = Cursors.Hand };
             border.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
             {
-                selectedDate = date;
+                selectedDate = date; detailMode = "selected";
                 if (e.ClickCount == 2) AddItem(sender, e); else RenderAll();
             };
             Grid.SetRow(border, row); Grid.SetColumn(border, col); calendar.Children.Add(border);
@@ -385,12 +410,12 @@ namespace FamilyPlanner
                 x.Start.Date <= weekEnd && (x.End > x.Start ? x.End.AddTicks(-1).Date : x.Start.Date) >= weekStart);
             if (settings.CalendarOrderMode == "time")
                 weekItems = settings.MultiDayFirst
-                    ? weekItems.OrderByDescending(IsMultiDay).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title)
-                    : weekItems.OrderBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
+                    ? weekItems.OrderBy(CompletedRank).ThenByDescending(IsMultiDay).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title)
+                    : weekItems.OrderBy(CompletedRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
             else
                 weekItems = settings.MultiDayFirst
-                    ? weekItems.OrderByDescending(IsMultiDay).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start)
-                    : weekItems.OrderBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+                    ? weekItems.OrderBy(CompletedRank).ThenByDescending(IsMultiDay).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start)
+                    : weekItems.OrderBy(CompletedRank).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
             var laneEnds = new List<DateTime>();
             foreach (var item in weekItems)
             {
@@ -415,7 +440,7 @@ namespace FamilyPlanner
                 {
                     var days = (segmentEnd - segmentStart).Days + 1;
                     var clickedDay = bar.ActualWidth <= 0 ? 0 : Math.Min(days - 1, Math.Max(0, (int)(e.GetPosition(bar).X / bar.ActualWidth * days)));
-                    selectedDate = segmentStart.AddDays(clickedDay);
+                    selectedDate = segmentStart.AddDays(clickedDay); detailMode = "selected";
                     if (e.ClickCount == 2) OpenEdit(item); else RenderAll();
                     e.Handled = true;
                 };
@@ -426,9 +451,38 @@ namespace FamilyPlanner
 
         void RenderDetail()
         {
-            selectedTitle.Text = selectedDate.ToString("M월 d일 dddd", new CultureInfo("ko-KR")); detail.Children.Clear();
-            var dayItems = VisibleItems(selectedDate).ToList();
-            if (dayItems.Count == 0) detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = Brush("#94A3B8"), Margin = new Thickness(0, 8, 0, 0) });
+            detail.Children.Clear(); UpdateDetailTabs();
+            if (detailMode == "selected")
+            {
+                selectedTitle.Text = selectedDate.ToString("M월 d일 dddd", new CultureInfo("ko-KR"));
+                AddDetailDay(selectedDate, false);
+                var add = Button("+ 이 날짜에 추가", AddItem, 150); add.Margin = new Thickness(0, 14, 0, 0); detail.Children.Add(add);
+                return;
+            }
+            var start = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
+            var end = start.AddDays(6);
+            selectedTitle.Text = (detailMode == "next_week" ? "다음 주" : "이번 주") + " · " + start.ToString("M/d") + "–" + end.ToString("M/d");
+            var added = false;
+            for (var date = start; date <= end; date = date.AddDays(1))
+            {
+                if (!VisibleItems(date).Any()) continue;
+                AddDetailDay(date, true); added = true;
+            }
+            if (!added) detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = Brush("#94A3B8"), Margin = new Thickness(0, 8, 0, 0) });
+        }
+
+        void AddDetailDay(DateTime date, bool showDateHeader)
+        {
+            var dayItems = VisibleItems(date).ToList();
+            if (showDateHeader)
+                detail.Children.Add(new TextBlock { Text = date.ToString("M월 d일 ddd", new CultureInfo("ko-KR")),
+                    Foreground = date.Date == DateTime.Today ? Brush("#2563EB") : Brush("#475569"), FontWeight = FontWeights.Bold,
+                    FontSize = Ui(12), Margin = new Thickness(1, 8, 0, 3) });
+            if (dayItems.Count == 0)
+            {
+                detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = Brush("#94A3B8"), Margin = new Thickness(0, 8, 0, 0) });
+                return;
+            }
             foreach (var sourceGroup in dayItems.GroupBy(DisplayGroup).OrderBy(x => GroupOrder(x.First())))
             {
                 var categoryItems = sourceGroup.ToList();
@@ -457,7 +511,7 @@ namespace FamilyPlanner
                         Foreground = item.Important ? Brush("#F20D7A") : item.Category == "국경일" ? Brush("#EF4444") : Brush("#1E293B"),
                         TextDecorations = item.Completed ? TextDecorations.Strikethrough : null });
                     if (item.AllDay || IsMultiDay(item))
-                        text.Children.Add(new TextBlock { Text = DetailTimeText(item, selectedDate),
+                        text.Children.Add(new TextBlock { Text = DetailTimeText(item, date),
                             FontSize = Ui(11), Foreground = Brush(ItemColor(item)) });
                     if (!string.IsNullOrWhiteSpace(item.Notes))
                         text.Children.Add(new TextBlock { Text = item.Notes, FontSize = Ui(11), Foreground = Brush("#64748B"),
@@ -476,16 +530,83 @@ namespace FamilyPlanner
                     BorderBrush = PastelBrush(groupColor, .62), BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(11), Padding = new Thickness(12), Margin = new Thickness(0, 5, 0, 8), Child = group });
             }
-            var add = Button("+ 이 날짜에 추가", AddItem, 150); add.Margin = new Thickness(0, 14, 0, 0); detail.Children.Add(add);
+        }
+
+        Button DetailTab(string text, string mode)
+        {
+            var button = Button(text, null, 80); button.Height = 31; button.Margin = new Thickness(2, 0, 2, 0); button.FontSize = Ui(11);
+            button.Click += delegate { detailMode = mode; RenderDetail(); };
+            return button;
+        }
+
+        void UpdateDetailTabs()
+        {
+            foreach (var entry in new[] { Tuple.Create(selectedDayButton, "selected"), Tuple.Create(thisWeekButton, "this_week"), Tuple.Create(nextWeekButton, "next_week") })
+            {
+                if (entry.Item1 == null) continue;
+                var selected = detailMode == entry.Item2;
+                entry.Item1.Background = Brush(selected ? "#4F46E5" : "#EEF2FF");
+                entry.Item1.Foreground = Brush(selected ? "#FFFFFF" : "#4338CA");
+            }
+            if (dateColorButton != null) dateColorButton.Visibility = detailMode == "selected" ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        DateTime StartOfWeek(DateTime date)
+        {
+            var firstDay = settings.WeekNumberRule == "iso" ? DayOfWeek.Monday : DayOfWeek.Sunday;
+            return date.Date.AddDays(-((7 + (int)date.DayOfWeek - (int)firstDay) % 7));
+        }
+
+        void OpenDateColorPopup(Button target)
+        {
+            var colors = new[] { "#FFF1F2", "#FEF3C7", "#DCFCE7", "#DBEAFE", "#EDE9FE", "#F1F5F9" };
+            var panel = new StackPanel { Orientation = Orientation.Horizontal };
+            var popup = new Popup { PlacementTarget = target, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
+            foreach (var hex in colors)
+            {
+                var color = hex;
+                var swatch = Button("", null, 28); swatch.Height = 28; swatch.Background = Brush(color); swatch.BorderBrush = Brush("#CBD5E1");
+                swatch.BorderThickness = new Thickness(1); swatch.Margin = new Thickness(3); swatch.Cursor = Cursors.Hand;
+                swatch.Click += delegate
+                {
+                    settings.DateBackgroundColors[DateKey(selectedDate)] = color; Store.SaveSettings(settings); popup.IsOpen = false; RenderAll();
+                };
+                panel.Children.Add(swatch);
+            }
+            var clear = Button("×", null, 28); clear.Height = 28; clear.Margin = new Thickness(3); clear.Foreground = Brush("#DC2626");
+            clear.ToolTip = "날짜 배경색 지우기";
+            clear.Click += delegate { settings.DateBackgroundColors.Remove(DateKey(selectedDate)); Store.SaveSettings(settings); popup.IsOpen = false; RenderAll(); };
+            panel.Children.Add(clear);
+            popup.Child = new Border { Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12), Padding = new Thickness(6), Margin = new Thickness(0, 5, 0, 0), Child = panel };
+            popup.IsOpen = true;
+        }
+
+        static string DateKey(DateTime date) { return date.ToString("yyyyMMdd", CultureInfo.InvariantCulture); }
+
+        public static string SolarTerm(DateTime date)
+        {
+            var names = new[] { "소한", "대한", "입춘", "우수", "경칩", "춘분", "청명", "곡우", "입하", "소만", "망종", "하지",
+                "소서", "대서", "입추", "처서", "백로", "추분", "한로", "상강", "입동", "소설", "대설", "동지" };
+            var minutes = new[] { 0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693,
+                263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758 };
+            var correctionMinutes = new[] { 178, 167, 167, 143, 132, 98, 83, 47, 33, 1, -5, -26,
+                -23, -28, -14, -3, 18, 42, 67, 96, 119, 145, 160, 176 };
+            var origin = new DateTime(1900, 1, 6, 2, 5, 0, DateTimeKind.Utc);
+            for (var i = 0; i < names.Length; i++)
+                if (origin.AddMilliseconds(31556925974.7 * (date.Year - 1900) + (minutes[i] + correctionMinutes[i]) * 60000.0).Date == date.Date) return names[i];
+            return null;
         }
 
         IEnumerable<PlannerItem> VisibleItems(DateTime date)
         {
             var day = items.Where(x => OccursOnDate(x, date) && IsItemVisible(x));
             if (settings.CalendarOrderMode == "time")
-                return day.OrderBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
-            return day.OrderBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+                return day.OrderBy(CompletedRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
+            return day.OrderBy(CompletedRank).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
         }
+
+        int CompletedRank(PlannerItem item) { return settings.CompletedLast && item.IsTodo && item.Completed ? 1 : 0; }
 
         internal static bool OccursOnDate(PlannerItem item, DateTime date)
         {
@@ -609,15 +730,16 @@ namespace FamilyPlanner
             settings.PaletteNames = persistedSettings.PaletteNames;
             settings.SavedPalettes = persistedSettings.SavedPalettes;
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], settings.FontSize,
-                settings.CalendarOrderMode, settings.MultiDayFirst, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule,
+                settings.CalendarOrderMode, settings.MultiDayFirst, settings.CompletedLast, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
-                GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, Store.Backups().Length, settings.CategoryOrder,
+                GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, Store.Backups().Length + Store.ExternalBackups().Length, settings.CategoryOrder,
                 settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes) { Owner = this };
             if (window.ShowDialog() != true) return;
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
             settings.FontSize = window.SelectedFontSize; settings.CalendarOrderMode = window.OrderMode;
             settings.MultiDayFirst = window.MultiDayFirst;
+            settings.CompletedLast = window.CompletedLast;
             settings.Use24HourTime = window.Use24HourTime;
             settings.CategoryOrder = window.CategoryOrder;
             settings.CustomPalette = window.CustomPalette;
@@ -626,11 +748,13 @@ namespace FamilyPlanner
             settings.SavedPalettes = window.SavedPalettes;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule;
             settings.ShowLunar = window.ShowLunar;
+            settings.ShowSolarTerms = window.ShowSolarTerms;
+            settings.BackupFolder = window.BackupFolder;
             settings.PastelEventStyle = window.PastelEventStyle;
             settings.AutoSyncMinutes = window.AutoSyncMinutes;
             FontSize = settings.FontSize;
             monthTitle.FontSize = Ui(24); selectedTitle.FontSize = Ui(18);
-            Store.SaveSettings(settings);
+            Store.SetExternalBackupFolder(settings.BackupFolder); Store.SaveSettings(settings);
             foreach (var item in items.Where(x => !string.IsNullOrWhiteSpace(x.GoogleCalendarId)))
             {
                 var source = settings.GoogleCalendars.FirstOrDefault(x => x.Id == item.GoogleCalendarId);
@@ -652,7 +776,7 @@ namespace FamilyPlanner
             }
             if (window.RestoreBackup)
             {
-                var backup = new BackupWindow(Store.Backups()) { Owner = this };
+                var backup = new BackupWindow(Store.Backups(), Store.ExternalBackups()) { Owner = this };
                 if (backup.ShowDialog() == true)
                 { items.Clear(); items.AddRange(Store.Restore(backup.SelectedPath)); RenderAll(); }
             }
@@ -677,7 +801,7 @@ namespace FamilyPlanner
         {
             var window = new SearchWindow(items.Where(IsItemVisible).ToList()) { Owner = this };
             if (window.ShowDialog() == true && window.SelectedItem != null)
-            { selectedDate = window.SelectedItem.Start.Date; shownMonth = new DateTime(selectedDate.Year, selectedDate.Month, 1); RenderAll(); OpenEdit(window.SelectedItem); }
+            { selectedDate = window.SelectedItem.Start.Date; detailMode = "selected"; shownMonth = new DateTime(selectedDate.Year, selectedDate.Month, 1); RenderAll(); OpenEdit(window.SelectedItem); }
         }
 
         void SaveWindowSettings()
@@ -976,7 +1100,7 @@ namespace FamilyPlanner
         async void ShowItemNotice(PlannerItem item, string message)
         {
             itemNoticeId = item.Id; itemNoticeText = message; var version = ++itemNoticeVersion;
-            selectedDate = item.Start.Date; RenderDetail();
+            selectedDate = item.Start.Date; detailMode = "selected"; RenderDetail();
             await Task.Delay(UiRound.ErrorNoticeMilliseconds);
             if (version != itemNoticeVersion) return;
             itemNoticeId = null; itemNoticeText = null; RenderDetail();

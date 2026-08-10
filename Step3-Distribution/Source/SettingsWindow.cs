@@ -38,11 +38,14 @@ namespace FamilyPlanner
         public double SelectedFontSize;
         public string OrderMode;
         public bool MultiDayFirst;
+        public bool CompletedLast;
         public bool Use24HourTime;
         public string CategoryOrderPreset;
         public List<string> CategoryOrder;
         public bool ShowWeekNumbers;
         public bool ShowLunar;
+        public bool ShowSolarTerms;
+        public string BackupFolder;
         public string WeekRule;
         public bool PastelEventStyle;
         public int AutoSyncMinutes;
@@ -60,8 +63,8 @@ namespace FamilyPlanner
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
         readonly Dictionary<string, CheckBox> editBoxes = new Dictionary<string, CheckBox>();
 
-        public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool use24HourTime, bool showWeeks,
-            string weekRule, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, int backupCount, List<string> categoryOrder,
+        public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool completedLast, bool use24HourTime, bool showWeeks,
+            string weekRule, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
             List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes)
         {
             selectedPastelStyle = pastelEventStyle;
@@ -69,6 +72,7 @@ namespace FamilyPlanner
             CustomPalettePastelStyle = customPalettePastelStyle;
             PaletteNames = paletteNames == null ? new List<string>() : paletteNames.ToList();
             SavedPalettes = savedPalettes == null ? new List<string>() : savedPalettes.ToList();
+            BackupFolder = backupFolder;
             Title = "온하루 설정"; Width = 620; SizeToContent = SizeToContent.Height; ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
             AllowsTransparency = true; Background = Brushes.Transparent;
@@ -257,15 +261,16 @@ namespace FamilyPlanner
             };
             Grid.SetColumn(categoryOrderButton, 1); orderRow.Children.Add(categoryOrderButton); panel.Children.Add(orderRow);
             panel.Children.Add(new TextBlock { Text = "표시 옵션", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 7) });
-            var eventDisplayOptions = new Grid(); eventDisplayOptions.ColumnDefinitions.Add(new ColumnDefinition()); eventDisplayOptions.ColumnDefinitions.Add(new ColumnDefinition());
+            var displayOptions = new UniformGrid { Columns = 3 };
             var multiDayTop = new CheckBox { Content = "연속 일정은 항상 위에 표시", IsChecked = multiDayFirst,
                 Margin = new Thickness(0, 0, 0, 7), ToolTip = "체크하지 않으면 카테고리 또는 시간 설정 순서를 따릅니다." };
             var use24Hour = new CheckBox { Content = "24시간제로 시간 표시", IsChecked = use24HourTime, Margin = new Thickness(0, 0, 0, 7) };
-            eventDisplayOptions.Children.Add(multiDayTop); Grid.SetColumn(use24Hour, 1); eventDisplayOptions.Children.Add(use24Hour); panel.Children.Add(eventDisplayOptions);
-            var displayOptions = new Grid(); displayOptions.ColumnDefinitions.Add(new ColumnDefinition()); displayOptions.ColumnDefinitions.Add(new ColumnDefinition());
+            var completedLastOption = new CheckBox { Content = "완료 Todo는 아래로 이동", IsChecked = completedLast, Margin = new Thickness(0, 0, 0, 7) };
             var showWeek = new CheckBox { Content = "달력 왼쪽에 주차 표시", IsChecked = showWeeks, Margin = new Thickness(0, 0, 0, 7) };
             var lunar = new CheckBox { Content = "날짜 아래에 음력 표시", IsChecked = showLunar, Margin = new Thickness(0, 0, 0, 7) };
-            displayOptions.Children.Add(showWeek); Grid.SetColumn(lunar, 1); displayOptions.Children.Add(lunar); panel.Children.Add(displayOptions);
+            var solarTerms = new CheckBox { Content = "날짜 옆에 24절기 표시", IsChecked = showSolarTerms, Margin = new Thickness(0, 0, 0, 7) };
+            foreach (var option in new[] { multiDayTop, use24Hour, completedLastOption, showWeek, lunar, solarTerms }) displayOptions.Children.Add(option);
+            panel.Children.Add(displayOptions);
             var weekRules = new StackPanel { Orientation = Orientation.Horizontal, IsEnabled = showWeeks };
             weekRules.Children.Add(new RadioButton { Content = "ISO · 월요일 시작", Tag = "iso", GroupName = "WeekRule",
                 IsChecked = weekRule != "jan1", Margin = new Thickness(18, 0, 22, 0) });
@@ -312,9 +317,11 @@ namespace FamilyPlanner
                 SelectedFontSize = (double)fontOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
                 OrderMode = orderOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 MultiDayFirst = multiDayTop.IsChecked == true;
+                CompletedLast = completedLastOption.IsChecked == true;
                 Use24HourTime = use24Hour.IsChecked == true;
                 ShowWeekNumbers = showWeek.IsChecked == true;
                 ShowLunar = lunar.IsChecked == true;
+                ShowSolarTerms = solarTerms.IsChecked == true;
                 WeekRule = weekRules.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 PastelEventStyle = selectedPastelStyle;
                 AutoSyncMinutes = (int)syncOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
@@ -335,17 +342,39 @@ namespace FamilyPlanner
                 panel.Children.Add(importLocal);
             }
             var dataActions = new Grid { Margin = new Thickness(0, 6, 0, 0) };
-            dataActions.ColumnDefinitions.Add(new ColumnDefinition()); dataActions.ColumnDefinitions.Add(new ColumnDefinition());
-            if (backupCount > 0)
+            for (var i = 0; i < 3; i++) dataActions.ColumnDefinitions.Add(new ColumnDefinition());
+            Func<string, object> backupButtonContent = path => string.IsNullOrWhiteSpace(path) ? (object)"📁  백업 폴더 지정" :
+                new TextBlock { Text = path, TextTrimming = TextTrimming.CharacterEllipsis, FontSize = 11, Margin = new Thickness(7, 0, 7, 0) };
+            var externalBackup = new Button { Content = backupButtonContent(BackupFolder),
+                Height = 34, Background = Brush(string.IsNullOrWhiteSpace(BackupFolder) ? "#F1F5F9" : "#ECFDF5"),
+                Foreground = Brush(string.IsNullOrWhiteSpace(BackupFolder) ? "#475569" : "#047857"), BorderThickness = new Thickness(0),
+                Margin = new Thickness(0, 0, 34, 0), Cursor = Cursors.Hand, ToolTip = string.IsNullOrWhiteSpace(BackupFolder) ? "백업 폴더 선택" : BackupFolder };
+            var clearBackup = new Button { Content = "×", Width = 28, Height = 34, Background = Brush("#FEE2E2"), Foreground = Brush("#DC2626"),
+                BorderThickness = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 4, 0), Cursor = Cursors.Hand,
+                ToolTip = "외부 자동 백업 해제", Visibility = string.IsNullOrWhiteSpace(BackupFolder) ? Visibility.Collapsed : Visibility.Visible };
+            Round(externalBackup, 10); Round(clearBackup, 10);
+            externalBackup.Click += delegate
             {
-                var restore = new Button { Content = "↶  백업 복원  ·  최근 " + backupCount + "개", Height = 34,
-                    Background = Brush("#EEF2FF"), Foreground = Brush("#4338CA"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 0, 4, 0), Cursor = Cursors.Hand };
-                Round(restore, 10); restore.Click += delegate { RestoreBackup = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }; dataActions.Children.Add(restore);
-            }
-            var export = new Button { Content = "⇩  일정 내보내기  ·  JSON · CSV · ICS", Height = 34,
+                using (var picker = new Forms.FolderBrowserDialog { Description = "온하루 자동 백업 폴더를 선택하세요", SelectedPath = BackupFolder ?? "" })
+                    if (picker.ShowDialog() == Forms.DialogResult.OK)
+                    {
+                        BackupFolder = picker.SelectedPath; externalBackup.Content = backupButtonContent(BackupFolder); externalBackup.ToolTip = BackupFolder;
+                        externalBackup.Background = Brush("#ECFDF5"); externalBackup.Foreground = Brush("#047857"); clearBackup.Visibility = Visibility.Visible;
+                    }
+            };
+            clearBackup.Click += delegate
+            { BackupFolder = null; externalBackup.Content = backupButtonContent(null); externalBackup.ToolTip = "백업 폴더 선택";
+                externalBackup.Background = Brush("#F1F5F9"); externalBackup.Foreground = Brush("#475569"); clearBackup.Visibility = Visibility.Collapsed; };
+            var externalCell = new Grid(); externalCell.Children.Add(externalBackup); externalCell.Children.Add(clearBackup); dataActions.Children.Add(externalCell);
+            var restore = new Button { Content = backupCount > 0 ? "↶  백업 복원  ·  " + backupCount + "개" : "↶  백업 없음", Height = 34,
+                Background = Brush("#EEF2FF"), Foreground = Brush("#4338CA"), BorderThickness = new Thickness(0), Margin = new Thickness(4, 0, 4, 0),
+                Cursor = Cursors.Hand, IsEnabled = backupCount > 0, Opacity = backupCount > 0 ? 1 : .45 };
+            Round(restore, 10); restore.Click += delegate { RestoreBackup = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); };
+            Grid.SetColumn(restore, 1); dataActions.Children.Add(restore);
+            var export = new Button { Content = "⇩  일정 내보내기", Height = 34,
                 Background = Brush("#ECFDF5"), Foreground = Brush("#047857"), BorderThickness = new Thickness(0), Margin = new Thickness(4, 0, 0, 0), Cursor = Cursors.Hand };
             Round(export, 10); export.Click += delegate { ExportItems = true; save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); };
-            if (backupCount > 0) Grid.SetColumn(export, 1); else Grid.SetColumnSpan(export, 2);
+            Grid.SetColumn(export, 2);
             dataActions.Children.Add(export); panel.Children.Add(dataActions);
             var logout = new Button { Content = "로그아웃", Height = 44, Background = Brush("#F1F5F9"), Foreground = Brush("#64748B"),
                 BorderThickness = new Thickness(0), Margin = new Thickness(0, 10, 4, 0), Cursor = Cursors.Hand };

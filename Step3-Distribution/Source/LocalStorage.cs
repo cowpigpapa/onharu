@@ -18,6 +18,7 @@ namespace FamilyPlanner
         static readonly string BackupFolder = Path.Combine(Folder, "backups");
         static readonly Mutex DataFileMutex = new Mutex(false, "Local\\OnharuDataFileLock");
         static string accountKey = "local";
+        static string externalBackupFolder;
         static string FilePath { get { return Path.Combine(Folder, "items-" + accountKey + ".json"); } }
 
         public static void SetAccount(string id)
@@ -25,6 +26,11 @@ namespace FamilyPlanner
             if (string.IsNullOrWhiteSpace(id)) { accountKey = "local"; return; }
             using (var sha = SHA256.Create())
                 accountKey = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(id))).Replace("-", "").Substring(0, 16).ToLowerInvariant();
+        }
+
+        public static void SetExternalBackupFolder(string path)
+        {
+            externalBackupFolder = string.IsNullOrWhiteSpace(path) ? null : path.Trim();
         }
 
         public static List<PlannerItem> Load()
@@ -53,6 +59,7 @@ namespace FamilyPlanner
             foreach (var item in items) NormalizeDates(item);
             WriteAtomic(FilePath, items, typeof(List<PlannerItem>));
             BackupDaily();
+            BackupExternal(FilePath, accountKey + "-" + DateTime.Today.ToString("yyyyMMdd") + ".json", accountKey + "-*.json");
         }
 
         static void NormalizeDates(PlannerItem item)
@@ -97,6 +104,16 @@ namespace FamilyPlanner
         }
 
         public static string[] Backups() { return Directory.Exists(BackupFolder) ? Directory.GetFiles(BackupFolder, accountKey + "-*.json").OrderByDescending(x => x).ToArray() : new string[0]; }
+        public static string[] ExternalBackups()
+        {
+            if (string.IsNullOrWhiteSpace(externalBackupFolder)) return new string[0];
+            try
+            {
+                var folder = Path.Combine(externalBackupFolder, "ONHARU-Backups");
+                return Directory.Exists(folder) ? Directory.GetFiles(folder, accountKey + "-*.json").OrderByDescending(x => x).ToArray() : new string[0];
+            }
+            catch (Exception ex) { ErrorLog.Write("Read external backups", ex); return new string[0]; }
+        }
         public static List<PlannerItem> Restore(string path) { File.Copy(path, FilePath, true); return Load(); }
 
         public static List<PlannerItem> LoadLocal()
@@ -123,10 +140,12 @@ namespace FamilyPlanner
                     if (settings.Version < 2) { settings.FontSize = 12; settings.Opacity = .95; settings.Version = 2; }
                     if (settings.Version < 3) { settings.SidebarVisible = true; settings.Version = 3; }
                     if (settings.Version < 5) { settings.Use24HourTime = true; settings.Version = 5; }
+                    if (settings.Version < 6) { settings.CompletedLast = true; settings.Version = 6; }
                     if (settings.GoogleCalendars == null) settings.GoogleCalendars = new List<GoogleCalendarSetting>();
                     if (settings.CustomPalette == null) settings.CustomPalette = new List<string>();
                     if (settings.PaletteNames == null) settings.PaletteNames = new List<string>();
                     if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                    if (settings.DateBackgroundColors == null) settings.DateBackgroundColors = new Dictionary<string, string>();
                     if (settings.GoogleOptionsVersion == 0)
                     {
                         foreach (var source in settings.GoogleCalendars) source.Editable = source.Primary;
@@ -141,6 +160,21 @@ namespace FamilyPlanner
         public static void SaveSettings(PlannerSettings settings)
         {
             WriteAtomic(SettingsPath, settings, typeof(PlannerSettings));
+            BackupExternal(SettingsPath, "settings.json", null);
+        }
+
+        static void BackupExternal(string source, string fileName, string cleanupPattern)
+        {
+            if (string.IsNullOrWhiteSpace(externalBackupFolder)) return;
+            try
+            {
+                var folder = Path.Combine(externalBackupFolder, "ONHARU-Backups");
+                Directory.CreateDirectory(folder);
+                File.Copy(source, Path.Combine(folder, fileName), true);
+                if (!string.IsNullOrWhiteSpace(cleanupPattern))
+                    foreach (var old in Directory.GetFiles(folder, cleanupPattern).OrderByDescending(x => x).Skip(30)) File.Delete(old);
+            }
+            catch (Exception ex) { ErrorLog.Write("External backup", ex); }
         }
 
         static List<PlannerItem> Samples()
