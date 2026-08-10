@@ -5,9 +5,14 @@
 .vs/
 bin/
 obj/
+Step3-Distribution/Release/
+Step3-Distribution/Installer/Output/
 
 # Local Google OAuth credentials and runtime data
 oauth.local.json
+OAuthCredentials.local.cs
+OAuth 클라이언트 생성됨.txt
+Step3-Distribution/Installer/DesktopIconLayout-before-ONHARU.reg
 *.token
 *.dat
 items-*.json
