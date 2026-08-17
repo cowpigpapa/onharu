@@ -1,0 +1,293 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+
+namespace FamilyPlanner
+{
+    public static class Store
+    {
+        static readonly string Folder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3");
+        static readonly string LegacyFilePath = Path.Combine(Folder, "items.json");
+        static readonly string SettingsPath = Path.Combine(Folder, "settings.json");
+        static readonly string BackupFolder = Path.Combine(Folder, "backups");
+        static readonly Mutex DataFileMutex = new Mutex(false, "Local\\OnharuV3.DataFileLock");
+        static string accountKey = "local";
+        static string externalBackupFolder;
+        static string FilePath { get { return Path.Combine(Folder, "items-" + accountKey + ".json"); } }
+
+        public static void SetAccount(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) { accountKey = "local"; return; }
+            using (var sha = SHA256.Create())
+                accountKey = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(id))).Replace("-", "").Substring(0, 16).ToLowerInvariant();
+        }
+
+        public static void SetExternalBackupFolder(string path)
+        {
+            externalBackupFolder = string.IsNullOrWhiteSpace(path) ? null : path.Trim();
+        }
+
+        public static List<PlannerItem> Load()
+        {
+            if (!File.Exists(FilePath) && File.Exists(LegacyFilePath)) File.Copy(LegacyFilePath, FilePath);
+            if (!File.Exists(FilePath)) return accountKey == "local" ? Samples() : new List<PlannerItem>();
+            try
+            {
+                return ReadItems(FilePath);
+            }
+            catch (Exception ex) { ErrorLog.Write("Load calendar data", ex); return new List<PlannerItem>(); }
+        }
+
+        public static List<PlannerItem> ReadImportFile(string path)
+        {
+            int ignored; return ReadImportFile(path, out ignored);
+        }
+
+        public static List<PlannerItem> ReadImportFile(string path, out int googleExcluded)
+        {
+            var items = ReadItems(path);
+            googleExcluded = items.Count(IsGoogleItem);
+            return items.Where(x => !IsGoogleItem(x)).ToList();
+        }
+
+        public static bool IsGoogleItem(PlannerItem item)
+        {
+            return item != null && (!string.IsNullOrWhiteSpace(item.GoogleCalendarId) ||
+                !string.IsNullOrWhiteSpace(item.GoogleEventId) || !string.IsNullOrWhiteSpace(item.GoogleRecurringEventId));
+        }
+
+        static List<PlannerItem> ReadItems(string path)
+        {
+            using (var stream = File.OpenRead(path))
+            {
+                var items = (List<PlannerItem>)new DataContractJsonSerializer(typeof(List<PlannerItem>)).ReadObject(stream);
+                if (items == null) throw new InvalidDataException("일정 목록이 없는 파일입니다.");
+                items = items.Where(x => x != null && x.Start.Year >= 1900 && x.Start.Year <= 9998).ToList();
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Id)) item.Id = Guid.NewGuid().ToString();
+                    if (!IsGoogleItem(item))
+                        item.Category = item.Category == "업무" || item.Category == "업무일정" ? "업무일정" : item.Category == "국경일" ? "국경일" : item.Category == "기념일" || !string.IsNullOrWhiteSpace(item.AnniversaryType) ? "기념일" : "개인일정";
+                    if (item.AllDay && !IsGoogleItem(item) && string.IsNullOrWhiteSpace(item.AnniversaryType) && (item.Category == "업무일정" || item.Category == "개인일정")) item.IsTodo = true;
+                    if (item.AutoRollover && string.IsNullOrWhiteSpace(item.RolloverMode)) item.RolloverMode = "next_day";
+                    NormalizeDates(item);
+                }
+                return items;
+            }
+        }
+
+        public static void Save(List<PlannerItem> items)
+        {
+            foreach (var item in items) NormalizeDates(item);
+            WriteAtomic(FilePath, items, typeof(List<PlannerItem>));
+            BackupDaily(items);
+            BackupExternalItems(items, accountKey + "-" + DateTime.Today.ToString("yyyyMMdd") + ".json", accountKey + "-*.json");
+        }
+
+        static void NormalizeDates(PlannerItem item)
+        {
+            if (item.End <= item.Start) item.End = item.AllDay ? item.Start.Date.AddDays(1) : item.Start.AddMinutes(30);
+            if (item.SnoozeUntil.Year < 1900) item.SnoozeUntil = new DateTime(2000, 1, 1);
+            if (item.RecurrenceUntil.Year < 1900) item.RecurrenceUntil = item.Start.Date;
+            if (item.AnniversaryDate.Year < 1900 || item.AnniversaryDate.Year > 9998) item.AnniversaryDate = item.Start.Date;
+            if (item.ShowDday && item.Start.Date < DateTime.Today && item.AnniversaryDate.Date > DateTime.Today)
+                item.AnniversaryDate = item.Start.Date;
+            item.RecurrenceCount = Math.Max(0, Math.Min(500, item.RecurrenceCount));
+            if (item.ReminderConfigured) item.ReminderMinutes = GoogleCalendar.NormalizeReminderMinutes(item.ReminderMinutes, item.AllDay);
+        }
+
+        static void WriteAtomic(string path, object value, Type type)
+        {
+            Directory.CreateDirectory(Folder);
+            var temp = path + "." + System.Diagnostics.Process.GetCurrentProcess().Id + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            DataFileMutex.WaitOne();
+            try
+            {
+                using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    new DataContractJsonSerializer(type).WriteObject(stream, value);
+                    stream.Flush(true);
+                }
+                if (File.Exists(path)) File.Replace(temp, path, null);
+                else File.Move(temp, path);
+            }
+            finally
+            {
+                if (File.Exists(temp)) File.Delete(temp);
+                DataFileMutex.ReleaseMutex();
+            }
+        }
+
+        static List<PlannerItem> LocalOnly(IEnumerable<PlannerItem> items) { return items.Where(x => !IsGoogleItem(x)).ToList(); }
+
+        static void BackupDaily(List<PlannerItem> items)
+        {
+            DataFileMutex.WaitOne();
+            try
+            {
+                Directory.CreateDirectory(BackupFolder);
+                var target = Path.Combine(BackupFolder, accountKey + "-" + DateTime.Today.ToString("yyyyMMdd") + ".json");
+                using (var stream = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None))
+                    new DataContractJsonSerializer(typeof(List<PlannerItem>)).WriteObject(stream, LocalOnly(items));
+                foreach (var old in Directory.GetFiles(BackupFolder, accountKey + "-*.json").OrderByDescending(x => x).Skip(30)) File.Delete(old);
+            }
+            finally { DataFileMutex.ReleaseMutex(); }
+        }
+
+        public static string[] Backups() { return Directory.Exists(BackupFolder) ? Directory.GetFiles(BackupFolder, accountKey + "-*.json").OrderByDescending(x => x).ToArray() : new string[0]; }
+        public static string[] ExternalBackups()
+        {
+            if (string.IsNullOrWhiteSpace(externalBackupFolder)) return new string[0];
+            try
+            {
+                var folder = Path.Combine(externalBackupFolder, "ONHARU-Backups");
+                return Directory.Exists(folder) ? Directory.GetFiles(folder, accountKey + "-*.json").OrderByDescending(x => x).ToArray() : new string[0];
+            }
+            catch (Exception ex) { ErrorLog.Write("Read external backups", ex); return new string[0]; }
+        }
+        public static List<PlannerItem> Restore(string path)
+        {
+            return LocalOnly(ReadItems(path));
+        }
+
+        public static List<PlannerItem> LoadLocal()
+        {
+            var current = accountKey; accountKey = "local";
+            var result = File.Exists(FilePath) ? Load() : new List<PlannerItem>();
+            accountKey = current; return result;
+        }
+
+        public static void SaveLocal(List<PlannerItem> items)
+        {
+            var current = accountKey; accountKey = "local"; Save(items); accountKey = current;
+        }
+
+        public static PlannerSettings LoadSettings()
+        {
+            if (!File.Exists(SettingsPath)) return new PlannerSettings();
+            try
+            {
+                using (var stream = File.OpenRead(SettingsPath))
+                {
+                    var settings = (PlannerSettings)new DataContractJsonSerializer(typeof(PlannerSettings)).ReadObject(stream);
+                    if (settings.Version == 0) { settings.BusinessVisible = true; settings.PersonalVisible = true; settings.HolidayVisible = true; settings.Version = 1; }
+                    if (settings.Version < 2) { settings.FontSize = 12; settings.Opacity = .95; settings.Version = 2; }
+                    if (settings.Version < 3) { settings.SidebarVisible = true; settings.Version = 3; }
+                    if (settings.Version < 5) { settings.Use24HourTime = true; settings.Version = 5; }
+                    if (settings.Version < 6) { settings.CompletedLast = true; settings.Version = 6; }
+                    if (settings.Version < 7)
+                    {
+                        settings.CalendarRangeMode = "month6"; settings.VisibleWeekCount = 1; settings.TodayRow = 1; settings.Version = 7;
+                    }
+                    if (settings.Version < 8)
+                    {
+                        settings.DefaultCalendarKey = "local:business"; settings.DefaultAllDay = true;
+                        settings.DefaultStartHour = 9; settings.DefaultStartMinute = 0;
+                        settings.DefaultDurationMinutes = 30; settings.DefaultReminderMinutes = -1; settings.Version = 8;
+                    }
+                    if (settings.Version < 9) { settings.CompletedDisplayMode = "normal"; settings.Version = 9; }
+                    if (settings.Version < 10) { settings.StartViewMode = "today"; settings.LastShownDate = DateTime.Today; settings.Version = 10; }
+                    if (settings.Version < 11) { settings.ReminderSound = true; settings.QuietStartHour = 22; settings.QuietEndHour = 7; settings.Version = 11; }
+                    if (settings.Version < 12) { settings.StartupPositionMode = "remember"; settings.Version = 12; }
+                    if (settings.Version < 13) { settings.CloseButtonAction = "minimize"; settings.Version = 13; }
+                    if (settings.Version < 14) { settings.AnniversaryVisible = true; settings.Version = 14; }
+                    if (settings.Version < 15) settings.Version = 15;
+                    if (settings.Version < 16) { settings.DdayPanelVisible = true; settings.Version = 16; }
+                    if (string.IsNullOrWhiteSpace(settings.CalendarRangeMode)) settings.CalendarRangeMode = "month6";
+                    if (!new[] { "monthAuto", "month5", "month6", "weeks" }.Contains(settings.CalendarRangeMode)) settings.CalendarRangeMode = "month6";
+                    if (string.IsNullOrWhiteSpace(settings.SelectedDateStyle)) settings.SelectedDateStyle = "fill";
+                    if (settings.SelectedDateStyle != "fill" && settings.SelectedDateStyle != "border") settings.SelectedDateStyle = "fill";
+                    if (string.IsNullOrWhiteSpace(settings.SelectedDateFillColor)) settings.SelectedDateFillColor = "#CCDBEAFE";
+                    if (string.IsNullOrWhiteSpace(settings.SelectedDateBorderColor)) settings.SelectedDateBorderColor = "#3B82F6";
+                    if (!new[] { "normal", "fade", "hide" }.Contains(settings.CompletedDisplayMode)) settings.CompletedDisplayMode = "normal";
+                    if (settings.StartViewMode != "today" && settings.StartViewMode != "last") settings.StartViewMode = "today";
+                    if (settings.LastShownDate.Year < 1900 || settings.LastShownDate.Year > 9998) settings.LastShownDate = DateTime.Today;
+                    if (!new[] { "remember", "locked", "editable" }.Contains(settings.StartupPositionMode)) settings.StartupPositionMode = "remember";
+                    if (!new[] { "minimize", "confirm_exit" }.Contains(settings.CloseButtonAction)) settings.CloseButtonAction = "minimize";
+                    if (!new[] { 11.0, 12.0, 14.0 }.Contains(settings.FontSize)) settings.FontSize = 12;
+                    if (!new[] { 0, 5, 15, 30, 60 }.Contains(settings.AutoSyncMinutes)) settings.AutoSyncMinutes = 0;
+                    if (settings.CalendarOrderMode != "category" && settings.CalendarOrderMode != "time") settings.CalendarOrderMode = "category";
+                    if (settings.WeekNumberRule != "iso" && settings.WeekNumberRule != "jan1") settings.WeekNumberRule = "iso";
+                    settings.Opacity = Math.Max(.45, Math.Min(.98, settings.Opacity));
+                    settings.VisibleWeekCount = Math.Max(1, Math.Min(6, settings.VisibleWeekCount));
+                    settings.TodayRow = Math.Max(1, Math.Min(settings.VisibleWeekCount, settings.TodayRow));
+                    settings.DefaultStartHour = Math.Max(0, Math.Min(23, settings.DefaultStartHour));
+                    settings.DefaultStartMinute = Math.Max(0, Math.Min(59, settings.DefaultStartMinute));
+                    if (!new[] { 30, 60, 90, 120 }.Contains(settings.DefaultDurationMinutes)) settings.DefaultDurationMinutes = 30;
+                    settings.QuietStartHour = Math.Max(0, Math.Min(23, settings.QuietStartHour));
+                    settings.QuietEndHour = Math.Max(0, Math.Min(23, settings.QuietEndHour));
+                    if (settings.GoogleCalendars == null) settings.GoogleCalendars = new List<GoogleCalendarSetting>();
+                    if (settings.CustomPalette == null) settings.CustomPalette = new List<string>();
+                    if (settings.PaletteNames == null) settings.PaletteNames = new List<string>();
+                    if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                    if (settings.DateBackgroundColors == null) settings.DateBackgroundColors = new Dictionary<string, string>();
+                    if (settings.GoogleOptionsVersion == 0)
+                    {
+                        foreach (var source in settings.GoogleCalendars) source.Editable = source.Primary;
+                        settings.GoogleOptionsVersion = 1;
+                    }
+                    return settings;
+                }
+            }
+            catch (Exception ex) { ErrorLog.Write("Load settings", ex); return new PlannerSettings(); }
+        }
+
+        public static void SaveSettings(PlannerSettings settings)
+        {
+            if (settings.LastShownDate.Year < 1900 || settings.LastShownDate.Year > 9998) settings.LastShownDate = DateTime.Today;
+            WriteAtomic(SettingsPath, settings, typeof(PlannerSettings));
+            BackupExternal(SettingsPath, "settings.json", null);
+        }
+
+        static void BackupExternal(string source, string fileName, string cleanupPattern)
+        {
+            if (string.IsNullOrWhiteSpace(externalBackupFolder)) return;
+            try
+            {
+                var folder = Path.Combine(externalBackupFolder, "ONHARU-Backups");
+                Directory.CreateDirectory(folder);
+                File.Copy(source, Path.Combine(folder, fileName), true);
+                if (!string.IsNullOrWhiteSpace(cleanupPattern))
+                    foreach (var old in Directory.GetFiles(folder, cleanupPattern).OrderByDescending(x => x).Skip(30)) File.Delete(old);
+            }
+            catch (Exception ex) { ErrorLog.Write("External backup", ex); }
+        }
+
+        static void BackupExternalItems(List<PlannerItem> items, string fileName, string cleanupPattern)
+        {
+            if (string.IsNullOrWhiteSpace(externalBackupFolder)) return;
+            try
+            {
+                var folder = Path.Combine(externalBackupFolder, "ONHARU-Backups"); Directory.CreateDirectory(folder);
+                using (var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create, FileAccess.Write, FileShare.None))
+                    new DataContractJsonSerializer(typeof(List<PlannerItem>)).WriteObject(stream, LocalOnly(items));
+                foreach (var old in Directory.GetFiles(folder, cleanupPattern).OrderByDescending(x => x).Skip(30)) File.Delete(old);
+            }
+            catch (Exception ex) { ErrorLog.Write("External item backup", ex); }
+        }
+
+        static List<PlannerItem> Samples()
+        {
+            var today = DateTime.Today;
+            return new List<PlannerItem>
+            {
+                New("가족 저녁 식사", today.AddHours(19), today.AddHours(20), false, false, "개인일정"),
+                New("주간 업무 보고", today.AddHours(10), today.AddHours(10.5), false, true, "업무일정"),
+                New("결혼기념일", today.AddDays(3), today.AddDays(4), true, false, "개인일정"),
+                New("자동차 보험 갱신", today.AddDays(1).AddHours(14), today.AddDays(1).AddHours(14.5), false, true, "개인일정")
+            };
+        }
+
+        static PlannerItem New(string title, DateTime start, DateTime end, bool allDay, bool todo, string category)
+        {
+            return new PlannerItem { Id = Guid.NewGuid().ToString(), Title = title, Start = start,
+                End = end, AllDay = allDay, IsTodo = todo, Category = category };
+        }
+    }
+}
