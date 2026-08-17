@@ -5,9 +5,13 @@
 .vs/
 bin/
 obj/
+Release/
+Tests/
+.publish/
 
 # Local Google OAuth credentials and runtime data
 oauth.local.json
+OAuthCredentials.local.cs
 *.token
 *.dat
 items-*.json
