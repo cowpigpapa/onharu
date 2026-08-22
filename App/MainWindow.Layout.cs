@@ -1,0 +1,372 @@
+using System;
+using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Markup;
+using System.Windows.Media;
+
+namespace FamilyPlanner
+{
+    public partial class MainWindow
+    {
+        UIElement BuildLayout()
+        {
+            var root = new Grid { Margin = new Thickness(12, 12, 12, 5), Background = Brushes.Transparent };
+            root.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (!positionLocked && e.GetPosition(root).Y <= 72 && !HasInteractiveParent(e.OriginalSource as DependencyObject))
+                { DragMove(); }
+            };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition());
+            var header = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom };
+            var logo = new Border { Width = 44, Height = 44, Background = Brushes.White, BorderBrush = Brush("#BAE6FD"),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 0, 14, 0), Padding = new Thickness(7) };
+            var logoTiles = new UniformGrid { Rows = 3, Columns = 3 };
+            foreach (var color in new[] { "#38BDF8", "#60A5FA", "#818CF8", "#34D399", "#22C55E", "#A3E635", "#FBBF24", "#FB923C", "#F472B6" })
+                logoTiles.Children.Add(new Border { Background = Brush(color), CornerRadius = new CornerRadius(2), Margin = new Thickness(1) });
+            logo.Child = logoTiles;
+            titleRow.Children.Add(logo);
+            var titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            var nameBrush = new LinearGradientBrush(); nameBrush.StartPoint = new Point(0, .5); nameBrush.EndPoint = new Point(1, .5);
+            nameBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0EA5E9"), 0));
+            nameBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#7C3AED"), 1));
+            opacitySlider = new Slider { Minimum = .10, Maximum = .98, Value = Math.Max(.10, settings.Opacity),
+                Width = 94, Height = 18, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+                Cursor = Cursors.Arrow, ToolTip = "달력 투명도", RenderTransformOrigin = new Point(.5, .5),
+                RenderTransform = new ScaleTransform(1, .74) };
+            opacitySlider.Template = (ControlTemplate)XamlReader.Parse(@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='{x:Type Slider}'><Grid Height='18' Background='Transparent'><Track x:Name='PART_Track' Orientation='Horizontal'><Track.DecreaseRepeatButton><RepeatButton Command='{x:Static Slider.DecreaseLarge}' Focusable='False'><RepeatButton.Template><ControlTemplate TargetType='{x:Type RepeatButton}'><Border Height='4' Background='#818CF8' CornerRadius='2' VerticalAlignment='Center'/></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseRepeatButton><Track.Thumb><Thumb Width='11' Height='15'><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Ellipse Fill='White' Stroke='#6366F1' StrokeThickness='2'/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command='{x:Static Slider.IncreaseLarge}' Focusable='False'><RepeatButton.Template><ControlTemplate TargetType='{x:Type RepeatButton}'><Border Height='4' Background='#CBD5E1' CornerRadius='2' VerticalAlignment='Center'/></ControlTemplate></RepeatButton.Template></RepeatButton></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate>");
+            opacitySlider.ValueChanged += delegate
+            {
+                settings.Opacity = opacitySlider.Value;
+                if (positionLocked) QueueFixedOpacityPreview(settings.Opacity);
+                else Opacity = settings.Opacity;
+            };
+            var brandLine = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            brandLine.Children.Add(new TextBlock { Text = "온하루 · ONHARU", FontSize = 14, FontWeight = FontWeights.Bold,
+                Foreground = nameBrush, VerticalAlignment = VerticalAlignment.Center });
+            brandLine.Children.Add(opacitySlider);
+            titleStack.Children.Add(brandLine);
+            titleStack.Children.Add(monthTitle); titleRow.Children.Add(titleStack); header.Children.Add(titleRow);
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 5, 0, 0) };
+            timetableButton = Button("▦", OpenTimetable, 32); timetableButton.Height = 28; timetableButton.FontSize = 15;
+            timetableButton.FontFamily = new FontFamily("Segoe UI Symbol");
+            timetableButton.ToolTip = "시간표 보기 · 편집"; timetableButton.Visibility = settings.UseTimetable ? Visibility.Visible : Visibility.Collapsed;
+            actions.Children.Add(timetableButton);
+            diaryButton = Button("✎", OpenDiaryReader, 32); diaryButton.Height = 28; diaryButton.FontSize = 15;
+            diaryButton.FontFamily = new FontFamily("Segoe UI Symbol"); diaryButton.ToolTip = "일기장 보기 · 날짜 더블클릭으로 작성";
+            diaryButton.Visibility = settings.UseDiary ? Visibility.Visible : Visibility.Collapsed; actions.Children.Add(diaryButton);
+            sportsButton = IconButton("⚾", OpenProBaseball, 32);
+            sportsButton.Height = 28; sportsButton.FontSize = 14; sportsButton.ToolTip = "프로야구 일정";
+            sportsButton.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            actions.Children.Add(sportsButton);
+            previousPeriodButton = Button("≪", delegate { if (ActiveCalendarRangeMode == "weeks") MoveCalendar(-1); }, 27); previousPeriodButton.Height = 27; previousPeriodButton.FontSize = 10; actions.Children.Add(previousPeriodButton);
+            var previousButton = Button("‹", delegate { MoveCalendarSingleStep(-1); }, 27); previousButton.Height = 27; previousButton.FontSize = 14; actions.Children.Add(previousButton);
+            var todayButton = Button("오늘", delegate { GoToday(); }, 42); todayButton.Height = 27; todayButton.FontSize = 10.5; actions.Children.Add(todayButton);
+            var nextButton = Button("›", delegate { MoveCalendarSingleStep(1); }, 27); nextButton.Height = 27; nextButton.FontSize = 14; actions.Children.Add(nextButton);
+            nextPeriodButton = Button("≫", delegate { if (ActiveCalendarRangeMode == "weeks") MoveCalendar(1); }, 27); nextPeriodButton.Height = 27; nextPeriodButton.FontSize = 10; actions.Children.Add(nextPeriodButton);
+            periodViewButton = Button("기간", delegate { SetTemporaryMonthView(false); }, 42); monthViewButton = Button("월간", delegate { SetTemporaryMonthView(true); }, 42);
+            periodViewButton.Margin = monthViewButton.Margin = new Thickness(0); periodViewButton.Height = monthViewButton.Height = 25; periodViewButton.FontSize = monthViewButton.FontSize = 10.5;
+            var viewSwitch = new StackPanel { Orientation = Orientation.Horizontal }; viewSwitch.Children.Add(periodViewButton); viewSwitch.Children.Add(monthViewButton);
+            actions.Children.Add(new Border { Margin = new Thickness(5, 0, 0, 0), Padding = new Thickness(1), Background = Brush("#EEF2FF"), BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Child = viewSwitch });
+            UpdatePeriodNavigationButtons();
+            lockButton = Button("↔", null, 78); lockButton.FontSize = 14;
+            AutomationProperties.SetAutomationId(lockButton, "OnharuPositionMode");
+            lockButton.Click += delegate
+            {
+                if (positionLocked) { EnterEditMode(); return; }
+                LockCurrentPlacement();
+            };
+            positionStatus = new TextBlock { Text = "📌 고정됨", FontSize = 10.5, FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, -17, 0, 0) };
+            var positionControl = new Grid { Width = 78, Height = 28, Margin = new Thickness(5, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Bottom, ClipToBounds = false };
+            lockButton.Margin = new Thickness(0); lockButton.Width = 78; lockButton.Height = 28;
+            lockButton.VerticalAlignment = VerticalAlignment.Bottom;
+            positionControl.Children.Add(lockButton); positionControl.Children.Add(positionStatus); actions.Children.Add(positionControl);
+            googleButton = Button("G 연결", GoogleClick, 74); googleButton.Height = 28; googleButton.FontSize = 11;
+            googleButton.Foreground = Brush("#2563EB"); googleButton.Visibility = Visibility.Collapsed;
+            var searchButton = Button("⌕", OpenSearch, 34); searchButton.Height = 28; searchButton.FontSize = 16; searchButton.ToolTip = "일정 검색"; actions.Children.Add(searchButton);
+            var settingsButton = Button("", OpenSettings, 34); settingsButton.Content = SettingsGlyph(); settingsButton.Height = 28; settingsButton.ToolTip = "색상 및 설정";
+            actions.Children.Add(settingsButton);
+            var close = Button("×", delegate { ExecuteCloseButtonAction(); }, 34); close.Height = 28; close.FontSize = 14; close.ToolTip = "왼쪽 클릭: 기본 동작 · 오른쪽 클릭: 닫기 메뉴";
+            close.Tag = "close_button"; close.ContextMenu = CreateCloseContextMenu();
+            close.Height = settingsButton.Height; close.Margin = new Thickness(5, 0, 0, 0);
+            close.Foreground = Brush("#DC2626"); close.Background = Brush("#FEE2E2"); close.BorderBrush = Brushes.Transparent;
+            actions.Children.Add(close);
+            var actionArea = new Grid { Height = 35, VerticalAlignment = VerticalAlignment.Bottom, ClipToBounds = false };
+            actionArea.Children.Add(actions);
+            googleStatus = new TextBlock { Text = "동기화 완료", Foreground = Brush("#16A34A"),
+                FontSize = 10.5, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 1, 1), Visibility = Visibility.Collapsed };
+            Grid.SetColumn(actionArea, 1); header.Children.Add(actionArea);
+            root.Children.Add(header);
+
+            var body = new Grid(); body.ColumnDefinitions.Add(new ColumnDefinition());
+            sidebarColumn = new ColumnDefinition { Width = settings.SidebarVisible ? new GridLength(310) : new GridLength(34) };
+            body.ColumnDefinitions.Add(sidebarColumn);
+            var calendarCard = new Border { Background = Brush("#D9FFFFFF"), CornerRadius = new CornerRadius(14),
+                BorderBrush = Brush("#80FFFFFF"), BorderThickness = new Thickness(1), Padding = new Thickness(5), Child = calendar };
+            body.Children.Add(calendarCard);
+            sidebarPanel = new Border { Background = Brush("#E6FFFFFF"), CornerRadius = new CornerRadius(14), Margin = new Thickness(12, 0, 0, 0), Padding = new Thickness(18),
+                Visibility = settings.SidebarVisible ? Visibility.Visible : Visibility.Collapsed };
+            var sideStack = new StackPanel();
+            var categoryHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 14) };
+            collapseSidebarButton = Button("❯", ToggleSidebar, 28); collapseSidebarButton.Height = 28; collapseSidebarButton.FontSize = 15;
+            collapseSidebarButton.VerticalAlignment = VerticalAlignment.Center; collapseSidebarButton.Margin = new Thickness(-8, 0, 7, 0);
+            collapseSidebarButton.ToolTip = "일정 패널 접기"; DockPanel.SetDock(collapseSidebarButton, Dock.Left); categoryHeader.Children.Add(collapseSidebarButton);
+            accountStatus.RenderTransform = accountStatusShift; Canvas.SetTop(accountStatus, 1); accountStatusViewport.Children.Add(accountStatus);
+            accountStatusViewport.SizeChanged += delegate { StartAccountMarquee(); };
+            googleAccountCard = new Border { Background = Brush("#EEF2FF"), CornerRadius = new CornerRadius(9),
+                Padding = new Thickness(10, 6, 10, 6), Child = accountStatusViewport, Cursor = Cursors.Hand,
+                ToolTip = "클릭하여 Google Calendar 동기화", Tag = "google_sync" };
+            googleAccountCard.MouseLeftButtonDown += GoogleClick; categoryHeader.Children.Add(googleAccountCard);
+            UpdateAccountStatus();
+            sideStack.Children.Add(categoryHeader);
+            var filterGroups = new Grid { Margin = new Thickness(0, 0, 0, 14) };
+            filterGroups.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(118) });
+            filterGroups.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(17) });
+            filterGroups.ColumnDefinitions.Add(new ColumnDefinition());
+            filterGroups.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            filterGroups.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var localHeader = new TextBlock { Text = "온하루 등록", Foreground = Brush("#64748B"), FontSize = Ui(11), Margin = new Thickness(0, 0, 0, 7) };
+            var specialHeader = new TextBlock { Text = "Special Day Card", Foreground = Brush("#64748B"), FontSize = Ui(11), Margin = new Thickness(0, 0, 0, 7) };
+            Grid.SetColumn(specialHeader, 2); filterGroups.Children.Add(localHeader); filterGroups.Children.Add(specialHeader);
+            var divider = new Border { Width = 1, Background = Brush("#CBD5E1"), Margin = new Thickness(8, 1, 8, 2) };
+            Grid.SetColumn(divider, 1); Grid.SetRowSpan(divider, 2); filterGroups.Children.Add(divider);
+            var localFilterRow = new UniformGrid { Columns = 2 };
+            var specialFilterRow = new StackPanel { Orientation = Orientation.Horizontal };
+            Grid.SetRow(localFilterRow, 1); Grid.SetRow(specialFilterRow, 1); Grid.SetColumn(specialFilterRow, 2);
+            foreach (var category in new[] { "업무일정", "개인일정", "야구", "D-Day", "기념일" })
+            {
+                var visible = category == "업무일정" ? settings.BusinessVisible : category == "개인일정" ? settings.PersonalVisible :
+                    category == "야구" ? settings.BaseballVisible : category == "기념일" ? settings.AnniversaryVisible : settings.DdayPanelVisible;
+                var displayCategory = category == "업무일정" ? "업무" : category == "개인일정" ? "개인" : category;
+                var box = new CheckBox { Content = displayCategory, IsChecked = visible,
+                    Foreground = Brush(category == "D-Day" ? "#0369A1" : Colors[category]), Margin = new Thickness(0, 0, category == "기념일" ? 0 : 7, 4),
+                    ToolTip = category == "D-Day" ? "오른쪽 D-Day 카드 표시" : null };
+                box.Click += delegate { SaveWindowSettings(); if (category == "D-Day") RenderDetail(); else RenderAll(); };
+                filters[category] = box;
+                (category == "D-Day" || category == "기념일" ? (Panel)specialFilterRow : localFilterRow).Children.Add(box);
+            }
+            filterGroups.Children.Add(localFilterRow); filterGroups.Children.Add(specialFilterRow); sideStack.Children.Add(filterGroups);
+            sideStack.Children.Add(new TextBlock { Text = "Google", Foreground = Brush("#64748B"), FontSize = Ui(11), Margin = new Thickness(0, 0, 0, 7) });
+            googleFilterPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 18) };
+            sideStack.Children.Add(googleFilterPanel); BuildGoogleFilters();
+            var detailTabs = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            for (var i = 0; i < 3; i++) detailTabs.ColumnDefinitions.Add(new ColumnDefinition());
+            selectedDayButton = DetailTab("선택 날짜", "selected"); thisWeekButton = DetailTab("이번 주", "this_week"); nextWeekButton = DetailTab("다음 주", "next_week");
+            detailTabs.Children.Add(selectedDayButton); Grid.SetColumn(thisWeekButton, 1); detailTabs.Children.Add(thisWeekButton); Grid.SetColumn(nextWeekButton, 2); detailTabs.Children.Add(nextWeekButton);
+            sideStack.Children.Add(detailTabs);
+            var detailHeader = new DockPanel();
+            dateColorButton = Button("★ 중요한 날", null, 82); dateColorButton.Height = 28; dateColorButton.FontSize = 10.5;
+            dateColorButton.Background = Brushes.White; dateColorButton.Foreground = Brush("#64748B");
+            dateColorButton.BorderBrush = Brush("#CBD5E1");
+            dateColorButton.Click += delegate
+            {
+                var opening = dateColorPalette.Visibility != Visibility.Visible;
+                dateColorPalette.Visibility = opening ? Visibility.Visible : Visibility.Collapsed;
+                if (opening) PositionDateColorPalette();
+                if (positionLocked) SchedulePublish();
+            };
+            dateColorButton.ToolTip = "중요한 날 배경색 선택"; DockPanel.SetDock(dateColorButton, Dock.Right); detailHeader.Children.Add(dateColorButton);
+            detailHeader.Children.Add(selectedTitle); sideStack.Children.Add(detailHeader);
+            dateColorPalette = BuildInlineDateColorPalette();
+            sideStack.Children.Add(new Border { Height = 1, Background = Brush("#E2E8F0"), Margin = new Thickness(0, 12, 0, 12) });
+            detailScroll = new ScrollViewer { Content = detail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Tag = "detail_scroll" };
+            detailScroll.Loaded += delegate { UiRound.SoftenScrollBars(detailScroll); };
+            var sideLayout = new Grid();
+            sideLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            sideLayout.RowDefinitions.Add(new RowDefinition());
+            sideLayout.Children.Add(sideStack); Grid.SetRow(detailScroll, 1); sideLayout.Children.Add(detailScroll);
+            sidebarPanel.Child = sideLayout; Grid.SetColumn(sidebarPanel, 1); body.Children.Add(sidebarPanel);
+            sidebarButton = Button("❮", ToggleSidebar, 28);
+            sidebarButton.Height = 32; sidebarButton.FontSize = 20; sidebarButton.ToolTip = settings.SidebarVisible ? "일정 패널 접기" : "일정 패널 펼치기";
+            sidebarButton.HorizontalAlignment = HorizontalAlignment.Right; sidebarButton.VerticalAlignment = VerticalAlignment.Top;
+            sidebarButton.Margin = new Thickness(0); sidebarButton.Visibility = settings.SidebarVisible ? Visibility.Collapsed : Visibility.Visible;
+            Grid.SetColumn(sidebarButton, 1); Panel.SetZIndex(sidebarButton, 30); body.Children.Add(sidebarButton);
+            Grid.SetRow(body, 1); body.Margin = new Thickness(0, 0, 0, 18); root.Children.Add(body);
+            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 2.1.0)", FontSize = 10,
+                FontWeight = FontWeights.SemiBold, Foreground = Brush("#475569"),
+                HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(12, 0, 0, 1) };
+            Grid.SetRow(credit, 1); Panel.SetZIndex(credit, 25); root.Children.Add(credit);
+            Grid.SetRow(googleStatus, 1); Panel.SetZIndex(googleStatus, 25);
+            googleStatus.HorizontalAlignment = HorizontalAlignment.Right; googleStatus.VerticalAlignment = VerticalAlignment.Bottom;
+            googleStatus.Margin = new Thickness(0, 0, 12, 1); root.Children.Add(googleStatus);
+            var shell = new Border { CornerRadius = new CornerRadius(18), Background = Brush("#BFF1F5F9"),
+                BorderBrush = Brush("#99FFFFFF"), BorderThickness = new Thickness(1), Child = root };
+            resizeSurface = shell;
+            shell.PreviewMouseMove += ResizeSurfaceMouseMove;
+            shell.MouseLeave += delegate { if (!positionLocked) shell.Cursor = Cursors.Arrow; };
+            shell.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (positionLocked) return;
+                var edge = ResizeEdgeAt(e.GetPosition(shell), shell);
+                if (edge == 0) return;
+                BeginResize(shell, edge); e.Handled = true;
+            };
+            mainFrame = new Grid(); mainFrame.Children.Add(shell);
+            floatingOverlay = new Canvas { ClipToBounds = false };
+            Panel.SetZIndex(floatingOverlay, 100); mainFrame.Children.Add(floatingOverlay);
+            floatingOverlay.Children.Add(dateColorPalette); return mainFrame;
+        }
+
+        void ToggleSidebar(object sender, RoutedEventArgs e)
+        {
+            settings.SidebarVisible = !settings.SidebarVisible;
+            sidebarPanel.Visibility = settings.SidebarVisible ? Visibility.Visible : Visibility.Collapsed;
+            sidebarColumn.Width = settings.SidebarVisible ? new GridLength(310) : new GridLength(34);
+            sidebarButton.Visibility = settings.SidebarVisible ? Visibility.Collapsed : Visibility.Visible;
+            sidebarButton.ToolTip = "일정 패널 펼치기";
+            Store.SaveSettings(settings);
+        }
+
+        static Button Button(string text, RoutedEventHandler click, double width)
+        {
+            var button = new Button { Content = text, Width = width, Height = 34, Margin = new Thickness(5, 0, 0, 0),
+                Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(System.Windows.Controls.Button.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(System.Windows.Controls.Button.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            content.SetValue(ContentPresenter.MarginProperty, new Thickness(8, 0, 8, 0));
+            border.AppendChild(content);
+            var template = new ControlTemplate(typeof(System.Windows.Controls.Button)) { VisualTree = border };
+            var hover = new Trigger { Property = System.Windows.Controls.Button.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(UIElement.OpacityProperty, .90));
+            var pressed = new Trigger { Property = System.Windows.Controls.Button.IsPressedProperty, Value = true };
+            pressed.Setters.Add(new Setter(UIElement.OpacityProperty, .62));
+            template.Triggers.Add(hover); template.Triggers.Add(pressed);
+            button.Template = template;
+            if (click != null) button.Click += click; return button;
+        }
+
+        static Button IconButton(string glyph, RoutedEventHandler click, double width)
+        {
+            FrameworkElement icon = glyph == "⚾" ? SportsGlyph() : (FrameworkElement)new Viewbox
+            {
+                Width = 15, Height = 15, Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe UI Symbol"),
+                    Padding = new Thickness(0), Margin = new Thickness(0), TextAlignment = TextAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }
+            };
+            var button = Button("", click, width);
+            button.Content = icon;
+            button.Padding = new Thickness(0);
+            button.HorizontalContentAlignment = HorizontalAlignment.Center;
+            button.VerticalContentAlignment = VerticalAlignment.Center;
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(System.Windows.Controls.Button.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(System.Windows.Controls.Button.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            content.SetValue(ContentPresenter.MarginProperty, new Thickness(0));
+            border.AppendChild(content);
+            var template = new ControlTemplate(typeof(System.Windows.Controls.Button)) { VisualTree = border };
+            var hover = new Trigger { Property = System.Windows.Controls.Button.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(UIElement.OpacityProperty, .90));
+            var pressed = new Trigger { Property = System.Windows.Controls.Button.IsPressedProperty, Value = true };
+            pressed.Setters.Add(new Setter(UIElement.OpacityProperty, .62));
+            template.Triggers.Add(hover); template.Triggers.Add(pressed);
+            button.Template = template;
+            return button;
+        }
+
+        static FrameworkElement SportsGlyph()
+        {
+            var canvas = new Canvas { Width = 16, Height = 16, ClipToBounds = false };
+            canvas.Children.Add(new System.Windows.Shapes.Ellipse { Width = 14, Height = 14,
+                Stroke = Brush("#334155"), StrokeThickness = 1.35, Fill = Brushes.White,
+                Margin = new Thickness(1) });
+            var seam = new System.Windows.Shapes.Path { Stroke = Brush("#E11D48"), StrokeThickness = 1.1,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                Data = Geometry.Parse("M5,2.8 C7,5.2 7,10.8 5,13.2 M11,2.8 C9,5.2 9,10.8 11,13.2") };
+            canvas.Children.Add(seam);
+            return new Viewbox { Width = 16, Height = 16, Stretch = Stretch.Uniform, Child = canvas,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        }
+
+        FrameworkElement BuildInlineDateColorPalette()
+        {
+            var colors = new[] { "#FFF1F2", "#FEF3C7", "#DCFCE7", "#DBEAFE", "#EDE9FE", "#F1F5F9" };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            foreach (var hex in colors)
+            {
+                var color = hex;
+                var swatch = IconButton("", null, 25); swatch.Height = 25; swatch.Margin = new Thickness(3, 0, 0, 0);
+                swatch.Background = Brush(color); swatch.BorderBrush = Brush("#CBD5E1");
+                swatch.Click += delegate
+                {
+                    settings.DateBackgroundColors[DateKey(selectedDate)] = color;
+                    Store.SaveSettings(settings); dateColorPalette.Visibility = Visibility.Collapsed; RenderAll();
+                };
+                row.Children.Add(swatch);
+            }
+            var clear = IconButton("×", null, 25); clear.Height = 25; clear.FontSize = 13;
+            clear.Margin = new Thickness(3, 0, 0, 0); clear.Foreground = Brush("#DC2626"); clear.ToolTip = "날짜 배경색 지우기";
+            clear.Click += delegate
+            {
+                settings.DateBackgroundColors.Remove(DateKey(selectedDate));
+                Store.SaveSettings(settings); dateColorPalette.Visibility = Visibility.Collapsed; RenderAll();
+            };
+            row.Children.Add(clear);
+            return new Border { Visibility = Visibility.Collapsed,
+                Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10), Padding = new Thickness(5), Child = row };
+        }
+
+        void PositionDateColorPalette()
+        {
+            if (mainFrame == null || floatingOverlay == null || dateColorButton == null || dateColorPalette == null) return;
+            dateColorPalette.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Point point;
+            try { point = dateColorButton.TranslatePoint(new Point(dateColorButton.ActualWidth, dateColorButton.ActualHeight), mainFrame); }
+            catch { return; }
+            var width = dateColorPalette.DesiredSize.Width;
+            Canvas.SetLeft(dateColorPalette, Math.Max(8, point.X - width));
+            Canvas.SetTop(dateColorPalette, point.Y + 5);
+        }
+
+        static FrameworkElement SettingsGlyph()
+        {
+            var path = new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M19.43,12.98 C19.47,12.66 19.5,12.34 19.5,12 C19.5,11.66 19.47,11.34 19.42,11.02 L21.54,9.37 L19.54,5.91 L17.05,6.91 C16.54,6.5 15.98,6.17 15.35,5.92 L14.96,3.27 L10.96,3.27 L10.57,5.92 C9.96,6.17 9.39,6.5 8.88,6.91 L6.39,5.91 L4.39,9.37 L6.51,11.02 C6.46,11.34 6.42,11.67 6.42,12 C6.42,12.33 6.46,12.66 6.51,12.98 L4.39,14.63 L6.39,18.09 L8.88,17.09 C9.39,17.5 9.96,17.83 10.57,18.08 L10.96,20.73 L14.96,20.73 L15.35,18.08 C15.98,17.83 16.54,17.5 17.05,17.09 L19.54,18.09 L21.54,14.63 Z M12.96,15.5 C11.03,15.5 9.46,13.93 9.46,12 C9.46,10.07 11.03,8.5 12.96,8.5 C14.89,8.5 16.46,10.07 16.46,12 C16.46,13.93 14.89,15.5 12.96,15.5 Z"),
+                Fill = Brush("#334155"), Stretch = Stretch.Uniform
+            };
+            return new Viewbox { Width = 15, Height = 15, Stretch = Stretch.Uniform, Child = path,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        }
+
+        void UpdateCompactHeaderTypography()
+        {
+            monthTitle.FontSize = Ui(17);
+        }
+
+        static bool HasInteractiveParent(DependencyObject source)
+        {
+            while (source != null)
+            {
+                if (source is Button || source is Slider || source is CheckBox) return true;
+                source = VisualTreeHelper.GetParent(source);
+            }
+            return false;
+        }
+    }
+}
