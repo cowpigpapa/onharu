@@ -1,4 +1,4 @@
-# ONHARU 2.1 설치 안내
+# ONHARU 2.2 설치 안내
 
 1. ZIP을 푼 뒤 `ONHARU-2.2.0-Setup.exe`를 실행합니다.
 2. ONHARU는 개인 명의 무료 프로그램이며 현재 코드 서명이 없습니다. Windows SmartScreen이 표시되면 파일 출처와 동봉된 SHA-256을 확인한 뒤 `추가 정보` → `실행`을 선택합니다.
