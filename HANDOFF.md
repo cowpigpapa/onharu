@@ -1,5 +1,9 @@
 # ONHARU 2.2 HANDOFF
 
+- 2026-08-23: 2.1 설치본의 자동 업데이트 창이 나타나지 않는 실제 원인을 확정했다. 로그의 `Check update / HttpRequestException`을 동일 .NET Framework 4.x `HttpClient`로 재현한 결과 기본 보안 프로토콜이 `Ssl3, Tls`라 GitHub와 TLS 채널을 만들지 못했다. `ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12` 적용 후 같은 요청이 HTTP 200으로 성공했다. 2.2 `UpdateService`에 TLS 1.2를 명시하고 `update-check.ps1` 회귀검사를 추가했다. 이미 배포된 2.1 EXE는 이 수정 자체를 자동으로 받을 수 없어 2.2 최초 전환은 수동 설치가 필요하다.
+
+- 2026-08-23: 2.1→2.2 자동 업데이트 실기기 시험 중 Google 연결 실패가 시작 동기화에서 업데이트 확인까지 막는 흐름을 발견했다. 같은 프로세스에서 로그아웃·재로그인 후 동기화가 성공해도 이미 중단된 `Loaded` 시작 절차는 재개되지 않아 업데이트 확인 시각이 2000년으로 남았다. 다음 2.2 수정에서는 시작 단계를 서로 독립된 안전 실행으로 분리해 Google 오류가 업데이트·타이머·알림·트레이 초기화를 끊지 못하게 하고, 업데이트 확인을 Google 동기화와 독립 실행한다. Google 실패는 `재로그인이 필요한 인증 오류`와 `재시도해야 하는 네트워크·서버 오류`로 분류하며, 인증 오류에만 다시 로그인 안내를 표시하고 민감한 토큰·응답 본문은 화면과 로그에 남기지 않는다.
+
 - 2026-08-23: ONHARU 2.2.0 공개 소스를 GitHub `main`에 커밋(`5af00bd`, 웹 문서 후속 `fe51e1e`)하고 `v2.2.0` 정식 Release를 게시했다. 설치판 SHA-256은 `3EAFC011975A30FF922B82A92D30624B7EA72AEE3F382AFCE64245DF716C01C0`이며 Setup·Portable·Source·SHA 목록을 제공한다. GitHub `releases/latest`가 2.2.0과 필수 자산을 정상 반환하므로 앱의 사용자 승인형 자동 업데이트 배포 경로도 준비됐다. `Publish/ONHARU-Web-Publish-2.2.0.zip` 웹 배포 묶음을 만들었으나 현재 작업 환경에 onharu.app 서버 SSH/AWS 로그인 세션이 없어 실제 사이트는 아직 2.1이다. Google OAuth 앱은 외부·프로덕션 상태지만 `calendar.events`, `calendar.calendarlist.readonly`, `tasks` 민감 범위의 공개 검증이 승인되지 않아 무경고 일반 공개 상태가 아니며, 검증 전에는 경고 화면과 프로젝트 수명 전체 100명 신규 사용자 상한이 적용될 수 있다.
 
 - 2026-08-23: 메인 상단과 시간표·일기장·KBO 팝업의 아이콘을 같은 글리프로 통일했다. 메인은 기존 버튼 크기 안에서 21px, 팝업 제목은 34px 박스 안 17px을 기준으로 하고 새 기능은 두 위치의 아이콘을 동시에 정의한다. 규칙은 `AGENTS.md`, `Docs/Architecture/POPUP_POLICY.md`, `popup-policy-check.ps1`에 고정했다.

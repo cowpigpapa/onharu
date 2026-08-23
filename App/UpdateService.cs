@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -47,6 +48,7 @@ namespace FamilyPlanner
 
         static HttpClient CreateClient()
         {
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
             client.DefaultRequestHeaders.UserAgent.ParseAdd("ONHARU/2.2");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");

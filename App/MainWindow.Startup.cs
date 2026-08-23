@@ -104,9 +104,9 @@ namespace FamilyPlanner
                 UpdateLayout(); RenderAll(); UpdateLayout();
                 if (positionLocked) SchedulePublish();
                 else ShowPositionEditor();
-                if (GoogleCalendar.IsConnected) await SyncGoogle(false);
                 StartAutoSync();
                 await CheckForUpdatesAsync(false);
+                if (GoogleCalendar.IsConnected) await SyncGoogle(false);
             };
             Closing += delegate
             {

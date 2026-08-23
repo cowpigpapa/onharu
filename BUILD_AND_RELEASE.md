@@ -120,7 +120,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 - `Release/ONHARU-2.1.0/ONHARU.exe.config`
 - `Release/ONHARU-2.1.0/Onharu.LayerHost.exe`
 - `Release/ONHARU-2.1.0/Onharu.DesktopHook.dll`
-- `Release/Installer/ONHARU-2.2.0-Setup.exe`
+- `Release/Installer/ONHARU-2.2.1-Setup.exe`
 
 ## 6. 설치와 업그레이드
 

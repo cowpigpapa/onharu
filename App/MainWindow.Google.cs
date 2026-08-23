@@ -132,11 +132,16 @@ namespace FamilyPlanner
             catch (Exception ex)
             {
                 ErrorLog.Write("Synchronize Google Calendar", ex);
-                syncProblem = IsOffline(ex) ? "오프라인" : "Google 오류"; UpdateAccountStatus();
-                ShowGoogleStatus(syncProblem + " · " + ShortGoogleError(ex.Message), "#DC2626", UiRound.ErrorNoticeMilliseconds);
+                var authenticationError = IsGoogleAuthenticationError(ex);
+                syncProblem = authenticationError ? "인증 만료" : IsOffline(ex) ? "오프라인" : "Google 오류"; UpdateAccountStatus();
+                var failureMessage = authenticationError
+                    ? "Google 연결 인증이 만료되었거나 취소되었습니다 · 다시 로그인해 주세요"
+                    : syncProblem + " · " + ShortGoogleError(ex.Message);
+                ShowGoogleStatus(failureMessage, "#DC2626", authenticationError ? 7000 : UiRound.ErrorNoticeMilliseconds);
                 if (showSuccess)
                 {
-                    ShowAccountCardState("!  " + syncProblem + " · 다시 시도해 주세요", "#FCE7F3", "#BE185D", UiRound.ErrorNoticeMilliseconds);
+                    ShowAccountCardState(authenticationError ? "!  Google 인증 만료 · 다시 로그인해 주세요" : "!  " + syncProblem + " · 다시 시도해 주세요",
+                        "#FCE7F3", "#BE185D", authenticationError ? 7000 : UiRound.ErrorNoticeMilliseconds);
                 }
             }
             finally
@@ -206,6 +211,15 @@ namespace FamilyPlanner
         }
 
         static bool IsOffline(Exception ex) { return ex is HttpRequestException || ex is TaskCanceledException; }
+
+        static bool IsGoogleAuthenticationError(Exception ex)
+        {
+            var message = ex == null ? "" : ex.ToString();
+            return message.IndexOf("invalid_grant", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("expired or revoked", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("Unauthorized", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("HTTP 401", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
 
         void AttachPrimaryCalendar(PlannerItem item)
         {
