@@ -14,12 +14,12 @@ namespace FamilyPlanner
         {
             try
             {
-                if (Process.GetProcessesByName("OnharuV3.LayerHost").Any()) return true;
+                if (Process.GetProcessesByName("Onharu.LayerHost").Any()) return true;
                 var app = AppDomain.CurrentDomain.BaseDirectory;
                 var candidates = new[]
                 {
-                    Path.Combine(app, "OnharuV3.LayerHost.exe"),
-                    Path.GetFullPath(Path.Combine(app, "..", "ExplorerLayer", "OnharuV3.LayerHost.exe"))
+                    Path.Combine(app, "Onharu.LayerHost.exe"),
+                    Path.GetFullPath(Path.Combine(app, "..", "ExplorerLayer", "Onharu.LayerHost.exe"))
                 };
                 hostPath = candidates.FirstOrDefault(File.Exists);
                 if (hostPath == null) return false;

@@ -1,4 +1,4 @@
-param([string]$OutputName = '..\Tests\LocalTest\ONHARU-2.1-local-test.exe')
+param([string]$OutputName = '..\Tests\LocalTest\ONHARU-2.2-local-test.exe')
 $ErrorActionPreference = 'Stop'
 $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $framework = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319'

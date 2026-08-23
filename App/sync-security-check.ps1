@@ -1,7 +1,7 @@
 param([string]$ExePath)
 $ErrorActionPreference = 'Stop'
 
-$exe = if ([string]::IsNullOrWhiteSpace($ExePath)) { Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.1-local-test.exe' } else { $ExePath }
+$exe = if ([string]::IsNullOrWhiteSpace($ExePath)) { Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe' } else { $ExePath }
 if (-not (Test-Path -LiteralPath $exe)) { throw 'Build the local test executable first.' }
 
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path -LiteralPath $exe))

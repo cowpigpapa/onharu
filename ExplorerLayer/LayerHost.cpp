@@ -4,7 +4,7 @@
 #include <string>
 #include "LayerShared.h"
 
-static constexpr wchar_t kStopEventName[] = L"Local\\OnharuV3.LayerHost.Stop";
+static constexpr wchar_t kStopEventName[] = L"Local\\Onharu.LayerHost.Stop";
 static HANDLE g_stopEvent;
 
 struct DesktopWindows { HWND defView = nullptr; HWND iconList = nullptr; };
@@ -52,7 +52,7 @@ int wmain(int argc, wchar_t** argv)
     std::wstring logPath = L"layer-host.log";
     if (GetEnvironmentVariableW(L"LOCALAPPDATA", localAppData, ARRAYSIZE(localAppData)) > 0) {
         std::wstring appData(localAppData);
-        appData += L"\\OnharuV3"; CreateDirectoryW(appData.c_str(), nullptr);
+        appData += L"\\Onharu"; CreateDirectoryW(appData.c_str(), nullptr);
         appData += L"\\logs"; CreateDirectoryW(appData.c_str(), nullptr);
         logPath = appData + L"\\layer-host.log";
     }
@@ -74,7 +74,7 @@ int wmain(int argc, wchar_t** argv)
     GetModuleFileNameW(nullptr, executablePath, ARRAYSIZE(executablePath));
     std::wstring dllPath(executablePath);
     dllPath.erase(dllPath.find_last_of(L"\\/") + 1);
-    dllPath += L"OnharuV3.DesktopHook.dll";
+    dllPath += L"Onharu.DesktopHook.dll";
     HMODULE dll = LoadLibraryW(dllPath.c_str());
     if (!dll) { std::wcerr << L"DLL load failed: " << GetLastError() << L"\n"; return 2; }
     HOOKPROC procedure = reinterpret_cast<HOOKPROC>(GetProcAddress(dll, "OnharuHook"));

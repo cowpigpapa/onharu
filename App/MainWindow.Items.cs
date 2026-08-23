@@ -11,7 +11,7 @@ namespace FamilyPlanner
         {
             var window = new AddItemWindow(selectedDate, null, settings.GoogleCalendars, GoogleCalendar.IsConnected, settings);
             PlaceCalendarDialog(window);
-            var accepted = window.ShowDialog() == true;
+            var accepted = ShowBlockingDialog(window) == true;
             if (positionLocked && IsVisible) PublishAndHide();
             if (accepted)
             {
@@ -60,7 +60,7 @@ namespace FamilyPlanner
             var originalSeriesStart = string.IsNullOrWhiteSpace(item.SeriesId) ? item.Start : items.Where(x => x.SeriesId == item.SeriesId).Min(x => x.Start);
             var window = new AddItemWindow(item.Start.Date, item, settings.GoogleCalendars, GoogleCalendar.IsConnected, settings);
             PlaceCalendarDialog(window);
-            var accepted = window.ShowDialog() == true;
+            var accepted = ShowBlockingDialog(window) == true;
             if (positionLocked && IsVisible) PublishAndHide();
             if (!accepted) return;
             if (window.DeleteRequested)
@@ -70,7 +70,7 @@ namespace FamilyPlanner
                 if (recurring)
                 {
                     var deleteWindow = new RepeatDeleteWindow(item); PlaceCalendarDialog(deleteWindow);
-                    if (deleteWindow.ShowDialog() != true) return;
+                    if (ShowBlockingDialog(deleteWindow) != true) return;
                     deleteScope = deleteWindow.Scope;
                 }
                 var isGoogle = !string.IsNullOrWhiteSpace(item.GoogleCalendarId) || !string.IsNullOrWhiteSpace(item.GoogleEventId);

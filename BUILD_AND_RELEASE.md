@@ -1,5 +1,18 @@
 # ONHARU 2.1 빌드 및 배포 과정
 
+## 사용자 승인형 자동 업데이트
+
+- 앱은 시작 후 하루에 한 번 GitHub의 `cowpigpapa/onharu` 최신 Release를 조회한다.
+- 현재 Assembly 버전보다 높은 `vX.Y.Z` 태그만 업데이트로 판단한다.
+- 사용자가 `다운로드 후 설치`를 선택하기 전에는 파일을 내려받거나 실행하지 않는다.
+- `*-Setup.exe`와 `SHA256SUMS.txt`를 함께 내려받아 SHA-256이 일치할 때만 설치 파일을 실행한다.
+- 확인 실패 시 자동 설치하지 않고 GitHub Release 페이지만 연다.
+- 새 릴리스에는 Setup EXE와 `SHA256SUMS.txt` 자산이 반드시 있어야 한다.
+
+## 설치 프로그램 언어
+
+Inno Setup은 한국어와 영어를 제공한다. 설치 시작 시 Windows 언어에 맞는 언어가 기본 선택되며 사용자가 바꿀 수 있다. 바로가기, 자동 시작, 실행 문구는 `[CustomMessages]`의 언어별 문구를 사용한다.
+
 ## 1. 왜 빌드가 두 부분인가
 
 ONHARU는 두 프로그램이 협력한다.
@@ -53,8 +66,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-local-test.ps1
 
 - `Tests/LocalTest/ONHARU-2.1-local-test.exe`
 - `Tests/LocalTest/ONHARU-2.1-local-test.exe.config`
-- `Tests/LocalTest/OnharuV3.DesktopHook.dll`
-- `Tests/LocalTest/OnharuV3.LayerHost.exe`
+- `Tests/LocalTest/Onharu.DesktopHook.dll`
+- `Tests/LocalTest/Onharu.LayerHost.exe`
 
 `App`, `ExplorerLayer`, `Release`에는 재생성 가능한 시험 실행 파일을 남기지 않는다. `App/build.ps1`을 직접 실행해도 App 결과는 같은 `Tests/LocalTest` 폴더에 생성된다.
 
@@ -105,16 +118,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 
 - `Release/ONHARU-2.1.0/ONHARU.exe`
 - `Release/ONHARU-2.1.0/ONHARU.exe.config`
-- `Release/ONHARU-2.1.0/OnharuV3.LayerHost.exe`
-- `Release/ONHARU-2.1.0/OnharuV3.DesktopHook.dll`
-- `Release/Installer/ONHARU-2.1.0-Setup.exe`
+- `Release/ONHARU-2.1.0/Onharu.LayerHost.exe`
+- `Release/ONHARU-2.1.0/Onharu.DesktopHook.dll`
+- `Release/Installer/ONHARU-2.2.0-Setup.exe`
 
 ## 6. 설치와 업그레이드
 
 - 설치 위치: `%LOCALAPPDATA%\Programs\ONHARU`
 - 기존 설치판과 동일한 Inno Setup AppId를 사용하므로 제거 없이 2.1로 업그레이드한다.
 - V1 데이터 `%LOCALAPPDATA%\FamilyPlanner`는 수정하지 않는다.
-- 기존 데이터 저장소 `%LOCALAPPDATA%\OnharuV3`를 그대로 사용한다.
+- 공식 데이터 저장소와 자동 백업 루트는 `%LOCALAPPDATA%\Onharu`로 통일한다.
 - 제거 프로그램은 실행 파일과 바로가기를 제거하지만 사용자 일정·설정·백업·Google 토큰은 보존한다.
 
 ## 7. 전체 사용자 배포 전 필수 확인
@@ -127,3 +140,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 - Authenticode 코드 서명은 비용 정책상 2.1.0에서 보류했다. 미서명 설치판은 SmartScreen의 `알 수 없는 게시자` 안내가 나타날 수 있으므로 SHA-256을 함께 제공한다.
 
 2.1 설치 파일은 현재 코드 서명 없이 배포한다. Explorer 훅 DLL 특성상 SmartScreen 또는 백신 경고 가능성이 있으므로 공식 다운로드 위치와 `Release/Installer/SHA256SUMS.txt`의 해시를 함께 안내한다.
+
+## 8. GitHub와 onharu.app 배포
+
+- GitHub 공개 소스에는 `App`, `ExplorerLayer`, `Installer`, `Docs`, `Distribution`과 루트 빌드 문서만 포함한다.
+- `App/OAuthCredentials.local.cs`, 사용자 데이터, `Release`, `Publish`, `Review`, 과거 시험 바이너리는 공개 소스와 Source ZIP에서 제외한다.
+- GitHub Release에는 설치판, Portable ZIP, Source ZIP, `SHA256SUMS.txt`를 올린다.
+- 웹 배포 원본은 `Publish/ONHARU-Web`이며 다운로드 파일은 그 아래 `downloads`에 둔다.
+- `Distribution/ONHARU-DOWNLOAD.html`과 웹 배포본의 파일 크기·SHA-256을 새 릴리스 값으로 함께 갱신한다.
+- 배포 후에는 `https://onharu.app/downloads/`에서 설치판과 포터블을 실제로 다시 내려받아 로컬 릴리스 SHA-256과 비교한다.

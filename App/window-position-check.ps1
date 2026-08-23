@@ -1,4 +1,4 @@
-param([string]$Exe = '..\Tests\LocalTest\ONHARU-2.1-local-test.exe')
+param([string]$Exe = '..\Tests\LocalTest\ONHARU-2.2-local-test.exe')
 $ErrorActionPreference = 'Stop'
 $exePath = if ([IO.Path]::IsPathRooted($Exe)) { $Exe } else { Join-Path $PSScriptRoot $Exe }
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path -LiteralPath $exePath).Path)

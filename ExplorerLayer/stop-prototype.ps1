@@ -1,3 +1,3 @@
-$hostExe = Join-Path $PSScriptRoot 'OnharuV3.LayerHost.exe'
+$hostExe = Join-Path $PSScriptRoot 'Onharu.LayerHost.exe'
 if (Test-Path -LiteralPath $hostExe) { & $hostExe --stop }
-Get-Process -Name 'OnharuV3.LayerHost' -ErrorAction SilentlyContinue | Stop-Process
+Get-Process -Name 'Onharu.LayerHost' -ErrorAction SilentlyContinue | Stop-Process

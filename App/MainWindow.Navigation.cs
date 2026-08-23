@@ -12,7 +12,7 @@ namespace FamilyPlanner
 {
     public partial class MainWindow
     {
-        string ActiveCalendarRangeMode { get { return temporaryMonthView ? "monthAuto" : settings.CalendarRangeMode; } }
+        string ActiveCalendarRangeMode { get { return temporaryMonthView ? settings.MonthRangeMode : "weeks"; } }
 
         void SetTemporaryMonthView(bool month)
         {
@@ -20,6 +20,9 @@ namespace FamilyPlanner
             if (month) { periodViewAnchor = shownMonth; shownMonth = new DateTime(shownMonth.Year, shownMonth.Month, 1); }
             else if (periodViewAnchor != default(DateTime)) shownMonth = periodViewAnchor;
             temporaryMonthView = month;
+            settings.UseMonthView = month;
+            settings.CalendarRangeMode = month ? settings.MonthRangeMode : "weeks";
+            Store.SaveSettings(settings);
             RenderAll();
         }
 
@@ -53,14 +56,13 @@ namespace FamilyPlanner
             var enabled = ActiveCalendarRangeMode == "weeks";
             if (previousPeriodButton != null) { previousPeriodButton.IsEnabled = enabled; previousPeriodButton.Opacity = enabled ? 1.0 : .38; }
             if (nextPeriodButton != null) { nextPeriodButton.IsEnabled = enabled; nextPeriodButton.Opacity = enabled ? 1.0 : .38; }
-            if (periodViewButton != null) { periodViewButton.Background = Brush(temporaryMonthView ? "#FFFFFF" : "#4F46E5"); periodViewButton.Foreground = Brush(temporaryMonthView ? "#64748B" : "#FFFFFF"); }
-            if (monthViewButton != null) { monthViewButton.Background = Brush(temporaryMonthView ? "#4F46E5" : "#FFFFFF"); monthViewButton.Foreground = Brush(temporaryMonthView ? "#FFFFFF" : "#64748B"); }
+            if (calendarRangeSwitch != null) { calendarRangeSwitch.SetLabel(0, Math.Max(1, Math.Min(6, settings.VisibleWeekCount)) + "주"); calendarRangeSwitch.SetSelected(temporaryMonthView ? 1 : 0, false); }
         }
 
         void OpenMonthJump(object sender, RoutedEventArgs e)
         {
             var window = new MonthJumpWindow(shownMonth); PlaceCalendarDialog(window);
-            if (window.ShowDialog() == true)
+            if (ShowBlockingDialog(window) == true)
             {
                 shownMonth = window.SelectedMonth;
                 selectedDate = window.SelectedMonth;

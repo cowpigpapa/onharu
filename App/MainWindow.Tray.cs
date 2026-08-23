@@ -14,9 +14,10 @@ namespace FamilyPlanner
     {
         void RequestExit()
         {
+            if (ActivateBlockingDialog()) return;
             var wasLocked = positionLocked;
             var wasMinimized = calendarMinimized;
-            var window = new ExitConfirmWindow { Topmost = wasLocked, ShowInTaskbar = false }; PlaceCalendarDialog(window); window.ShowDialog();
+            var window = new ExitConfirmWindow { Topmost = wasLocked, ShowInTaskbar = false }; PlaceCalendarDialog(window); ShowBlockingDialog(window);
             if (window.Choice == "exit") { ExitApplication(); return; }
             if (window.Choice == "minimize") { MinimizeToTray(); return; }
             if (wasMinimized) { MinimizeToTray(); return; }

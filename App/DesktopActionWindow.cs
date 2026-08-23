@@ -13,7 +13,7 @@ namespace FamilyPlanner
 
         public DesktopActionWindow()
         {
-            var parameters = new HwndSourceParameters("OnharuV3.ActionSink")
+            var parameters = new HwndSourceParameters("Onharu.ActionSink")
             {
                 Width = 0,
                 Height = 0,

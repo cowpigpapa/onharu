@@ -7,7 +7,8 @@ namespace FamilyPlanner
     [DataContract]
     public class PlannerSettings
     {
-        [DataMember] public int Version = 26;
+        [DataMember] public int Version = 39;
+        [DataMember] public string ThemeId = "classic";
         [DataMember] public bool HasPosition;
         [DataMember] public double Left;
         [DataMember] public double Top;
@@ -21,6 +22,10 @@ namespace FamilyPlanner
         [DataMember] public int PhysicalHeight;
         [DataMember] public string BusinessColor;
         [DataMember] public string PersonalColor;
+        [DataMember] public string BaseballColor;
+        [DataMember] public string DdayColor;
+        [DataMember] public string AnniversaryColor;
+        [DataMember] public string HolidayColor;
         [DataMember] public bool BusinessVisible = true;
         [DataMember] public bool PersonalVisible = true;
         [DataMember] public bool AnniversaryVisible = true;
@@ -55,6 +60,8 @@ namespace FamilyPlanner
         [DataMember] public string WeekStartDay = "monday";
         [DataMember] public List<int> RestDays = new List<int> { 0, 6 };
         [DataMember] public string CalendarRangeMode = "month6";
+        [DataMember] public string MonthRangeMode = "month6";
+        [DataMember] public bool UseMonthView = true;
         [DataMember] public int VisibleWeekCount = 1;
         [DataMember] public int TodayRow = 1;
         [DataMember] public string SelectedDateStyle = "fill";
@@ -62,7 +69,9 @@ namespace FamilyPlanner
         [DataMember] public string SelectedDateBorderColor = "#3B82F6";
         [DataMember] public string TodayColor = "#CCFCE7F3";
         [DataMember] public string TodayStyle = "fill";
-        [DataMember] public string TodayBorderColor = "#F59E0B";
+        // Kept under the legacy serialized name so existing 2.1 settings load;
+        // 2.2 uses this value for the date-circle color, not a cell border.
+        [DataMember] public string TodayBorderColor = "#4F7BFF";
         [DataMember] public bool PastelEventStyle;
         [DataMember] public int AutoSyncMinutes;
         [DataMember] public string ActiveGoogleAccountId;
@@ -75,6 +84,7 @@ namespace FamilyPlanner
         [DataMember] public bool UseProBaseball;
         [DataMember] public bool BaseballVisible = true;
         [DataMember] public string FavoriteBaseballTeam;
+        [DataMember] public double SportsCalendarScale = 1.0;
         [DataMember] public Dictionary<string, string> DateBackgroundColors = new Dictionary<string, string>();
         [DataMember] public string BackupFolder;
         [DataMember] public string LastDataFolder;
@@ -82,8 +92,12 @@ namespace FamilyPlanner
         [DataMember] public List<string> CategoryOrder = new List<string>();
         [DataMember] public List<string> CustomPalette = new List<string>();
         [DataMember] public bool CustomPalettePastelStyle;
+        [DataMember] public bool AutomaticUpdateChecks = true;
+        [DataMember] public bool ShowThemeQuickSwitch = true;
+        [DataMember] public DateTime LastUpdateCheckUtc = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         [DataMember] public List<string> PaletteNames = new List<string>();
         [DataMember] public List<string> SavedPalettes = new List<string>();
+        [DataMember] public int SelectedPaletteIndex = 8;
     }
 
     [DataContract]

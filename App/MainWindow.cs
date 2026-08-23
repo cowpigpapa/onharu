@@ -49,7 +49,7 @@ namespace FamilyPlanner
         bool positionLocked;
         bool publishPending;
         object lastDesktopClickTarget;
-        Button lockButton;
+        OnharuSegmentedSwitch positionModeSwitch;
         TextBlock positionStatus;
         FrameworkElement resizeSurface;
         Grid mainFrame;
@@ -63,10 +63,12 @@ namespace FamilyPlanner
         Button timetableButton;
         Button diaryButton;
         Button sportsButton;
+        SportsCalendarWindow sportsWindow;
         Button previousPeriodButton;
         Button nextPeriodButton;
-        Button periodViewButton;
-        Button monthViewButton;
+        Button todayButton;
+        OnharuSegmentedSwitch calendarRangeSwitch;
+        OnharuSegmentedSwitch themeQuickSwitch;
         bool temporaryMonthView;
         DateTime periodViewAnchor;
         TextBlock googleStatus;
@@ -100,6 +102,8 @@ namespace FamilyPlanner
         bool googleConnecting;
         int googleAccountVisualVersion;
         bool applicationExitRequested;
+        Window blockingDialog;
+        int blockingDialogDepth;
         int visibleEventLanes = 3;
         Forms.NotifyIcon trayIcon;
         Forms.ToolStripMenuItem trayVisibilityItem;
@@ -109,8 +113,7 @@ namespace FamilyPlanner
         readonly ExplorerFramePublisher explorerFrame = new ExplorerFramePublisher();
         readonly DesktopActionWindow desktopActions = new DesktopActionWindow();
 
-        static readonly Dictionary<string, string> Colors = new Dictionary<string, string>
-        { { "업무일정", "#5B7CFA" }, { "개인일정", "#F08CA6" }, { "야구", "#16A085" }, { "기념일", "#A78BFA" }, { "국경일", "#EF4444" } };
+        static readonly Dictionary<string, string> Colors = OnharuColorPresets.DefaultCategories();
 
         public MainWindow()
         {
@@ -122,8 +125,9 @@ namespace FamilyPlanner
             RepairLoadedData();
             ConfigureInitialWindow();
             Content = BuildLayout();
+            monthTitle.Template = ContentOnlyButtonTemplate();
             monthTitle.Click += OpenMonthJump;
-            RenderAll();
+            ApplyTheme(settings.ThemeId);
             AttachWindowLifecycle();
             AttachDpiPlacement();
         }

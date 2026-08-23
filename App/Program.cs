@@ -53,13 +53,13 @@ namespace FamilyPlanner
 
     public static class Program
     {
-        const string ShowEventName = "Local\\OnharuV3.ShowOnLaunch";
+        const string ShowEventName = "Local\\Onharu.ShowOnLaunch";
 
         [STAThread]
         public static void Main()
         {
             bool first;
-            using (var singleInstance = new Mutex(true, "Local\\OnharuV3.SingleInstance", out first))
+            using (var singleInstance = new Mutex(true, "Local\\Onharu.SingleInstance", out first))
             {
                 if (!first)
                 {
@@ -69,7 +69,7 @@ namespace FamilyPlanner
                 }
                 try
                 {
-                    V3Migration.CopyV1UserStateOnce();
+                    LegacyMigration.CopyV1UserStateOnce();
                     V21Migration.BackupPreUpgradeOnce();
                     AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
                     { ErrorLog.Write("Unhandled application error", e.ExceptionObject as Exception); };

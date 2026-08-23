@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
@@ -70,23 +71,36 @@ namespace FamilyPlanner
     {
         void OpenProBaseball(object sender, RoutedEventArgs e)
         {
+            if (sportsWindow != null)
+            {
+                if (sportsWindow.WindowState == WindowState.Minimized) sportsWindow.WindowState = WindowState.Normal;
+                sportsWindow.Activate(); return;
+            }
             if (!SportsApiKeyStore.HasKey)
             {
-                var setup = new SportsApiSetupWindow(); PlaceCalendarDialog(setup); setup.ShowDialog();
+                var setup = new SportsApiSetupWindow(); PlaceCalendarDialog(setup); ShowBlockingDialog(setup);
                 if (!SportsApiKeyStore.HasKey) { ShowNotice("프로야구 일정을 사용하려면 API 키를 연결해 주세요.", false, "프로야구 일정"); return; }
             }
-            var window = new SportsCalendarWindow(items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId)).Select(x => x.SportsGameId), settings.FavoriteBaseballTeam);
-            PlaceCalendarDialog(window);
-            var accepted = window.ShowDialog() == true;
-            if (!string.Equals(settings.FavoriteBaseballTeam ?? "", window.FavoriteTeam ?? "", StringComparison.Ordinal))
+            sportsWindow = new SportsCalendarWindow(items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId)).Select(x => x.SportsGameId),
+                settings.FavoriteBaseballTeam, settings.SportsCalendarScale);
+            PlaceCalendarDialog(sportsWindow);
+            sportsWindow.ViewScaleChanged += delegate(double scale)
             {
-                settings.FavoriteBaseballTeam = window.FavoriteTeam; Store.SaveSettings(settings);
-            }
-            if (accepted && window.SelectedItems != null)
+                settings.SportsCalendarScale = scale;
+                Store.SaveSettings(settings);
+            };
+            sportsWindow.RegistrationRequested += delegate(List<PlannerItem> selectedItems)
             {
-                items.AddRange(window.SelectedItems); Store.Save(items); RenderAll();
-                ShowNotice("선택한 경기 " + window.SelectedItems.Count + "개를 야구 일정으로 등록했습니다.", false, "프로야구 일정");
-            }
+                foreach (var item in selectedItems) if (!items.Any(x => x.SportsGameId == item.SportsGameId)) items.Add(item);
+                Store.Save(items); RenderAll();
+            };
+            sportsWindow.Closed += delegate
+            {
+                if (!string.Equals(settings.FavoriteBaseballTeam ?? "", sportsWindow.FavoriteTeam ?? "", StringComparison.Ordinal))
+                { settings.FavoriteBaseballTeam = sportsWindow.FavoriteTeam; Store.SaveSettings(settings); }
+                sportsWindow = null;
+            };
+            sportsWindow.Show(); sportsWindow.Activate();
         }
     }
 }

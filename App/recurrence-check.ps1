@@ -1,4 +1,4 @@
-param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.1-local-test.exe'))
+param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe'))
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path $Exe))
 $service = $assembly.GetType('FamilyPlanner.RecurrenceService')
 $method = $service.GetMethod('NextOccurrence', [Reflection.BindingFlags]'Public,Static')

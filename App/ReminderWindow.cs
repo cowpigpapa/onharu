@@ -33,6 +33,7 @@ namespace FamilyPlanner
         {
             Width = 410; SizeToContent = SizeToContent.Height; WindowStyle = WindowStyle.None; AllowsTransparency = true;
             Background = Brushes.Transparent; ShowInTaskbar = false; Topmost = true; ShowActivated = false; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            OnharuPopupChrome.EnableTopDrag(this);
             var content = new StackPanel { Margin = new Thickness(22, 18, 22, 18) };
             content.Children.Add(new TextBlock { Text = "✦  온하루 알림", FontSize = 17, FontWeight = FontWeights.Bold, Foreground = Brush("#4338CA") });
             foreach (var item in due) content.Children.Add(new TextBlock { Text = (item.AllDay ? "오늘" : item.Start.ToString("HH:mm")) + "  ·  " + item.Title,

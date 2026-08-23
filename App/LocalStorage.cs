@@ -11,13 +11,12 @@ namespace FamilyPlanner
 {
     public static class Store
     {
-        static readonly string Folder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3");
+        static readonly string Folder = AppDataPaths.Root;
         static readonly string LegacyFilePath = Path.Combine(Folder, "items.json");
         static readonly string SettingsPath = Path.Combine(Folder, "settings.json");
         static readonly string LegacyBackupFolder = Path.Combine(Folder, "backups");
-        static readonly string BackupFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Onharu", "backups");
-        static readonly Mutex DataFileMutex = new Mutex(false, "Local\\OnharuV3.DataFileLock");
+        static readonly string BackupFolder = AppDataPaths.Backups;
+        static readonly Mutex DataFileMutex = new Mutex(false, "Local\\Onharu.DataFileLock");
         static readonly object BackupFolderInitLock = new object();
         static bool backupFolderReady;
         static string accountKey = "local";
@@ -261,16 +260,94 @@ namespace FamilyPlanner
                     if (settings.Version < 24) { settings.UseProBaseball = false; settings.Version = 24; }
                     if (settings.Version < 25) { settings.BaseballVisible = true; settings.Version = 25; }
                     if (settings.Version < 26) { settings.FavoriteBaseballTeam = ""; settings.Version = 26; }
+                    if (settings.Version < 27) { settings.AutomaticUpdateChecks = true; settings.LastUpdateCheckUtc = SafeUpdateEpoch(); settings.Version = 27; }
+                    if (settings.Version < 28) { settings.ThemeId = "classic"; settings.Version = 28; }
+                    if (settings.Version < 29)
+                    {
+                        settings.MonthRangeMode = settings.CalendarRangeMode == "weeks" ? "monthAuto" : settings.CalendarRangeMode;
+                        settings.UseMonthView = settings.CalendarRangeMode != "weeks";
+                        settings.Version = 29;
+                    }
+                    if (settings.Version < 30)
+                    {
+                        settings.BaseballColor = "#16A085"; settings.DdayColor = "#38A7D8";
+                        settings.AnniversaryColor = "#A78BFA"; settings.HolidayColor = "#EF4444";
+                        settings.Version = 30;
+                    }
+                    if (settings.Version < 31) { settings.SelectedPaletteIndex = 8; settings.Version = 31; }
+                    if (settings.Version < 32)
+                    {
+                        if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                        for (var i = 0; i < Math.Min(5, settings.SavedPalettes.Count); i++) settings.SavedPalettes[i] = "";
+                        settings.Version = 32;
+                    }
+                    if (settings.Version < 33)
+                    {
+                        if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                        for (var i = 0; i < Math.Min(5, settings.SavedPalettes.Count); i++) settings.SavedPalettes[i] = "";
+                        settings.Version = 33;
+                    }
+                    if (settings.Version < 34)
+                    {
+                        if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                        for (var i = 0; i < Math.Min(5, settings.SavedPalettes.Count); i++) settings.SavedPalettes[i] = "";
+                        settings.Version = 34;
+                    }
+                    if (settings.Version < 35)
+                    {
+                        if (string.IsNullOrWhiteSpace(settings.BaseballColor) || settings.BaseballColor.Equals("#16A085", StringComparison.OrdinalIgnoreCase)) settings.BaseballColor = "#00FF66";
+                        if (string.IsNullOrWhiteSpace(settings.DdayColor) || settings.DdayColor.Equals("#38A7D8", StringComparison.OrdinalIgnoreCase)) settings.DdayColor = "#FF5722";
+                        if (string.IsNullOrWhiteSpace(settings.AnniversaryColor) || settings.AnniversaryColor.Equals("#A78BFA", StringComparison.OrdinalIgnoreCase)) settings.AnniversaryColor = "#FF1744";
+                        if (string.IsNullOrWhiteSpace(settings.HolidayColor) || settings.HolidayColor.Equals("#EF4444", StringComparison.OrdinalIgnoreCase)) settings.HolidayColor = "#FF2A2A";
+                        if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                        for (var i = 0; i < Math.Min(5, settings.SavedPalettes.Count); i++) settings.SavedPalettes[i] = "";
+                        settings.Version = 35;
+                    }
+                    if (settings.Version < 36)
+                    {
+                        if (string.IsNullOrWhiteSpace(settings.BaseballColor) || settings.BaseballColor.Equals("#00FF66", StringComparison.OrdinalIgnoreCase)) settings.BaseballColor = "#38A169";
+                        if (string.IsNullOrWhiteSpace(settings.DdayColor) || settings.DdayColor.Equals("#FF5722", StringComparison.OrdinalIgnoreCase)) settings.DdayColor = "#DD6B20";
+                        if (string.IsNullOrWhiteSpace(settings.AnniversaryColor) || settings.AnniversaryColor.Equals("#FF1744", StringComparison.OrdinalIgnoreCase)) settings.AnniversaryColor = "#E52E71";
+                        if (string.IsNullOrWhiteSpace(settings.HolidayColor) || settings.HolidayColor.Equals("#FF2A2A", StringComparison.OrdinalIgnoreCase)) settings.HolidayColor = "#E53E3E";
+                        if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                        for (var i = 0; i < Math.Min(5, settings.SavedPalettes.Count); i++) settings.SavedPalettes[i] = "";
+                        settings.Version = 36;
+                    }
+                    if (settings.Version < 37)
+                    {
+                        settings.ThemeId = OnharuThemePalette.Normalize(settings.ThemeId);
+                        settings.Version = 37;
+                    }
+                    if (settings.Version < 38)
+                    {
+                        settings.ShowThemeQuickSwitch = true;
+                        settings.Version = 38;
+                    }
+                    if (settings.Version < 39)
+                    {
+                        settings.SportsCalendarScale = 1.0;
+                        settings.Version = 39;
+                    }
+                    if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();
+                    settings.ThemeId = OnharuThemePalette.Normalize(settings.ThemeId);
+                    if (string.IsNullOrWhiteSpace(settings.BaseballColor)) settings.BaseballColor = "#38A169";
+                    if (!new[] { .90, 1.0, 1.15 }.Contains(settings.SportsCalendarScale)) settings.SportsCalendarScale = 1.0;
+                    if (string.IsNullOrWhiteSpace(settings.DdayColor)) settings.DdayColor = "#DD6B20";
+                    if (string.IsNullOrWhiteSpace(settings.AnniversaryColor)) settings.AnniversaryColor = "#E52E71";
+                    if (string.IsNullOrWhiteSpace(settings.HolidayColor)) settings.HolidayColor = "#E53E3E";
                     if (settings.RestDays == null) settings.RestDays = new List<int> { 0, 6 };
                     settings.RestDays = settings.RestDays.Where(x => x >= 0 && x <= 6).Distinct().ToList();
                     if (string.IsNullOrWhiteSpace(settings.CalendarRangeMode)) settings.CalendarRangeMode = "month6";
                     if (!new[] { "monthAuto", "month5", "month6", "weeks" }.Contains(settings.CalendarRangeMode)) settings.CalendarRangeMode = "month6";
+                    if (!new[] { "monthAuto", "month5", "month6" }.Contains(settings.MonthRangeMode)) settings.MonthRangeMode = "monthAuto";
                     if (string.IsNullOrWhiteSpace(settings.SelectedDateStyle)) settings.SelectedDateStyle = "fill";
                     if (settings.SelectedDateStyle != "fill" && settings.SelectedDateStyle != "border" && settings.SelectedDateStyle != "both" && settings.SelectedDateStyle != "none") settings.SelectedDateStyle = "fill";
                     if (string.IsNullOrWhiteSpace(settings.TodayColor)) settings.TodayColor = "#CCFCE7F3";
                     if (settings.TodayColor != "none" && !settings.TodayColor.StartsWith("#")) settings.TodayColor = "#CCFCE7F3";
-                    if (!new[] { "none", "fill", "border", "both" }.Contains(settings.TodayStyle)) settings.TodayStyle = "fill";
-                    if (string.IsNullOrWhiteSpace(settings.TodayBorderColor) || !settings.TodayBorderColor.StartsWith("#")) settings.TodayBorderColor = "#F59E0B";
+                    if (settings.TodayStyle == "border") settings.TodayStyle = "icon";
+                    if (settings.TodayStyle == "both") settings.TodayStyle = "fill_icon";
+                    if (!new[] { "none", "fill", "icon", "fill_icon" }.Contains(settings.TodayStyle)) settings.TodayStyle = "fill";
+                    if (string.IsNullOrWhiteSpace(settings.TodayBorderColor) || !settings.TodayBorderColor.StartsWith("#")) settings.TodayBorderColor = "#4F7BFF";
                     if (string.IsNullOrWhiteSpace(settings.SelectedDateFillColor)) settings.SelectedDateFillColor = "#CCDBEAFE";
                     if (string.IsNullOrWhiteSpace(settings.SelectedDateBorderColor)) settings.SelectedDateBorderColor = "#3B82F6";
                     if (!new[] { "normal", "fade", "hide" }.Contains(settings.CompletedDisplayMode)) settings.CompletedDisplayMode = "normal";
@@ -284,7 +361,7 @@ namespace FamilyPlanner
                     if (settings.WeekNumberRule != "iso" && settings.WeekNumberRule != "jan1") settings.WeekNumberRule = "iso";
                     if (!new[] { "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday" }.Contains(settings.WeekStartDay))
                         settings.WeekStartDay = settings.WeekNumberRule == "jan1" ? "sunday" : "monday";
-                    settings.Opacity = Math.Max(.10, Math.Min(.98, settings.Opacity));
+                    settings.Opacity = Math.Max(.10, Math.Min(1.0, settings.Opacity));
                     settings.VisibleWeekCount = Math.Max(1, Math.Min(6, settings.VisibleWeekCount));
                     settings.TodayRow = Math.Max(1, Math.Min(settings.VisibleWeekCount, settings.TodayRow));
                     settings.DefaultStartHour = Math.Max(0, Math.Min(23, settings.DefaultStartHour));
@@ -296,6 +373,7 @@ namespace FamilyPlanner
                     if (settings.CustomPalette == null) settings.CustomPalette = new List<string>();
                     if (settings.PaletteNames == null) settings.PaletteNames = new List<string>();
                     if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
+                    settings.SelectedPaletteIndex = Math.Max(0, Math.Min(8, settings.SelectedPaletteIndex));
                     if (settings.DateBackgroundColors == null) settings.DateBackgroundColors = new Dictionary<string, string>();
                     if (settings.GoogleOptionsVersion == 0)
                     {
@@ -311,9 +389,12 @@ namespace FamilyPlanner
         public static void SaveSettings(PlannerSettings settings)
         {
             if (settings.LastShownDate.Year < 1900 || settings.LastShownDate.Year > 9998) settings.LastShownDate = DateTime.Today;
+            if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();
             WriteAtomic(SettingsPath, settings, typeof(PlannerSettings));
             BackupExternal(SettingsPath, "settings.json", null);
         }
+
+        static DateTime SafeUpdateEpoch() { return new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc); }
 
         static void BackupExternal(string source, string fileName, string cleanupPattern)
         {

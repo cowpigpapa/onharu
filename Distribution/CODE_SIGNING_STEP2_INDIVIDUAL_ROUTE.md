@@ -35,8 +35,8 @@
 ## 발급 후 서명 순서
 
 1. `ONHARU.exe`
-2. `OnharuV3.LayerHost.exe`
-3. `OnharuV3.DesktopHook.dll`
+2. `Onharu.LayerHost.exe`
+3. `Onharu.DesktopHook.dll`
 4. 서명된 세 파일로 설치 프로그램 재빌드
 5. `ONHARU-2.1.0-Setup.exe` 최종 서명
 6. RFC 3161 SHA-256 타임스탬프와 서명 체인 검증

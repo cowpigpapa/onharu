@@ -8,8 +8,7 @@ namespace FamilyPlanner
 {
     static class ErrorLog
     {
-        static readonly string Folder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "logs");
+        static readonly string Folder = AppDataPaths.Logs;
         static readonly object Sync = new object();
 
         public static void Write(string area, Exception error, string detail = null)

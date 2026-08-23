@@ -19,10 +19,10 @@ namespace FamilyPlanner
 
     public static class DiaryStore
     {
-        static readonly string Folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3");
+        static readonly string Folder = AppDataPaths.Root;
         static readonly string FilePath = Path.Combine(Folder, "diary.json");
-        static readonly string BackupFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Onharu", "backups");
-        static readonly Mutex FileMutex = new Mutex(false, "Local\\OnharuV3.DiaryFileLock");
+        static readonly string BackupFolder = AppDataPaths.Backups;
+        static readonly Mutex FileMutex = new Mutex(false, "Local\\Onharu.DiaryFileLock");
 
         public static List<DiaryEntry> Load()
         {

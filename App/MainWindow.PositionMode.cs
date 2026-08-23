@@ -8,14 +8,13 @@ namespace FamilyPlanner
     {
         void UpdateModeButtons()
         {
-            if (lockButton == null) return;
-            lockButton.Content = positionLocked ? "↔" : "📌";
-            lockButton.ToolTip = positionLocked
+            if (positionModeSwitch == null) return;
+            positionModeSwitch.ToolTip = positionLocked
                 ? "달력의 위치와 크기를 조정합니다"
                 : "현재 위치와 크기를 저장하고 바탕화면에 고정합니다";
-            lockButton.Background = positionLocked ? Brush("#EEF2FF") : Brush("#4F46E5");
-            lockButton.Foreground = positionLocked ? Brush("#4338CA") : Brushes.White;
-            lockButton.BorderBrush = positionLocked ? Brush("#C7D2FE") : Brush("#4338CA");
+            positionModeSwitch.SetAccent(positionLocked ? "#22C55E" : "#F59E0B");
+            var targetMode = positionLocked ? 1 : 0;
+            positionModeSwitch.SetSelected(targetMode, positionModeSwitch.SelectedIndex != targetMode);
             if (positionStatus != null)
             {
                 positionStatus.Text = positionLocked ? "📌 고정됨" : "↔ 이동 가능";

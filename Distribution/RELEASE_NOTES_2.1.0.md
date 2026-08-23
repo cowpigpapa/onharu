@@ -26,6 +26,6 @@ ONHARU는 Windows 바탕화면과 아이콘 사이에 표시되는 데스크톱 
 
 - 설치판은 코드 서명이 없어 Windows SmartScreen의 `알 수 없는 게시자` 안내가 나타날 수 있습니다.
 - Portable ZIP은 압축을 푼 뒤 `ONHARU.exe`를 실행합니다. 같은 폴더의 LayerHost EXE와 DesktopHook DLL을 분리하거나 삭제하면 바탕화면 고정 기능이 동작하지 않습니다.
-- 기존 사용자 데이터는 `%LOCALAPPDATA%\OnharuV3`에 유지됩니다.
+- 일정·설정·연동 정보와 자동 백업은 `%LOCALAPPDATA%\Onharu`에 저장됩니다.
 
 2.1 최종 빌드는 자동 품질 검사 13종, 격리 설치·제거, 기존 설치 덮어쓰기와 설치 파일 해시 검증을 통과했습니다.

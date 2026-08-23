@@ -14,7 +14,7 @@ namespace FamilyPlanner
 {
     internal static class SportsApiKeyStore
     {
-        static readonly string KeyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "parse-kbo-api-key-v1.dat");
+        static readonly string KeyPath = Path.Combine(AppDataPaths.Root, "kbo-api-key.dat");
         internal static bool HasKey { get { return !string.IsNullOrWhiteSpace(Load()); } }
         internal static string Load()
         {
@@ -81,7 +81,7 @@ namespace FamilyPlanner
                 }
             }
         }
-        static string CachePath(int year, int month) { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "sports-kbo-parse-" + year + month.ToString("00") + ".json"); }
+        static string CachePath(int year, int month) { return Path.Combine(AppDataPaths.Root, "sports-kbo-parse-" + year + month.ToString("00") + ".json"); }
         static void SaveCache(int year, int month, List<SportsGame> games)
         {
             var path = CachePath(year, month); Directory.CreateDirectory(Path.GetDirectoryName(path));

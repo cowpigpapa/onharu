@@ -377,7 +377,8 @@ namespace FamilyPlanner
             Loaded += delegate
             {
                 contentScroll.MaxHeight = CompactScrollHeight(Forms.Screen.FromHandle(new WindowInteropHelper(this).Handle).WorkingArea.Height);
-                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate { UiRound.SoftenScrollBars(contentScroll); }));
+                contentScroll.ApplyTemplate();
+                UiRound.SoftenScrollBars(contentScroll);
             };
             var shell = new Border { Background = Brush("#FFF8FAFC"), CornerRadius = new CornerRadius(18),
                 BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Child = popupLayout };

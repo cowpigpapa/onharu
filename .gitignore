@@ -12,3 +12,6 @@ oauth.local.json
 *.dat
 items-*.json
 settings.json
+
+__pycache__/
+*.pyc

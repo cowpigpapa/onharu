@@ -120,7 +120,7 @@ namespace FamilyPlanner
             googleFilterPanel.Children.Clear();
             if (settings.GoogleCalendars == null || !settings.GoogleCalendars.Any(x => settings.ShowGoogleTasks || !GoogleTasks.IsSource(x.Id)))
             {
-                googleFilterPanel.Children.Add(new TextBlock { Text = "G 연결 후 목록이 표시됩니다.", Foreground = Brush("#94A3B8"), FontSize = Ui(11) });
+                googleFilterPanel.Children.Add(new TextBlock { Text = "G 연결 후 목록이 표시됩니다.", Foreground = T("Disabled"), FontSize = Ui(11) });
                 return;
             }
             var orderedSources = settings.GoogleCalendars.Where(x => settings.ShowGoogleTasks || !GoogleTasks.IsSource(x.Id))
@@ -131,8 +131,10 @@ namespace FamilyPlanner
                 var key = "google:" + source.Id;
                 var color = string.IsNullOrWhiteSpace(source.Color) ? Colors["개인일정"] : source.Color;
                 var box = new CheckBox { Content = (source.Primary ? "내 캘린더 · " : "") + source.Name,
-                    IsChecked = source.Visible, Foreground = Brush(color), Margin = new Thickness(0, 0, 8, 6),
+                    IsChecked = source.Visible, Foreground = Brush(color), Background = Brush(color), Tag = color,
+                    Margin = new Thickness(0, 0, 8, 6),
                     HorizontalAlignment = HorizontalAlignment.Left };
+                StyleThemeCheckBox(box, color);
                 box.Click += delegate { source.Visible = box.IsChecked == true; Store.SaveSettings(settings); RenderAll(); };
                 filters[key] = box; boxes.Add(box);
             }

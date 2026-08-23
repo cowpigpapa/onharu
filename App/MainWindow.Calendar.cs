@@ -61,14 +61,14 @@ namespace FamilyPlanner
             if (settings.ShowWeekNumbers)
             {
                 var weekHeader = new TextBlock { Text = "주", HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center, Foreground = Brush("#94A3B8"), FontSize = Ui(10), FontWeight = FontWeights.Bold };
+                    VerticalAlignment = VerticalAlignment.Center, Foreground = T("Disabled"), FontSize = Ui(10), FontWeight = FontWeights.Bold };
                 calendar.Children.Add(weekHeader);
             }
             for (var c = 0; c < 7; c++)
             {
                 var day = new TextBlock { Text = weekdays[c], HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.Bold, FontSize = Ui(13),
-                    Foreground = IsRestDay(first.AddDays(c)) ? Brush("#DC6B73") : Brush("#0F766E") };
+                    Foreground = IsRestDay(first.AddDays(c)) ? Brush("#DC6B73") : T("Weekday") };
                 Grid.SetColumn(day, c + weekOffset); calendar.Children.Add(day);
             }
             if (settings.ShowWeekNumbers)
@@ -76,7 +76,7 @@ namespace FamilyPlanner
                 {
                     var week = new TextBlock { Text = "W" + GetWeekNumber(first.AddDays(r * 7)).ToString("00"),
                         HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = Brush("#64748B"), FontSize = Ui(10), FontWeight = FontWeights.SemiBold };
+                        Foreground = T("Muted"), FontSize = Ui(10), FontWeight = FontWeights.SemiBold };
                     Grid.SetRow(week, r + 1); calendar.Children.Add(week);
                 }
             for (var i = 0; i < rowCount * 7; i++) AddDayCell(first.AddDays(i), i / 7 + 1, i % 7 + weekOffset);
@@ -109,10 +109,22 @@ namespace FamilyPlanner
                 if (e.ClickCount != 2) return; selectedDate = date; detailMode = "selected"; e.Handled = true; OpenDiaryEditor(date);
             };
             var number = new TextBlock { Text = date.Day.ToString(), FontSize = Ui(13), FontWeight = date == DateTime.Today ? FontWeights.Bold : FontWeights.Normal,
-                Foreground = ActiveCalendarRangeMode != "weeks" && date.Month != shownMonth.Month ? Brush("#CBD5E1") : isHoliday ? Brush("#EF4444") : IsRestDay(date) ? Brush("#DC6B73") : Brush("#0F172A"),
+                Foreground = ActiveCalendarRangeMode != "weeks" && date.Month != shownMonth.Month ? T("Disabled") : isHoliday ? Brush(Colors["국경일"]) : IsRestDay(date) ? Brush("#DC6B73") : T("Text"),
                 Margin = new Thickness(5, 3, 2, 4), Tag = diaryTarget, ToolTip = settings.UseDiary ? "더블클릭하여 일기 쓰기" : null };
-            if (settings.UseDiary) number.MouseLeftButtonDown += openDiary;
-            dateHeader.Children.Add(number);
+            var todayIcon = date.Date == DateTime.Today && (settings.TodayStyle == "icon" || settings.TodayStyle == "fill_icon");
+            if (todayIcon)
+            {
+                number.Margin = new Thickness(0); number.Foreground = Brushes.White;
+                var todayCircle = new Border { Width = Ui(23), Height = Ui(23), CornerRadius = new CornerRadius(Ui(12)),
+                    Background = Brush(settings.TodayBorderColor), Margin = new Thickness(3, 1, 2, 1), Child = number, Tag = diaryTarget,
+                    ToolTip = settings.UseDiary ? "더블클릭하여 일기 쓰기" : null };
+                number.HorizontalAlignment = HorizontalAlignment.Center; number.VerticalAlignment = VerticalAlignment.Center;
+                if (settings.UseDiary) todayCircle.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(todayCircle);
+            }
+            else
+            {
+                if (settings.UseDiary) number.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(number);
+            }
             if (settings.ShowLunar)
             {
                 var lunar = new TextBlock { Text = Lunar(date), Foreground = Brush("#8B5CF6"), FontSize = Ui(11), Tag = diaryTarget,
@@ -134,7 +146,7 @@ namespace FamilyPlanner
                 dateHeader.Children.Add(new TextBlock { Text = "오늘", Foreground = Brush("#2563EB"), FontSize = Ui(10),
                     FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 0, 2) });
             if (!string.IsNullOrWhiteSpace(holidays))
-                dateHeader.Children.Add(new TextBlock { Text = (date == DateTime.Today ? ". " : "") + holidays, Foreground = Brush("#EF4444"), FontSize = Ui(11),
+                dateHeader.Children.Add(new TextBlock { Text = (date == DateTime.Today ? ". " : "") + holidays, Foreground = Brush(Colors["국경일"]), FontSize = Ui(11),
                     FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(3, 1, 2, 2), TextTrimming = TextTrimming.CharacterEllipsis });
             stack.Children.Add(dateHeader);
@@ -152,20 +164,20 @@ namespace FamilyPlanner
         {
             string customBackground = null;
             var custom = settings.DateBackgroundColors != null && settings.DateBackgroundColors.TryGetValue(DateKey(date), out customBackground);
-            return (settings.SelectedDateStyle == "fill" || settings.SelectedDateStyle == "both") && date.Date == selectedDate.Date ? Brush(settings.SelectedDateFillColor)
-                : date.Date == DateTime.Today && (settings.TodayStyle == "fill" || settings.TodayStyle == "both") && settings.TodayColor != "none" ? Brush(settings.TodayColor)
-                : custom ? Brush(customBackground) : Brush("#99FFFFFF");
+            return (settings.SelectedDateStyle == "fill" || settings.SelectedDateStyle == "both") && date.Date == selectedDate.Date
+                    ? new SolidColorBrush(CategoryColorSystem.SelectionBackground(settings.ThemeId, settings.SelectedDateFillColor))
+                : date.Date == DateTime.Today && (settings.TodayStyle == "fill" || settings.TodayStyle == "fill_icon") && settings.TodayColor != "none" ? Brush(settings.TodayColor)
+                : custom ? Brush(customBackground) : T("CardBorder");
         }
 
         void StyleDayCell(Border cell, DateTime date)
         {
             var selectedBorder = (settings.SelectedDateStyle == "border" || settings.SelectedDateStyle == "both") && date.Date == selectedDate.Date;
-            var todayBorder = !selectedBorder && (settings.TodayStyle == "border" || settings.TodayStyle == "both") && date.Date == DateTime.Today;
             cell.Background = DayBackground(date);
-            cell.BorderBrush = Brush(selectedBorder ? settings.SelectedDateBorderColor : todayBorder ? settings.TodayBorderColor : "#99CBD5E1");
-            cell.BorderThickness = new Thickness(selectedBorder || todayBorder ? 2 : .5);
-            cell.Margin = selectedBorder || todayBorder ? new Thickness(-1.5) : new Thickness(0);
-            Panel.SetZIndex(cell, selectedBorder || todayBorder ? 2 : 0);
+            cell.BorderBrush = selectedBorder ? Brush(settings.SelectedDateBorderColor) : T("Grid");
+            cell.BorderThickness = new Thickness(selectedBorder ? 2 : .5);
+            cell.Margin = selectedBorder ? new Thickness(-1.5) : new Thickness(0);
+            Panel.SetZIndex(cell, selectedBorder ? 2 : 0);
         }
 
         void AddWeekEventBars(DateTime weekStart, int row, int weekOffset)
@@ -215,11 +227,11 @@ namespace FamilyPlanner
                     ? item.Title + AnniversaryOccurrenceText(item)
                     : DdayText(item) + item.Title;
                 var text = new TextBlock { Text = prefix + (item.Important ? "★ " : "") + calendarTitle,
-                    FontSize = Ui(11), Foreground = item.Important ? Brush("#F20D7A") : settings.PastelEventStyle ? Brush("#1F2937") : Brushes.White,
+                    FontSize = Ui(11), Foreground = EventTextBrush(ItemColor(item), item.Important),
                     FontWeight = item.Important ? FontWeights.Bold : FontWeights.Normal, Padding = new Thickness(5, 1, 4, 1),
                     TextTrimming = TextTrimming.CharacterEllipsis, TextDecorations = item.Completed ? TextDecorations.Strikethrough : null };
                 var bar = new Border { Child = text, Height = Ui(19), CornerRadius = new CornerRadius(4),
-                    Background = item.Important ? Brush("#FFF1F7") : settings.PastelEventStyle ? PastelBrush(ItemColor(item), .72) : Brush(ItemColor(item)),
+                    Background = EventBackgroundBrush(ItemColor(item), item.Important),
                     Margin = new Thickness(2, Ui(29 + lane * 20), 2, 0), VerticalAlignment = VerticalAlignment.Top,
                     Cursor = Cursors.Hand, ToolTip = "클릭하여 날짜 선택 · 더블클릭하여 수정" };
                 bar.Tag = new ItemHitTarget { Item = item, SegmentStart = segmentStart, SegmentEnd = segmentEnd, Element = bar };

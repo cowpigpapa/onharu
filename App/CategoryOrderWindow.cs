@@ -36,6 +36,7 @@ namespace FamilyPlanner
         {
             entries = values; Title = "카테고리 순서"; Width = 440; SizeToContent = SizeToContent.Height; WindowStartupLocation = WindowStartupLocation.CenterOwner;
             WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
+            OnharuPopupChrome.EnableTopDrag(this);
             var panel = new StackPanel { Margin = new Thickness(24, 20, 24, 18) };
             var header = new DockPanel { Margin = new Thickness(0, 0, 38, 4) };
             header.Children.Add(new TextBlock { Text = "☷  카테고리 표시 순서", FontSize = 21, FontWeight = FontWeights.Bold });

@@ -151,7 +151,7 @@ namespace FamilyPlanner
 
         void OfferDormantLocalItems()
         {
-            if (localItemsOfferShown || !GoogleCalendar.IsConnected) return;
+            if (localItemsOfferShown || !GoogleCalendar.IsConnected || HasBlockingDialog) return;
             localItemsOfferShown = true;
             var localItems = Store.LoadLocal();
             var activeIds = new HashSet<string>(items.Select(x => x.Id));
@@ -159,9 +159,9 @@ namespace FamilyPlanner
             if (localItems.Count == 0) return;
 
             var offer = new LocalItemsOfferWindow(localItems.Count); PlaceCalendarDialog(offer);
-            if (offer.ShowDialog() != true || !offer.ReviewItems) return;
+            if (ShowBlockingDialog(offer) != true || !offer.ReviewItems) return;
             var picker = new LocalImportWindow(localItems); PlaceCalendarDialog(picker);
-            if (picker.ShowDialog() != true) return;
+            if (ShowBlockingDialog(picker) != true) return;
             foreach (var item in picker.SelectedItems)
                 if (!items.Any(x => x.Id == item.Id)) items.Add(item);
             localItems.RemoveAll(x => picker.SelectedItems.Any(y => y.Id == x.Id));
@@ -282,7 +282,7 @@ namespace FamilyPlanner
         {
             var pending = items.Where(x => x.PendingGoogleSync && !string.IsNullOrWhiteSpace(x.GoogleCalendarId)).OrderBy(x => x.Start).ToList();
             if (pending.Count == 0) { ShowGoogleStatus("모든 일정이 동기화되었습니다", 1200); return; }
-            var window = new PendingSyncWindow(pending); PlaceCalendarDialog(window); window.ShowDialog();
+            var window = new PendingSyncWindow(pending); PlaceCalendarDialog(window); ShowBlockingDialog(window);
         }
     }
 }

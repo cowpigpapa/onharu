@@ -11,7 +11,7 @@ namespace FamilyPlanner
     {
         public static void Ics(string path, List<PlannerItem> items)
         {
-            var lines = new List<string> { "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ONHARU//Calendar 2.1//KO", "CALSCALE:GREGORIAN" };
+            var lines = new List<string> { "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ONHARU//Calendar 2.2//KO", "CALSCALE:GREGORIAN" };
             foreach (var item in items.OrderBy(x => x.Start).ThenBy(x => x.Title))
             {
                 lines.Add("BEGIN:VEVENT");

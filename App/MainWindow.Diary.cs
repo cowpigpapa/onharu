@@ -20,7 +20,7 @@ namespace FamilyPlanner
             var existing = DiaryStore.Load().FirstOrDefault(x => x.Date.Date == date.Date);
             var window = new DiaryEditorWindow(date, existing);
             PlaceCalendarDialog(window);
-            if (window.ShowDialog() == true && window.Result != null) { DiaryStore.Upsert(window.Result, existing == null ? (DateTime?)null : existing.Date); RefreshDiaryDates(); }
+            if (ShowBlockingDialog(window) == true && window.Result != null) { DiaryStore.Upsert(window.Result, existing == null ? (DateTime?)null : existing.Date); RefreshDiaryDates(); }
             if (positionLocked && IsVisible) PublishAndHide();
         }
 

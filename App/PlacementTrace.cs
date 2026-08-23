@@ -10,9 +10,7 @@ namespace FamilyPlanner
         static readonly bool Enabled = string.Equals(
             Environment.GetEnvironmentVariable("ONHARU_PLACEMENT_TRACE"), "1", StringComparison.Ordinal);
         static readonly object Sync = new object();
-        static readonly string Path = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OnharuV3", "logs", "placement-transition.log");
+        static readonly string Path = System.IO.Path.Combine(AppDataPaths.Logs, "placement-transition.log");
 
         public static bool IsEnabled { get { return Enabled; } }
 

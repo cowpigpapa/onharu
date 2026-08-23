@@ -34,11 +34,17 @@ namespace FamilyPlanner
         readonly Dictionary<string, Slider[]> sliders = new Dictionary<string, Slider[]>();
         readonly Dictionary<string, Border> previews = new Dictionary<string, Border>();
         readonly Dictionary<string, Border> editorCards = new Dictionary<string, Border>();
+        readonly Dictionary<string, CheckBox> editorTitles = new Dictionary<string, CheckBox>();
+        readonly Dictionary<string, TextBlock[]> editorChannels = new Dictionary<string, TextBlock[]>();
         readonly Dictionary<string, TextBlock[]> values = new Dictionary<string, TextBlock[]>();
         readonly List<CheckBox> colorSelections = new List<CheckBox>();
         readonly List<StackPanel> rgbPanels = new List<StackPanel>();
         public string BusinessColor;
         public string PersonalColor;
+        public string BaseballColor;
+        public string DdayColor;
+        public string AnniversaryColor;
+        public string HolidayColor;
         public double SelectedFontSize;
         public string OrderMode;
         public bool MultiDayFirst;
@@ -68,7 +74,7 @@ namespace FamilyPlanner
         public string SelectedDateBorderColor;
         public string TodayColor;
         public string TodayStyle;
-        public string TodayBorderColor;
+        public string TodayIconColor;
         public bool PastelEventStyle;
         public int AutoSyncMinutes;
         public string DefaultCalendarKey;
@@ -87,22 +93,29 @@ namespace FamilyPlanner
         public bool UseRollover;
         public bool ShowGoogleTasks;
         public bool UseProBaseball;
+        public bool AutomaticUpdateChecks;
+        public bool ShowThemeQuickSwitch;
+        public string ThemeId;
         public List<string> CustomPalette;
         public bool CustomPalettePastelStyle;
         public List<string> PaletteNames;
         public List<string> SavedPalettes;
+        public int PaletteSelectionIndex;
         bool selectedPastelStyle;
         readonly StackPanel fontOptions = new StackPanel { Orientation = Orientation.Horizontal };
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
         readonly Dictionary<string, CheckBox> editBoxes = new Dictionary<string, CheckBox>();
 
-        public SettingsWindow(string business, string personal, double fontSize, string orderMode, bool multiDayFirst, bool completedLast, bool use24HourTime, bool showWeeks,
+        public SettingsWindow(string business, string personal, string baseball, string dday, string anniversary, string holidayColor, double fontSize, string orderMode, bool multiDayFirst, bool completedLast, bool use24HourTime, bool showWeeks,
             string weekRule, string weekStartDay, List<int> restDays, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
-            List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes,
+            List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes, int selectedPaletteIndexValue,
             string calendarRangeMode, int visibleWeekCount, int todayRow, string selectedDateStyle, string selectedDateFillColor, string selectedDateBorderColor, string todayColor, string todayStyle, string todayBorderColor,
             string defaultCalendarKey, bool defaultAllDay, int defaultStartHour, int defaultStartMinute, int defaultDurationMinutes, int defaultReminderMinutes,
-            string completedDisplayMode, string startViewMode, bool reminderSound, int quietStartHour, int quietEndHour, string startupPositionMode, string closeButtonAction, bool useTimetable, bool useDiary, bool useRollover, bool showGoogleTasks, bool useProBaseball)
+            string completedDisplayMode, string startViewMode, bool reminderSound, int quietStartHour, int quietEndHour, string startupPositionMode, string closeButtonAction, bool useTimetable, bool useDiary, bool useRollover, bool showGoogleTasks, bool useProBaseball, bool automaticUpdateChecks, bool showThemeQuickSwitch, string themeId,
+            bool holidayColorVisible, bool baseballColorVisible, bool ddayColorVisible, bool anniversaryColorVisible)
         {
+            ThemeId = OnharuThemePalette.Normalize(themeId);
+            ShowThemeQuickSwitch = showThemeQuickSwitch;
             selectedPastelStyle = pastelEventStyle;
             CustomPalette = customPalette == null ? new List<string>() : customPalette.ToList();
             CustomPalettePastelStyle = customPalettePastelStyle;
@@ -148,70 +161,76 @@ namespace FamilyPlanner
             header.Children.Add(new TextBlock { Text = "⚙  온하루 설정", FontSize = 21, FontWeight = FontWeights.Bold,
                 VerticalAlignment = VerticalAlignment.Center });
             header.MouseLeftButtonDown += delegate { if (Mouse.LeftButton == MouseButtonState.Pressed) DragMove(); };
-            panel.Children.Add(new TextBlock { Text = "추천 색상 조합", Foreground = Brush("#475569"), FontSize = 12 });
-            var paletteName = new TextBox { Text = "내 설정", Height = 32, Padding = new Thickness(4, 5, 8, 4),
-                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
-                FontWeight = FontWeights.SemiBold, Foreground = Brush("#4338CA"), VerticalContentAlignment = VerticalAlignment.Center };
-            var nameLayout = new Grid(); nameLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) }); nameLayout.ColumnDefinitions.Add(new ColumnDefinition());
-            nameLayout.Children.Add(new TextBlock { Text = "✎", FontSize = 15, Foreground = Brush("#6366F1"),
-                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
-            Grid.SetColumn(paletteName, 1); nameLayout.Children.Add(paletteName);
-            var nameBox = new Border { Height = 36, Background = Brushes.White, BorderBrush = Brush("#C7D2FE"),
-                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Child = nameLayout };
-            var saveMyPalette = new Button { Content = "♡  색상 저장", Height = 36,
+            var rgbToggle = new Button { Content = "▦  RGB 조절  펼치기  ▾", Width = 158, Height = 29,
+                HorizontalAlignment = HorizontalAlignment.Right, Background = Brush("#F8FAFC"),
+                Foreground = Brush("#475569"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
+                FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0), Cursor = Cursors.Hand,
+                HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(11, 0, 8, 0) };
+            Round(rgbToggle, 9);
+            var paletteHeader = new Grid(); paletteHeader.ColumnDefinitions.Add(new ColumnDefinition()); paletteHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            paletteHeader.Children.Add(new TextBlock { Text = "추천 색상 조합 · 스킨에 맞는 5가지 기본 팔레트", Foreground = Brush("#475569"), FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center });
+            Grid.SetColumn(rgbToggle, 1); paletteHeader.Children.Add(rgbToggle); panel.Children.Add(paletteHeader);
+            var updateSelectedPalette = new Button { Content = "선택 프리셋 변경", Height = 36,
+                Background = Brush("#EDE9FE"), Foreground = Brush("#5B21B6"), BorderBrush = Brush("#A78BFA"),
+                BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand };
+            Round(updateSelectedPalette, 11);
+            var saveMyPalette = new Button { Content = "내 설정으로 저장", Height = 36,
                 Background = Brush("#EEF2FF"), Foreground = Brush("#4F46E5"), BorderBrush = Brush("#C7D2FE"),
                 BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
             Round(saveMyPalette, 11);
-            var resetPalettes = new Button { Content = "↺  전체 초기화", Height = 36, Background = Brush("#F8FAFC"),
-                Foreground = Brush("#64748B"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
+            var resetPalettes = new Button { Content = "↺  색상 설정 초기화", Height = 36, Background = Brush("#FFF7ED"),
+                Foreground = Brush("#C2410C"), BorderBrush = Brush("#FDBA74"), BorderThickness = new Thickness(1),
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
             Round(resetPalettes, 11);
             resetPalettes.IsEnabled = PaletteNames.Any(x => !string.IsNullOrWhiteSpace(x)) || SavedPalettes.Any(x => !string.IsNullOrWhiteSpace(x)) || CustomPalette.Count >= 2;
             resetPalettes.Opacity = resetPalettes.IsEnabled ? 1 : .45;
             var swap = new Button { Content = "☑  ⇄  ☑  색상 교환", ToolTip = "체크한 두 색상 교환", Height = 36, Background = Brush("#FCE7F3"),
                 Foreground = Brush("#BE185D"), BorderBrush = Brush("#FBCFE8"), BorderThickness = new Thickness(1),
-                FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 0, 10, 0), Cursor = Cursors.Hand };
             Round(swap, 11);
-            var paletteSaveRow = new Grid { Margin = new Thickness(0, 7, 0, 4) };
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(216) });
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
-            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
-            paletteSaveRow.Children.Add(nameBox); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette);
-            Grid.SetColumn(resetPalettes, 2); paletteSaveRow.Children.Add(resetPalettes);
-            panel.Children.Add(paletteSaveRow);
-            var presets = new UniformGrid { Columns = 5, Margin = new Thickness(0, 3, 0, 14) };
-            var names = new[] { "오션", "핫 핑크", "라임 블루", "선셋", "내 설정", "로즈 밀크", "라벤더", "민트", "피치 스카이", "Google 기본" };
-            var palettes = new[] {
-                new[] { "#2563EB", "#DB2777", "#059669", "#D97706", "#0F766E", "#7C3AED", "#0284C7", "#C2410C", "#4F46E5", "#BE185D" },
-                new[] { "#F20D7A", "#FF3D9A", "#7C3AED", "#EC4899", "#2563EB", "#E11D48", "#9333EA", "#0891B2", "#DB2777", "#EA580C" },
-                new[] { "#65A30D", "#0284C7", "#7C3AED", "#EA580C", "#0891B2", "#DB2777", "#0F766E", "#4F46E5", "#CA8A04", "#C026D3" },
-                new[] { "#E11D48", "#F97316", "#7C2D12", "#C026D3", "#0F766E", "#2563EB", "#CA8A04", "#9333EA", "#0891B2", "#BE123C" },
-                new[] { "#E8798E", "#F2A65A", "#B3DC6C", "#FBE983", "#D06B64", "#B99AFF", "#9A9CFF", "#F691B2", "#8EA8D8", "#C394B7" },
-                new[] { "#E8798E", "#F2A65A", "#69A6A6", "#8196D1", "#B58AC8", "#D98CA3", "#78B6A4", "#E0B36A", "#8EA8D8", "#C394B7" },
-                new[] { "#A78BFA", "#F0A6CA", "#7EA6E0", "#F4A27C", "#8FCB9B", "#D7A1E5", "#79C8C3", "#E8BD73", "#9CB7E8", "#E58FAE" },
-                new[] { "#64B5A6", "#8FC7B5", "#78A7C8", "#D9A66C", "#B795C9", "#E29A9A", "#8BBE87", "#D6B66D", "#89A6D5", "#C58AAF" },
-                new[] { "#F4A38C", "#F7C58B", "#8EC5D6", "#B7A0D8", "#8FCB9B", "#E78DB0", "#78BFB3", "#DDA76D", "#91A9DC", "#C58FC2" } };
-            var initialNames = names.ToArray();
-            var initialPalettes = palettes.Select(x => x.ToArray()).ToArray();
-            if (CustomPalette.Count >= 2) palettes[4] = CustomPalette.ToArray();
-            for (var i = 0; i < Math.Min(9, PaletteNames.Count); i++) if (!string.IsNullOrWhiteSpace(PaletteNames[i])) names[i] = PaletteNames[i];
-            for (var i = 0; i < Math.Min(9, SavedPalettes.Count); i++)
+            var paletteSaveRow = new Grid { Margin = new Thickness(0, 7, 0, 5) };
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            paletteSaveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            paletteSaveRow.Children.Add(updateSelectedPalette); Grid.SetColumn(saveMyPalette, 1); paletteSaveRow.Children.Add(saveMyPalette);
+            Grid.SetColumn(swap, 2); paletteSaveRow.Children.Add(swap); Grid.SetColumn(resetPalettes, 3); paletteSaveRow.Children.Add(resetPalettes);
+            var presets = new Grid { Margin = new Thickness(0, 3, 0, 8) };
+            for (var i = 0; i < 13; i++) presets.ColumnDefinitions.Add(new ColumnDefinition {
+                Width = i % 2 == 0 ? GridLength.Auto : new GridLength(1, GridUnitType.Star) });
+            var names = OnharuColorPresets.Names.Concat(new[] { "내설정", "Google" }).ToArray();
+            var palettes = OnharuColorPresets.Palettes().Concat(new[] {
+                new[] { business, personal, baseball, dday, anniversary, holidayColor }, new string[0] }).ToArray();
+            const int presetCount = 5, customPaletteIndex = 5, googlePaletteIndex = 6;
+            for (var i = 0; i < presetCount && i < SavedPalettes.Count; i++)
             {
-                var savedColors = (SavedPalettes[i] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                if (savedColors.Length >= 2) palettes[i] = savedColors;
+                var saved = (SavedPalettes[i] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                if (saved.Length >= 6) palettes[i] = saved;
             }
+            if (SavedPalettes.Count > 8)
+            {
+                var legacyCustom = (SavedPalettes[8] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                if (legacyCustom.Length >= 6) palettes[customPaletteIndex] = legacyCustom;
+            }
+            else if (SavedPalettes.Count > customPaletteIndex)
+            {
+                var savedCustom = (SavedPalettes[customPaletteIndex] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                if (savedCustom.Length >= 6) palettes[customPaletteIndex] = savedCustom;
+            }
+            if (CustomPalette.Count >= 6) palettes[customPaletteIndex] = CustomPalette.ToArray();
             var allSources = sources ?? new List<GoogleCalendarSetting>();
             var activeSources = allSources.Where(x => showGoogleTasks || !GoogleTasks.IsSource(x.Id))
                 .OrderBy(x => IsHoliday(x) ? 2 : x.Primary ? 0 : 1).ThenBy(x => x.Name).ToList();
             var hiddenTaskSources = allSources.Where(x => GoogleTasks.IsSource(x.Id) && !activeSources.Contains(x)).ToList();
             var hiddenTaskEditBoxes = new Dictionary<GoogleCalendarSetting, CheckBox>();
             for (var i = 0; i < activeSources.Count; i++) sourceEditors.Add(Tuple.Create("google_" + i, activeSources[i]));
-            if (CustomPalette.Count < 2)
+            if (CustomPalette.Count < 6)
             {
-                var currentColors = new List<string> { business, personal };
+                var currentColors = new List<string> { business, personal, baseball, dday, anniversary, holidayColor };
                 currentColors.AddRange(activeSources.Where(x => !IsHoliday(x)).Select(x => string.IsNullOrWhiteSpace(x.Color) ? "#E9799A" : x.Color));
-                palettes[4] = currentColors.ToArray();
+                palettes[customPaletteIndex] = currentColors.ToArray();
             }
             var orderEntries = new List<Tuple<string, string>> { Tuple.Create("local:business", "업무일정"), Tuple.Create("local:personal", "개인일정") };
             orderEntries.AddRange(activeSources.Select(x => Tuple.Create("google:" + x.Id, "Google · " + x.Name)));
@@ -219,77 +238,135 @@ namespace FamilyPlanner
             orderEntries = orderEntries.OrderBy(x => { var p = savedOrder.IndexOf(x.Item1); return p < 0 ? 999 : p; }).ThenBy(x => x.Item2).ToList();
             CategoryOrder = orderEntries.Select(x => x.Item1).ToList();
             var paletteOptions = new List<RadioButton>();
-            var selectedPaletteIndex = 4;
+            var selectedPaletteIndex = selectedPaletteIndexValue == 8 ? customPaletteIndex
+                : selectedPaletteIndexValue == 9 ? googlePaletteIndex
+                : selectedPaletteIndexValue >= presetCount ? 0 : Math.Max(0, selectedPaletteIndexValue);
+            var applyingPalette = false;
+            Action<int> applyPalette = null;
+            Func<string, string[], UIElement> presetContent = delegate(string label, string[] colors)
+            {
+                return new TextBlock { Text = label, FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = Brush("#334155"), VerticalAlignment = VerticalAlignment.Center };
+            };
             for (var i = 0; i < names.Length; i++)
             {
-                var index = i; var option = new RadioButton { Content = names[i], GroupName = "Palette", Margin = new Thickness(2, 5, 8, 5), IsChecked = index == 4 };
+                var index = i; var option = new RadioButton { Content = presetContent(names[i], index == googlePaletteIndex ? new string[0] : palettes[index]),
+                    GroupName = "Palette", Margin = new Thickness(0, 5, 0, 5), Padding = new Thickness(0),
+                    HorizontalAlignment = HorizontalAlignment.Left, HorizontalContentAlignment = HorizontalAlignment.Left,
+                    VerticalContentAlignment = VerticalAlignment.Center,
+                    IsChecked = index == selectedPaletteIndex };
                 paletteOptions.Add(option);
                 option.Checked += delegate
                 {
                     selectedPaletteIndex = index;
-                    var googleDefault = index == names.Length - 1;
-                    paletteName.IsReadOnly = googleDefault;
-                    paletteName.Text = googleDefault ? "Google 기본 (변경 불가)" : names[index];
-                    nameBox.Background = googleDefault ? Brush("#F1F5F9") : Brushes.White;
-                    paletteName.Foreground = googleDefault ? Brush("#94A3B8") : Brush("#4338CA");
-                    saveMyPalette.IsEnabled = !googleDefault; saveMyPalette.Opacity = googleDefault ? .45 : 1;
-                    if (index == names.Length - 1)
-                    {
-                        foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
-                            SetHex(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.OriginalColor) ? editor.Item2.Color : editor.Item2.OriginalColor);
-                        return;
-                    }
-                    selectedPastelStyle = index == 4 ? CustomPalettePastelStyle : index >= 5;
-                    SetHex("업무일정", palettes[index][0]);
-                    SetHex("개인일정", palettes[index][1]);
-                    var colorIndex = 2;
-                    foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
-                        SetHex(editor.Item1, palettes[index][colorIndex++ % palettes[index].Length]);
+                    var googleDefault = index == googlePaletteIndex;
+                    updateSelectedPalette.Content = googleDefault ? "Google · 변경 불가" : names[index];
+                    updateSelectedPalette.IsEnabled = !googleDefault; updateSelectedPalette.Opacity = googleDefault ? .45 : 1;
+                    if (applyPalette != null) applyPalette(index);
                 };
-                presets.Children.Add(option);
+                Grid.SetColumn(option, index * 2); presets.Children.Add(option);
             }
+            updateSelectedPalette.Content = selectedPaletteIndex == googlePaletteIndex
+                ? "Google · 변경 불가" : names[selectedPaletteIndex];
+            updateSelectedPalette.IsEnabled = selectedPaletteIndex != googlePaletteIndex;
+            updateSelectedPalette.Opacity = updateSelectedPalette.IsEnabled ? 1 : .45;
+            panel.Children.Add(paletteSaveRow);
             panel.Children.Add(presets);
-            var rgbToggle = new Button { Content = "RGB 조절 펼치기  ▾", Width = 132, Height = 29,
-                HorizontalAlignment = HorizontalAlignment.Left, Background = Brush("#F8FAFC"),
-                Foreground = Brush("#475569"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
-                FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0), Cursor = Cursors.Hand };
-            Round(rgbToggle, 9);
-            swap.Width = 154; swap.Height = 29; swap.Margin = new Thickness(0);
-            var colorTools = new Grid { Margin = new Thickness(0, -3, 4, 6) };
-            colorTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            colorTools.ColumnDefinitions.Add(new ColumnDefinition());
-            colorTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            colorTools.Children.Add(rgbToggle); Grid.SetColumn(swap, 2); colorTools.Children.Add(swap);
             var rgbExpanded = false;
             rgbToggle.Click += delegate
             {
                 rgbExpanded = !rgbExpanded;
                 foreach (var rgbPanel in rgbPanels) rgbPanel.Visibility = rgbExpanded ? Visibility.Visible : Visibility.Collapsed;
-                rgbToggle.Content = rgbExpanded ? "RGB 조절 접기  ▴" : "RGB 조절 펼치기  ▾";
+                rgbToggle.Content = rgbExpanded ? "▦  RGB 조절  접기    ▴" : "▦  RGB 조절  펼치기  ▾";
             };
-            panel.Children.Add(colorTools);
             var colorGrid = new UniformGrid { Columns = 2, Margin = new Thickness(-4, 0, -4, 4) };
             colorGrid.Children.Add(ColorEditor("업무일정", business));
             colorGrid.Children.Add(ColorEditor("개인일정", personal));
             foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
                 colorGrid.Children.Add(ColorEditor(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.Color) ? "#E9799A" : editor.Item2.Color, editor.Item2.Name));
             panel.Children.Add(colorGrid);
-            paletteName.TextChanged += delegate { if (!paletteName.IsReadOnly) { resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1; } };
-            foreach (var slider in sliders.Values.SelectMany(x => x))
-                slider.ValueChanged += delegate { resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1; };
-            saveMyPalette.Click += delegate
+            var specialColorGrid = new UniformGrid { Columns = 2, Margin = new Thickness(-4, 0, -4, 4) };
+            var holidayEditor = ColorEditor("국경일", holidayColor, "휴일");
+            var baseballEditor = ColorEditor("야구", baseball);
+            var ddayEditor = ColorEditor("D-Day", dday);
+            var anniversaryEditor = ColorEditor("기념일", anniversary);
+            if (holidayColorVisible) specialColorGrid.Children.Add(holidayEditor);
+            if (baseballColorVisible) specialColorGrid.Children.Add(baseballEditor);
+            if (ddayColorVisible) specialColorGrid.Children.Add(ddayEditor);
+            if (anniversaryColorVisible) specialColorGrid.Children.Add(anniversaryEditor);
+            if (specialColorGrid.Children.Count > 0)
             {
-                if (selectedPaletteIndex == names.Length - 1) return;
-                var savedName = string.IsNullOrWhiteSpace(paletteName.Text) ? names[selectedPaletteIndex] : paletteName.Text.Trim();
-                var currentColors = new List<string> { Hex("업무일정"), Hex("개인일정") };
-                currentColors.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
-                names[selectedPaletteIndex] = savedName; paletteOptions[selectedPaletteIndex].Content = savedName;
-                while (PaletteNames.Count < 9) PaletteNames.Add("");
+                panel.Children.Add(new TextBlock { Text = "Special Day 색상", Foreground = Brush("#64748B"), FontSize = 11,
+                    FontWeight = FontWeights.SemiBold, Margin = new Thickness(4, 2, 0, 5) });
+                panel.Children.Add(specialColorGrid);
+            }
+            applyPalette = delegate(int index)
+            {
+                if (index == googlePaletteIndex)
+                {
+                    foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
+                        SetHex(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.OriginalColor) ? editor.Item2.Color : editor.Item2.OriginalColor);
+                    return;
+                }
+                if (index < 0 || index >= palettes.Length || palettes[index].Length < 6) return;
+                applyingPalette = true;
+                try
+                {
+                    selectedPastelStyle = ThemeId == "classic";
+                    SetHex("업무일정", palettes[index][0]); SetHex("개인일정", palettes[index][1]);
+                    SetHex("야구", palettes[index][2]); SetHex("D-Day", palettes[index][3]);
+                    SetHex("기념일", palettes[index][4]); SetHex("국경일", palettes[index][5]);
+                    var usedColors = new HashSet<string>(palettes[index].Take(6), StringComparer.OrdinalIgnoreCase);
+                    var colorIndex = 6; var googleIndex = 0;
+                    foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
+                    {
+                        var candidate = colorIndex < palettes[index].Length
+                            ? palettes[index][colorIndex++] : GooglePresetVariant(palettes[index][googleIndex % 6], googleIndex);
+                        var color = UniquePresetColor(candidate, googleIndex, usedColors);
+                        usedColors.Add(color); SetHex(editor.Item1, color); googleIndex++;
+                    }
+                }
+                finally { applyingPalette = false; }
+            };
+            applyPalette(selectedPaletteIndex);
+            Func<List<string>> captureColors = delegate
+            {
+                var colors = new List<string> { Hex("업무일정"), Hex("개인일정"), Hex("야구"), Hex("D-Day"), Hex("기념일"), Hex("국경일") };
+                colors.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
+                return colors;
+            };
+            foreach (var slider in sliders.Values.SelectMany(x => x))
+                slider.ValueChanged += delegate
+                {
+                    resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1;
+                    if (!applyingPalette && selectedPaletteIndex != googlePaletteIndex)
+                        updateSelectedPalette.Content = names[selectedPaletteIndex] + " 변경";
+                };
+            updateSelectedPalette.Click += delegate
+            {
+                if (selectedPaletteIndex == googlePaletteIndex) return;
+                var currentColors = captureColors();
                 while (SavedPalettes.Count < 9) SavedPalettes.Add("");
-                PaletteNames[selectedPaletteIndex] = savedName;
                 SavedPalettes[selectedPaletteIndex] = string.Join(",", currentColors);
                 palettes[selectedPaletteIndex] = currentColors.ToArray();
-                if (selectedPaletteIndex == 4) CustomPalette = currentColors.ToList();
+                paletteOptions[selectedPaletteIndex].Content = presetContent(names[selectedPaletteIndex], palettes[selectedPaletteIndex]);
+                if (selectedPaletteIndex == customPaletteIndex) CustomPalette = currentColors.ToList();
+                CustomPalettePastelStyle = selectedPastelStyle;
+                var normalText = names[selectedPaletteIndex];
+                updateSelectedPalette.Content = "✓  " + names[selectedPaletteIndex] + " 변경 완료";
+                resetPalettes.IsEnabled = true; resetPalettes.Opacity = 1;
+                var updateNotice = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
+                updateNotice.Tick += delegate { updateNotice.Stop(); updateSelectedPalette.Content = normalText; };
+                updateNotice.Start();
+            };
+            saveMyPalette.Click += delegate
+            {
+                var currentColors = captureColors();
+                while (SavedPalettes.Count < 9) SavedPalettes.Add("");
+                SavedPalettes[customPaletteIndex] = string.Join(",", currentColors);
+                palettes[customPaletteIndex] = currentColors.ToArray();
+                paletteOptions[customPaletteIndex].Content = presetContent(names[customPaletteIndex], palettes[customPaletteIndex]);
+                CustomPalette = currentColors.ToList();
                 CustomPalettePastelStyle = selectedPastelStyle;
                 saveMyPalette.Content = "✓  색상 저장 완료";
                 saveMyPalette.Background = Brush("#ECFDF5"); saveMyPalette.Foreground = Brush("#047857");
@@ -298,26 +375,23 @@ namespace FamilyPlanner
                 var saveNotice = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
                 saveNotice.Tick += delegate
                 {
-                    saveNotice.Stop(); saveMyPalette.Content = "♡  색상 저장";
+                    saveNotice.Stop(); saveMyPalette.Content = "내 설정으로 저장";
                     saveMyPalette.Background = Brush("#EEF2FF"); saveMyPalette.Foreground = Brush("#4F46E5");
                     saveMyPalette.BorderBrush = Brush("#C7D2FE");
                 };
                 saveNotice.Start();
             };
-            paletteName.KeyDown += delegate(object sender, KeyEventArgs e)
-            {
-                if (e.Key != Key.Enter) return;
-                saveMyPalette.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); e.Handled = true;
-            };
             resetPalettes.Click += delegate
             {
-                PaletteNames.Clear(); SavedPalettes.Clear(); CustomPalette.Clear(); CustomPalettePastelStyle = true;
-                for (var i = 0; i < 9; i++) { names[i] = initialNames[i]; palettes[i] = initialPalettes[i].ToArray(); paletteOptions[i].Content = names[i]; }
-                paletteOptions[4].IsChecked = false; paletteOptions[4].IsChecked = true; paletteName.Text = names[4];
+                PaletteNames.Clear(); SavedPalettes.Clear(); CustomPalette.Clear(); CustomPalettePastelStyle = ThemeId == "classic";
+                var defaultNames = OnharuColorPresets.Names; var defaultPalettes = OnharuColorPresets.Palettes();
+                for (var i = 0; i < presetCount; i++) { names[i] = defaultNames[i]; palettes[i] = defaultPalettes[i].ToArray(); paletteOptions[i].Content = presetContent(names[i], palettes[i]); }
+                palettes[customPaletteIndex] = defaultPalettes[0].ToArray();
+                paletteOptions[0].IsChecked = false; paletteOptions[0].IsChecked = true;
                 resetPalettes.Content = "✓  초기화 완료";
                 resetPalettes.IsEnabled = false; resetPalettes.Opacity = .45;
                 var resetNotice = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
-                resetNotice.Tick += delegate { resetNotice.Stop(); resetPalettes.Content = "↺  전체 초기화"; };
+                resetNotice.Tick += delegate { resetNotice.Stop(); resetPalettes.Content = "↺  색상 초기화"; };
                 resetNotice.Start();
             };
             swap.Click += delegate
@@ -327,7 +401,6 @@ namespace FamilyPlanner
                 var first = Hex(selected[0]); SetHex(selected[0], Hex(selected[1])); SetHex(selected[1], first);
                 foreach (var check in colorSelections) check.IsChecked = false;
             };
-            foreach (var editor in sourceEditors.Where(x => IsHoliday(x.Item2))) panel.Children.Add(FixedHolidayColor(editor.Item2.Name));
             var fontRow = new Grid { Height = 24 };
             fontRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             fontRow.ColumnDefinitions.Add(new ColumnDefinition());
@@ -362,6 +435,45 @@ namespace FamilyPlanner
                 if (window.ShowDialog() == true) CategoryOrder = window.Result;
             };
             Grid.SetColumn(categoryOrderButton, 2); orderRow.Children.Add(categoryOrderButton); panel.Children.Add(SectionCard(orderRow));
+            var themeOptions = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, 0, 2) };
+            foreach (var option in new[] { Tuple.Create("파스텔", "classic", "부드럽고 생동감 있는 기본 스킨"), Tuple.Create("블랙", "dark", "어두운 배경과 선명한 포인트") })
+            {
+                var previewBackground = option.Item2 == "dark" ? "#1A1A1A" : "#E7E9FF";
+                var previewBorder = option.Item2 == "dark" ? "#6366F1" : "#B9C1FF";
+                var previewForeground = option.Item2 == "dark" ? "#FFFFFF" : "#4338CA";
+                var choice = new RadioButton { Tag = option.Item2, GroupName = "OnharuTheme", IsChecked = ThemeId == option.Item2,
+                    Height = 34, VerticalContentAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, option.Item2 == "dark" ? 0 : 10, 0), Cursor = Cursors.Hand };
+                choice.Content = new Border { Height = 30, Background = Brush(previewBackground), BorderBrush = Brush(previewBorder),
+                    BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(9, 0, 9, 0),
+                    Child = new TextBlock { Text = option.Item1 + " · " + option.Item3, Foreground = Brush(previewForeground),
+                        FontWeight = FontWeights.SemiBold, FontSize = 11, VerticalAlignment = VerticalAlignment.Center } };
+                choice.Checked += delegate
+                {
+                    ThemeId = option.Item2;
+                    var refreshedNames = OnharuColorPresets.Names; var refreshedPalettes = OnharuColorPresets.Palettes();
+                    for (var i = 0; i < presetCount; i++)
+                    {
+                        names[i] = refreshedNames[i]; palettes[i] = refreshedPalettes[i]; paletteOptions[i].Content = presetContent(names[i], palettes[i]);
+                    }
+                    while (SavedPalettes.Count <= customPaletteIndex) SavedPalettes.Add("");
+                    for (var i = 0; i < presetCount; i++) SavedPalettes[i] = "";
+                    updateSelectedPalette.Content = selectedPaletteIndex == googlePaletteIndex
+                        ? "Google · 변경 불가" : names[selectedPaletteIndex];
+                    foreach (var editorName in sliders.Keys.ToList()) UpdatePreview(editorName);
+                    if (applyPalette != null) applyPalette(selectedPaletteIndex);
+                };
+                themeOptions.Children.Add(choice);
+            }
+            var themeGroup = new StackPanel();
+            var themeQuickSwitchOption = new CheckBox { Content = "상단 스킨 전환 버튼 표시", IsChecked = showThemeQuickSwitch,
+                Margin = new Thickness(0), VerticalAlignment = VerticalAlignment.Center };
+            var themeHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 7), LastChildFill = true };
+            DockPanel.SetDock(themeQuickSwitchOption, Dock.Right); themeHeader.Children.Add(themeQuickSwitchOption);
+            themeHeader.Children.Add(new TextBlock { Text = "디자인 스킨", Foreground = Brush("#475569"), FontSize = 12,
+                FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            themeGroup.Children.Add(themeHeader); themeGroup.Children.Add(themeOptions); panel.Children.Add(SectionCard(themeGroup));
+
             var displayHeader = new TextBlock { Text = "표시 옵션", Foreground = Brush("#475569"), FontSize = 12,
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 7) };
             var weekRules = new StackPanel { Orientation = Orientation.Horizontal, Visibility = showWeeks ? Visibility.Visible : Visibility.Collapsed,
@@ -523,13 +635,15 @@ namespace FamilyPlanner
             bothStyleOption.Checked += delegate { fillColorButton.Background = Brush(selectedDateFillColor); fillColorButton.Content = ""; borderColorButton.Background = Brush(selectedDateBorderColor); borderColorButton.Content = ""; };
             todayColor = string.IsNullOrWhiteSpace(todayColor) ? "#CCFCE7F3" : todayColor;
             todayStyle = string.IsNullOrWhiteSpace(todayStyle) ? (todayColor == "none" ? "none" : "fill") : todayStyle;
-            todayBorderColor = string.IsNullOrWhiteSpace(todayBorderColor) ? "#F59E0B" : todayBorderColor;
+            if (todayStyle == "border") todayStyle = "icon";
+            if (todayStyle == "both") todayStyle = "fill_icon";
+            var todayIconColor = string.IsNullOrWhiteSpace(todayBorderColor) ? "#4F7BFF" : todayBorderColor;
             var todayOptions = new StackPanel { Orientation = Orientation.Horizontal, Height = 24 };
             todayOptions.Children.Add(new TextBlock { Text = "오늘 표시", Width = 120, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
             var todayNone = new RadioButton { Tag = "none", GroupName = "TodayStyle", IsChecked = todayStyle == "none", Visibility = Visibility.Collapsed };
             var todayFill = new RadioButton { Content = "색상", Tag = "fill", GroupName = "TodayStyle", IsChecked = todayStyle == "fill", Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-            var todayBorder = new RadioButton { Content = "테두리", Tag = "border", GroupName = "TodayStyle", IsChecked = todayStyle == "border", Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-            var todayBoth = new RadioButton { Content = "색상 + 테두리", Tag = "both", GroupName = "TodayStyle", IsChecked = todayStyle == "both", Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var todayIcon = new RadioButton { Content = "날짜 원형", Tag = "icon", GroupName = "TodayStyle", IsChecked = todayStyle == "icon", Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
+            var todayBoth = new RadioButton { Content = "색상 + 날짜 원형", Tag = "fill_icon", GroupName = "TodayStyle", IsChecked = todayStyle == "fill_icon", Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             todayOptions.Children.Add(todayNone); todayOptions.Children.Add(todayFill);
             var todayColorButton = new Button { Width = 30, Height = 14, Background = todayStyle == "none" ? Brushes.White : Brush(todayColor),
                 Content = todayStyle == "none" ? "×" : "", Foreground = Brush("#DC2626"), BorderBrush = Brush("#CBD5E1"),
@@ -553,31 +667,29 @@ namespace FamilyPlanner
                 popup.IsOpen = true;
             };
             todayOptions.Children.Add(todayColorButton);
-            todayOptions.Children.Add(todayBorder);
-            var todayBorderButton = new Button { Width = 30, Height = 14, Background = todayStyle == "none" ? Brushes.White : Brush(todayBorderColor),
+            todayOptions.Children.Add(todayIcon);
+            var todayIconButton = new Button { Width = 30, Height = 14, Background = todayStyle == "none" ? Brushes.White : Brush(todayIconColor),
                 Content = todayStyle == "none" ? "×" : "", Foreground = Brush("#DC2626"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
-                Cursor = Cursors.Hand, ToolTip = "오늘 테두리 색상", VerticalAlignment = VerticalAlignment.Center };
-            Round(todayBorderButton, 6);
-            todayBorderButton.Click += delegate
+                Cursor = Cursors.Hand, ToolTip = "오늘 날짜 원형 색상", VerticalAlignment = VerticalAlignment.Center };
+            Round(todayIconButton, 6);
+            todayIconButton.Click += delegate
             {
-                var colors = new[] { "#F59E0B", "#3B82F6", "#06B6D4", "#10B981", "#8B5CF6", "#EC4899", "#64748B" };
+                var colors = new[] { "#4F7BFF", "#06B6D4", "#10B981", "#8B5CF6", "#EC4899", "#F59E0B", "#64748B" };
                 var swatches = new StackPanel { Orientation = Orientation.Horizontal };
-                var popup = new Popup { PlacementTarget = todayBorderButton, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
+                var popup = new Popup { PlacementTarget = todayIconButton, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
                 foreach (var hex in colors)
                 {
                     var color = hex; var swatch = new Button { Width = 28, Height = 28, Margin = new Thickness(3), Background = Brush(color), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
-                    Round(swatch, 10); swatch.Click += delegate { todayBorderColor = color; todayBorderButton.Background = Brush(color); todayBorderButton.Content = ""; todayBorder.IsChecked = true; popup.IsOpen = false; }; swatches.Children.Add(swatch);
+                    Round(swatch, 10); swatch.Click += delegate { todayIconColor = color; todayIconButton.Background = Brush(color); todayIconButton.Content = ""; todayIcon.IsChecked = true; popup.IsOpen = false; }; swatches.Children.Add(swatch);
                 }
                 var clear = new Button { Content = "×", Width = 28, Height = 28, Margin = new Thickness(3), Background = Brushes.White, Foreground = Brush("#DC2626"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
-                Round(clear, 10); clear.Click += delegate { todayColor = "none"; todayNone.IsChecked = true; todayColorButton.Background = Brushes.White; todayColorButton.Content = "×"; todayBorderButton.Background = Brushes.White; todayBorderButton.Content = "×"; popup.IsOpen = false; }; swatches.Children.Add(clear);
+                Round(clear, 10); clear.Click += delegate { todayColor = "none"; todayNone.IsChecked = true; todayColorButton.Background = Brushes.White; todayColorButton.Content = "×"; todayIconButton.Background = Brushes.White; todayIconButton.Content = "×"; popup.IsOpen = false; }; swatches.Children.Add(clear);
                 popup.Child = new Border { Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Padding = new Thickness(5), Margin = new Thickness(0, 4, 0, 0), Child = swatches }; popup.IsOpen = true;
             };
-            todayOptions.Children.Add(todayBorderButton); todayOptions.Children.Add(todayBoth);
-            todayFill.Checked += delegate { todayColorButton.Background = Brush(todayColor == "none" ? "#CCFCE7F3" : todayColor); todayColorButton.Content = ""; };
-            todayBorder.Checked += delegate { if (borderStyleOption.IsChecked == true || bothStyleOption.IsChecked == true) fillStyleOption.IsChecked = true; };
-            todayBoth.Checked += delegate { if (borderStyleOption.IsChecked == true || bothStyleOption.IsChecked == true) fillStyleOption.IsChecked = true; };
-            borderStyleOption.Checked += delegate { if (todayBorder.IsChecked == true || todayBoth.IsChecked == true) todayFill.IsChecked = true; };
-            bothStyleOption.Checked += delegate { if (todayBorder.IsChecked == true || todayBoth.IsChecked == true) todayFill.IsChecked = true; };
+            todayOptions.Children.Add(todayIconButton); todayOptions.Children.Add(todayBoth);
+            todayFill.Checked += delegate { if (todayColor == "none") todayColor = "#CCFCE7F3"; todayColorButton.Background = Brush(todayColor); todayColorButton.Content = ""; };
+            todayIcon.Checked += delegate { todayIconButton.Background = Brush(todayIconColor); todayIconButton.Content = ""; };
+            todayBoth.Checked += delegate { if (todayColor == "none") todayColor = "#CCFCE7F3"; todayColorButton.Background = Brush(todayColor); todayColorButton.Content = ""; todayIconButton.Background = Brush(todayIconColor); todayIconButton.Content = ""; };
             showWeek.Click += delegate { weekRuleRow.Visibility = showWeek.IsChecked == true ? Visibility.Visible : Visibility.Collapsed; };
             var displayGroup = new StackPanel(); displayGroup.Children.Add(displayHeader);
             displayGroup.Children.Add(new TextBlock { Text = "달력 내 표시", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
@@ -598,9 +710,9 @@ namespace FamilyPlanner
             rangeGroup.Children.Add(new TextBlock { Text = "달력 표시 범위", Foreground = Brush("#475569"), FontSize = 12 });
             var rangeRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 24 };
             rangeRow.Children.Add(new TextBlock { Text = "월전체 (1일부터)", Width = 120, VerticalAlignment = VerticalAlignment.Center, Foreground = Brush("#64748B") });
-            var monthFive = new RadioButton { Content = "5주", Tag = "month5", GroupName = "CalendarRange", IsChecked = calendarRangeMode == "month5", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
-            var monthSix = new RadioButton { Content = "6주", Tag = "month6", GroupName = "CalendarRange", IsChecked = calendarRangeMode != "month5" && calendarRangeMode != "monthAuto" && calendarRangeMode != "weeks", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
-            var monthAuto = new RadioButton { Content = "자동 (4~6주)", Tag = "monthAuto", GroupName = "CalendarRange", IsChecked = calendarRangeMode == "monthAuto", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
+            var monthFive = new RadioButton { Content = "5주", Tag = "month5", GroupName = "MonthCalendarRange", IsChecked = calendarRangeMode == "month5", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
+            var monthSix = new RadioButton { Content = "6주", Tag = "month6", GroupName = "MonthCalendarRange", IsChecked = calendarRangeMode == "month6", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
+            var monthAuto = new RadioButton { Content = "자동 (4~6주)", Tag = "monthAuto", GroupName = "MonthCalendarRange", IsChecked = calendarRangeMode != "month5" && calendarRangeMode != "month6", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
             monthAuto.ToolTip = "해당 월에 필요한 4~6주만 표시";
             rangeRow.Children.Add(monthFive); rangeRow.Children.Add(monthSix); rangeRow.Children.Add(monthAuto); rangeGroup.Children.Add(rangeRow);
             var weekChoiceRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 24, Margin = new Thickness(0, -3, 0, 0) };
@@ -608,8 +720,8 @@ namespace FamilyPlanner
             var customWeeks = new List<RadioButton>();
             for (var count = 1; count <= 6; count++)
             {
-                var option = new RadioButton { Content = count + "주", Tag = "weeks:" + count, GroupName = "CalendarRange",
-                    IsChecked = calendarRangeMode == "weeks" && visibleWeekCount == count, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+                var option = new RadioButton { Content = count + "주", Tag = "weeks:" + count, GroupName = "CustomCalendarRange",
+                    IsChecked = visibleWeekCount == count, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
                 customWeeks.Add(option); weekChoiceRow.Children.Add(option);
             }
             todayRow = Math.Max(1, Math.Min(Math.Max(1, visibleWeekCount), todayRow > 0 ? todayRow : DefaultTodayRow(visibleWeekCount)));
@@ -631,8 +743,7 @@ namespace FamilyPlanner
             weekChoiceRow.Children.Add(todayPicker);
             Action updateRange = delegate
             {
-                var enabled = customWeeks.Any(x => x.IsChecked == true);
-                todayLabel.IsEnabled = enabled; todayRowOption.IsEnabled = enabled; todayRowOption.Opacity = enabled ? 1 : .45;
+                todayLabel.IsEnabled = true; todayRowOption.IsEnabled = true; todayRowOption.Opacity = 1;
             };
             foreach (var option in customWeeks)
             {
@@ -716,6 +827,11 @@ namespace FamilyPlanner
                 syncOptions.Children.Add(new RadioButton { Content = option.Name, Tag = option.Minutes, GroupName = "AutoSync",
                     IsChecked = autoSyncMinutes == option.Minutes, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center });
             syncGroup.Children.Add(syncOptions); panel.Children.Add(SectionCard(syncGroup));
+            var updateOption = new CheckBox { Content = "새 버전 자동 확인 · 설치 전 항상 확인",
+                IsChecked = automaticUpdateChecks, Foreground = Brush("#475569"), FontSize = 12,
+                Margin = new Thickness(0, 1, 0, 1), VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "하루에 한 번 GitHub Release를 확인합니다. 동의 없이 설치하지 않습니다." };
+            panel.Children.Add(SectionCard(updateOption));
             if (activeSources.Count > 0 || hiddenTaskSources.Count > 0)
             {
                 var permissionGroup = new StackPanel();
@@ -755,9 +871,11 @@ namespace FamilyPlanner
             save.Click += delegate
             {
                 BusinessColor = Hex("업무일정"); PersonalColor = Hex("개인일정");
+                BaseballColor = Hex("야구"); DdayColor = Hex("D-Day");
+                AnniversaryColor = Hex("기념일"); HolidayColor = Hex("국경일");
                 foreach (var editor in sourceEditors)
                 {
-                    editor.Item2.Color = IsHoliday(editor.Item2) ? "#CF2B36" : Hex(editor.Item1);
+                    if (!IsHoliday(editor.Item2)) editor.Item2.Color = Hex(editor.Item1);
                     editor.Item2.Editable = editBoxes.ContainsKey(editor.Item1) && editBoxes[editor.Item1].IsChecked == true;
                 }
                 foreach (var entry in hiddenTaskEditBoxes) entry.Key.Editable = entry.Value.IsChecked == true;
@@ -778,21 +896,28 @@ namespace FamilyPlanner
                 UseRollover = rollover.IsChecked == true;
                 ShowGoogleTasks = googleTasks.IsChecked == true;
                 UseProBaseball = proBaseball.IsChecked == true;
+                AutomaticUpdateChecks = updateOption.IsChecked == true;
+                ShowThemeQuickSwitch = themeQuickSwitchOption.IsChecked == true;
+                ThemeId = themeOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
+                PaletteSelectionIndex = selectedPaletteIndex;
+                if (selectedPaletteIndex == customPaletteIndex)
+                {
+                    var customColors = new List<string> { Hex("업무일정"), Hex("개인일정"), Hex("야구"), Hex("D-Day"), Hex("기념일"), Hex("국경일") };
+                    customColors.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
+                    CustomPalette = customColors;
+                }
                 SelectedDateStyle = selectionOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 SelectedDateFillColor = selectedDateFillColor;
                 SelectedDateBorderColor = selectedDateBorderColor;
                 TodayColor = todayColor;
                 TodayStyle = todayOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
-                TodayBorderColor = todayBorderColor;
+                TodayIconColor = todayIconColor;
                 WeekRule = weekRules.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 WeekStartDay = startDay.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 RestDays = restDayBoxes.Where(x => x.IsChecked == true).Select(x => (int)x.Tag).ToList();
-                var selectedRange = rangeRow.Children.OfType<RadioButton>().Concat(customWeeks).First(x => x.IsChecked == true).Tag.ToString();
-                if (selectedRange.StartsWith("weeks:"))
-                {
-                    CalendarRangeMode = "weeks"; VisibleWeekCount = int.Parse(selectedRange.Substring(6));
-                }
-                else { CalendarRangeMode = selectedRange; VisibleWeekCount = Math.Max(1, Math.Min(6, visibleWeekCount)); }
+                CalendarRangeMode = rangeRow.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
+                var selectedCustomRange = customWeeks.First(x => x.IsChecked == true).Tag.ToString();
+                VisibleWeekCount = int.Parse(selectedCustomRange.Substring(6));
                 TodayRow = Math.Max(1, Math.Min(VisibleWeekCount, todayRowOption.SelectedIndex + 1));
                 PastelEventStyle = selectedPastelStyle;
                 AutoSyncMinutes = (int)syncOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
@@ -889,7 +1014,7 @@ namespace FamilyPlanner
             Func<double, double> compactScrollHeight = delegate(double workAreaHeight)
             { return Math.Max(360, Math.Min(650, workAreaHeight * .70 - 60)); };
             var contentScroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = compactScrollHeight(SystemParameters.WorkArea.Height) };
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = compactScrollHeight(SystemParameters.WorkArea.Height), Opacity = 0 };
             Action updateTopSave = delegate { topSave.Visibility = contentScroll.ComputedVerticalScrollBarVisibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed; };
             contentScroll.ScrollChanged += delegate { updateTopSave(); };
             contentScroll.SizeChanged += delegate { updateTopSave(); };
@@ -898,52 +1023,72 @@ namespace FamilyPlanner
             Loaded += delegate
             {
                 contentScroll.MaxHeight = compactScrollHeight(Forms.Screen.FromHandle(new WindowInteropHelper(this).Handle).WorkingArea.Height);
-                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate { UiRound.SoftenScrollBars(contentScroll); updateTopSave(); }));
+                contentScroll.ApplyTemplate();
+                UiRound.SoftenScrollBars(contentScroll);
+                updateTopSave();
+                contentScroll.Opacity = 1;
             };
             var shell = new Border { Background = Brush("#FFF8FAFC"), CornerRadius = new CornerRadius(18),
                 BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Child = popupLayout };
             Content = UiRound.EmphasizePopup(shell);
         }
 
-        UIElement FixedHolidayColor(string name)
+        static string GooglePresetVariant(string hex, int ordinal)
         {
-            var row = new DockPanel();
-            var swatch = new Border { Width = 42, Height = 20, CornerRadius = new CornerRadius(6), Background = Brush("#CF2B36") };
-            DockPanel.SetDock(swatch, Dock.Right); row.Children.Add(swatch);
-            row.Children.Add(new TextBlock { Text = name + " 색상 · 빨간색 고정", FontWeight = FontWeights.SemiBold,
-                FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = Brush("#991B1B") });
-            return new Border { Background = Brush("#FEF2F2"), BorderBrush = Brush("#FECACA"), BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(11), Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 0, 8), Child = row };
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            var delta = (ordinal / 6) % 2 == 0 ? 18 : -18;
+            Func<byte, byte> shift = value => (byte)Math.Max(0, Math.Min(255, value + delta));
+            return string.Format("#{0:X2}{1:X2}{2:X2}", shift(color.R), shift(color.G), shift(color.B));
+        }
+
+        static string UniquePresetColor(string hex, int ordinal, HashSet<string> usedColors)
+        {
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            var candidate = string.Format("#{0:X2}{1:X2}{2:X2}", color.R, color.G, color.B);
+            if (!usedColors.Contains(candidate)) return candidate;
+            for (var attempt = 1; attempt <= 64; attempt++)
+            {
+                var r = (byte)((color.R + 17 * attempt + 3 * ordinal) % 256);
+                var g = (byte)((color.G + 29 * attempt + 5 * ordinal) % 256);
+                var b = (byte)((color.B + 43 * attempt + 7 * ordinal) % 256);
+                candidate = string.Format("#{0:X2}{1:X2}{2:X2}", r, g, b);
+                if (!usedColors.Contains(candidate)) return candidate;
+            }
+            return candidate;
         }
 
         UIElement ColorEditor(string name, string hex, string displayName = null)
         {
             var color = (Color)ColorConverter.ConvertFromString(hex);
             var box = new StackPanel { Margin = new Thickness(0, 0, 0, 3) };
-            var title = new DockPanel { Margin = new Thickness(0, 0, 0, 2) };
-            var preview = new Border { Width = 42, Height = 20, CornerRadius = new CornerRadius(6), Background = new SolidColorBrush(color) };
+            var title = new DockPanel { Height = 24, LastChildFill = true, Margin = new Thickness(0, 0, 0, 2), VerticalAlignment = VerticalAlignment.Center };
+            var preview = new Border { Width = 42, Height = 20, CornerRadius = new CornerRadius(6),
+                Background = PaletteEditorPreview(color), VerticalAlignment = VerticalAlignment.Center };
             previews[name] = preview; DockPanel.SetDock(preview, Dock.Right); title.Children.Add(preview);
             var select = new CheckBox { Tag = name, Content = (displayName ?? name) + " 색상", FontWeight = FontWeights.SemiBold,
-                FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0), Cursor = Cursors.Hand };
+                FontSize = 14, Foreground = PaletteEditorForeground(color), VerticalAlignment = VerticalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 7, 0), Cursor = Cursors.Hand };
+            editorTitles[name] = select;
             colorSelections.Add(select);
             select.Checked += delegate { UpdateColorSelectionAvailability(); };
             select.Unchecked += delegate { UpdateColorSelectionAvailability(); };
             DockPanel.SetDock(select, Dock.Left); title.Children.Add(select); box.Children.Add(title);
             var rgbPanel = new StackPanel { Visibility = Visibility.Collapsed };
             rgbPanels.Add(rgbPanel); box.Children.Add(rgbPanel);
-            var rgb = new[] { color.R, color.G, color.B }; var set = new Slider[3]; var labels = new TextBlock[3];
+            var rgb = new[] { color.R, color.G, color.B }; var set = new Slider[3]; var labels = new TextBlock[3]; var channels = new TextBlock[3];
             for (var i = 0; i < 3; i++)
             {
                 var row = new Grid { Height = 18 };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) }); row.ColumnDefinitions.Add(new ColumnDefinition());
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(38) });
-                var channel = new TextBlock { Text = new[] { "R", "G", "B" }[i], Foreground = Brush("#64748B") }; row.Children.Add(channel);
+                var channel = new TextBlock { Text = new[] { "R", "G", "B" }[i], Foreground = PaletteEditorForeground(color) }; row.Children.Add(channel); channels[i] = channel;
                 var slider = new Slider { Minimum = 0, Maximum = 255, Value = rgb[i], Tag = name, Height = 17 }; Grid.SetColumn(slider, 1); row.Children.Add(slider); set[i] = slider;
-                var value = new TextBlock { Text = rgb[i].ToString(), HorizontalAlignment = HorizontalAlignment.Right }; Grid.SetColumn(value, 2); row.Children.Add(value); labels[i] = value;
+                var value = new TextBlock { Text = rgb[i].ToString(), Foreground = PaletteEditorForeground(color), HorizontalAlignment = HorizontalAlignment.Right }; Grid.SetColumn(value, 2); row.Children.Add(value); labels[i] = value;
                 slider.ValueChanged += delegate { UpdatePreview(name); }; rgbPanel.Children.Add(row);
             }
-            sliders[name] = set; values[name] = labels;
-            var card = new Border { Background = Pastel(color, .88), BorderBrush = Pastel(color, .65),
+            sliders[name] = set; values[name] = labels; editorChannels[name] = channels;
+            var card = new Border { Background = PaletteEditorBackground(color), BorderBrush = PaletteEditorBorder(color),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Padding = new Thickness(12, 5, 12, 4),
                 Margin = new Thickness(4, 0, 4, 5), Child = box };
             editorCards[name] = card; UpdatePreview(name); return card;
@@ -963,13 +1108,19 @@ namespace FamilyPlanner
         {
             if (!sliders.ContainsKey(name)) return;
             var s = sliders[name]; var c = Color.FromRgb((byte)s[0].Value, (byte)s[1].Value, (byte)s[2].Value);
-            previews[name].Background = new SolidColorBrush(c);
+            previews[name].Background = PaletteEditorPreview(c);
             if (editorCards.ContainsKey(name))
             {
-                editorCards[name].Background = Pastel(c, .88);
-                editorCards[name].BorderBrush = Pastel(c, .65);
+                editorCards[name].Background = PaletteEditorBackground(c);
+                editorCards[name].BorderBrush = PaletteEditorBorder(c);
             }
-            for (var i = 0; i < 3; i++) values[name][i].Text = ((int)s[i].Value).ToString();
+            var foreground = PaletteEditorForeground(c);
+            if (editorTitles.ContainsKey(name)) editorTitles[name].Foreground = foreground;
+            for (var i = 0; i < 3; i++)
+            {
+                values[name][i].Text = ((int)s[i].Value).ToString(); values[name][i].Foreground = foreground;
+                if (editorChannels.ContainsKey(name)) editorChannels[name][i].Foreground = foreground;
+            }
         }
         string Hex(string name)
         {
@@ -1062,12 +1213,21 @@ namespace FamilyPlanner
             content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center); border.AppendChild(content);
             button.Template = new ControlTemplate(typeof(Button)) { VisualTree = border };
         }
-        static Brush Pastel(Color color, double whiteRatio)
+        Brush PaletteEditorBackground(Color color)
         {
-            return new SolidColorBrush(Color.FromRgb(
-                (byte)(color.R + (255 - color.R) * whiteRatio),
-                (byte)(color.G + (255 - color.G) * whiteRatio),
-                (byte)(color.B + (255 - color.B) * whiteRatio)));
+            return new SolidColorBrush(CategoryColorSystem.Background(ThemeId, color));
+        }
+        Brush PaletteEditorBorder(Color color)
+        {
+            return new SolidColorBrush(CategoryColorSystem.EditorBorder(ThemeId, color));
+        }
+        Brush PaletteEditorForeground(Color color)
+        {
+            return new SolidColorBrush(CategoryColorSystem.Foreground(ThemeId, color));
+        }
+        Brush PaletteEditorPreview(Color color)
+        {
+            return new SolidColorBrush(CategoryColorSystem.Background("classic", color));
         }
         static Brush Brush(string hex) { return (Brush)new BrushConverter().ConvertFromString(hex); }
     }

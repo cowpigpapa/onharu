@@ -11,6 +11,7 @@ namespace FamilyPlanner
     {
         [DataMember(Name = "access_token", EmitDefaultValue = false)] public string AccessToken = null;
         [DataMember(Name = "refresh_token", EmitDefaultValue = false)] public string RefreshToken = null;
+        [DataMember(Name = "id_token", EmitDefaultValue = false)] public string IdToken = null;
         [DataMember(Name = "expires_in", EmitDefaultValue = false)] public int ExpiresIn = 0;
         [DataMember(Name = "error", EmitDefaultValue = false)] public string Error = null;
         [DataMember(Name = "error_description", EmitDefaultValue = false)] public string ErrorDescription = null;

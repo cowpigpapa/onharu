@@ -8,7 +8,7 @@ namespace FamilyPlanner
     {
         public static void BackupPreUpgradeOnce()
         {
-            var source = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3");
+            var source = AppDataPaths.Root;
             var target = Path.Combine(source, "pre-2.1-backup");
             BackupPreUpgrade(source, target);
         }

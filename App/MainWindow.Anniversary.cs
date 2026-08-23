@@ -23,9 +23,14 @@ namespace FamilyPlanner
                 .OrderBy(x => Math.Abs((x.Start.Date - DateTime.Today).Days)).ThenBy(x => x.Start).ThenBy(x => x.Title).ToList();
             if (ddayItems.Count == 0) return;
 
+            var ddayColor = Colors["D-Day"];
+            var ddayForeground = new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, ddayColor));
+            var ddayBackground = new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, ddayColor));
+            var ddayBorder = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, ddayColor));
+
             var stack = new StackPanel();
             var heading = new DockPanel { Height = 24, Margin = new Thickness(1, 0, 3, ddaySectionCollapsed ? 0 : 7), LastChildFill = true };
-            heading.Children.Add(SectionTitleButton("◈  D-Day (" + ddayItems.Count + "개)", "#0369A1",
+            heading.Children.Add(SectionTitleButton("◈  D-Day (" + ddayItems.Count + "개)", ddayForeground,
                 ddaySectionCollapsed ? "D-Day 펼치기" : "D-Day 접기", delegate { ddaySectionCollapsed = !ddaySectionCollapsed; RenderDetail(); }));
             stack.Children.Add(heading);
 
@@ -38,24 +43,24 @@ namespace FamilyPlanner
                     var isToday = days == 0;
                     var label = isToday ? "D-Day" : days > 0 ? "D-" + days.ToString("N0") : "D+" + (-days).ToString("N0");
                     var content = new TextBlock { Tag = item, Cursor = Cursors.Hand, Text = "◈ " + item.Title + " · " + label,
-                        FontSize = Ui(11), Foreground = Brush(isToday ? "#075985" : "#0369A1"), FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal, TextTrimming = TextTrimming.CharacterEllipsis,
+                        FontSize = Ui(11), Foreground = ddayForeground, FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal, TextTrimming = TextTrimming.CharacterEllipsis,
                         ToolTip = item.Title + " · " + item.Start.ToString("yyyy.MM.dd") + " · " + label };
                     content.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
                     { if (e.ClickCount == 2) { OpenEdit(item); e.Handled = true; } else e.Handled = true; };
-                    stack.Children.Add(new Border { Background = isToday ? Brush("#E0F2FE") : Brushes.Transparent,
-                        BorderBrush = Brush(isToday ? "#38BDF8" : "#BAE6FD"), BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, 1),
+                    stack.Children.Add(new Border { Background = isToday ? ddayBackground : Brushes.Transparent,
+                        BorderBrush = ddayBorder, BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, 1),
                         CornerRadius = isToday ? new CornerRadius(8) : new CornerRadius(0), Margin = isToday ? new Thickness(0, 1, 0, 2) : new Thickness(0),
                         Padding = isToday ? new Thickness(7, 5, 7, 5) : new Thickness(2, 5, 2, 5), Child = content });
                 }
                 if (ddayItems.Count > 5)
                 {
                     var toggle = new Button { Content = ddayCardsExpanded ? "접기" : "+ " + (ddayItems.Count - 5) + "개 더보기",
-                        Height = 29, Background = Brushes.Transparent, Foreground = Brush("#0284C7"), BorderThickness = new Thickness(0),
+                        Height = 29, Background = Brushes.Transparent, Foreground = ddayForeground, BorderThickness = new Thickness(0),
                         FontSize = Ui(11), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand };
                     toggle.Click += delegate { ddayCardsExpanded = !ddayCardsExpanded; RenderDetail(); }; stack.Children.Add(toggle);
                 }
             }
-            detail.Children.Add(new Border { Background = Brush("#F0F9FF"), BorderBrush = Brush("#BAE6FD"), BorderThickness = new Thickness(1),
+            detail.Children.Add(new Border { Background = ddayBackground, BorderBrush = ddayBorder, BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
         }
 
@@ -71,10 +76,10 @@ namespace FamilyPlanner
             button.Template = ContentOnlyButtonTemplate(); return button;
         }
 
-        Button SectionTitleButton(string text, string foreground, string tooltip, RoutedEventHandler click)
+        Button SectionTitleButton(string text, Brush foreground, string tooltip, RoutedEventHandler click)
         {
             var title = new TextBlock { Text = text, FontSize = Ui(13), FontWeight = FontWeights.Bold,
-                Foreground = Brush(foreground), VerticalAlignment = VerticalAlignment.Center };
+                Foreground = foreground, VerticalAlignment = VerticalAlignment.Center };
             var button = new Button { Content = title, Height = 24, Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0), Padding = new Thickness(0), Margin = new Thickness(0) };
             button.HorizontalContentAlignment = HorizontalAlignment.Left; button.VerticalContentAlignment = VerticalAlignment.Center;
@@ -97,10 +102,14 @@ namespace FamilyPlanner
                 .Select(x => x.OrderBy(y => y.AnniversaryDate).First())
                 .OrderBy(x => AnniversaryRemainingDays(x.AnniversaryDate, DateTime.Today)).ThenBy(x => x.Title).ToList();
             var stack = new StackPanel();
+            var anniversaryColor = Colors["기념일"];
+            var anniversaryForeground = new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, anniversaryColor));
+            var anniversaryBackground = new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, anniversaryColor));
+            var anniversaryBorder = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, anniversaryColor));
             var heading = new DockPanel { Height = 24, Margin = new Thickness(1, 0, 3, anniversarySectionCollapsed ? 0 : 7), LastChildFill = true };
-            var makeLabel = new TextBlock { Text = "만들기", Foreground = Brush("#0F766E"), FontSize = Ui(10), FontWeight = FontWeights.SemiBold,
+            var makeLabel = new TextBlock { Text = "만들기", Foreground = anniversaryForeground, FontSize = Ui(10), FontWeight = FontWeights.SemiBold,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            var makeFace = new Border { Width = 43, Height = 22, Background = Brush("#DFF7F1"), BorderBrush = Brush("#B7E8DC"),
+            var makeFace = new Border { Width = 43, Height = 22, Background = anniversaryBackground, BorderBrush = anniversaryBorder,
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Child = makeLabel,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             var make = Button("", delegate { OpenAnniversary(null); }, 45); make.Content = makeFace; make.Height = 24;
@@ -109,12 +118,12 @@ namespace FamilyPlanner
             make.Cursor = Cursors.Hand; make.ToolTip = "기념일 만들기";
             make.Template = ContentOnlyButtonTemplate();
             DockPanel.SetDock(make, Dock.Right); heading.Children.Add(make);
-            heading.Children.Add(SectionTitleButton("✦  기념일 (" + anniversaries.Count + "개)", "#6D28D9",
+            heading.Children.Add(SectionTitleButton("✦  기념일 (" + anniversaries.Count + "개)", anniversaryForeground,
                 anniversarySectionCollapsed ? "기념일 펼치기" : "기념일 접기", delegate { anniversarySectionCollapsed = !anniversarySectionCollapsed; RenderDetail(); }));
             stack.Children.Add(heading);
             if (anniversarySectionCollapsed)
             {
-                detail.Children.Add(new Border { Background = Brush("#FAF5FF"), BorderBrush = Brush("#DDD6FE"), BorderThickness = new Thickness(1),
+                detail.Children.Add(new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
                 return;
             }
@@ -123,7 +132,7 @@ namespace FamilyPlanner
             {
                 var isToday = AnniversaryRemainingDays(item.AnniversaryDate, DateTime.Today) == 0;
                 var content = new TextBlock { Tag = item, Cursor = Cursors.Hand, Text = "✦ " + item.Title + " · " + AnniversarySummary(item, DateTime.Today),
-                    FontSize = Ui(11), Foreground = Brush(isToday ? "#BE185D" : "#6D28D9"), FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
+                    FontSize = Ui(11), Foreground = anniversaryForeground, FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
                     TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = item.Title + " · " + AnniversarySummary(item, DateTime.Today) };
                 content.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
                 {
@@ -131,8 +140,8 @@ namespace FamilyPlanner
                     else if (e.ClickCount == 2) { OpenEdit(item); e.Handled = true; }
                     else e.Handled = true;
                 };
-                stack.Children.Add(new Border { Background = isToday ? Brush("#FDF2F8") : Brushes.Transparent,
-                    BorderBrush = Brush(isToday ? "#F472B6" : "#E9D5FF"), BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, 1),
+                stack.Children.Add(new Border { Background = isToday ? anniversaryBackground : Brushes.Transparent,
+                    BorderBrush = anniversaryBorder, BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, 1),
                     CornerRadius = isToday ? new CornerRadius(8) : new CornerRadius(0), Margin = isToday ? new Thickness(0, 1, 0, 2) : new Thickness(0),
                     Padding = isToday ? new Thickness(7, 5, 7, 5) : new Thickness(2, 5, 2, 5), Child = content });
             }
@@ -140,12 +149,12 @@ namespace FamilyPlanner
             {
                 var remainingCount = anniversaries.Count - 5;
                 var toggle = new Button { Content = anniversaryCardsExpanded ? "접기" : "+ " + remainingCount + "개 더보기",
-                    Height = 29, Background = Brushes.Transparent, Foreground = Brush("#7C3AED"), BorderThickness = new Thickness(0),
+                    Height = 29, Background = Brushes.Transparent, Foreground = anniversaryForeground, BorderThickness = new Thickness(0),
                     FontSize = Ui(11), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand };
                 toggle.Click += delegate { anniversaryCardsExpanded = !anniversaryCardsExpanded; RenderDetail(); };
                 stack.Children.Add(toggle);
             }
-            detail.Children.Add(new Border { Background = Brush("#FAF5FF"), BorderBrush = Brush("#DDD6FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
+            detail.Children.Add(new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
         }
 
         static ControlTemplate ContentOnlyButtonTemplate()
@@ -161,7 +170,7 @@ namespace FamilyPlanner
         {
             if (existing == null && AnniversaryCount() >= 10) { ShowNotice("기념일은 최대 10개까지 등록할 수 있습니다. 기존 기념일을 더블클릭해 삭제한 뒤 다시 등록해 주세요.", true); return; }
             var window = new AnniversaryWindow(existing); PlaceCalendarDialog(window);
-            if (window.ShowDialog() != true) { if (positionLocked && IsVisible) PublishAndHide(); return; }
+            if (ShowBlockingDialog(window) != true) { if (positionLocked && IsVisible) PublishAndHide(); return; }
             if (existing != null)
             {
                 if (!string.IsNullOrWhiteSpace(existing.SeriesId)) items.RemoveAll(x => x.SeriesId == existing.SeriesId);

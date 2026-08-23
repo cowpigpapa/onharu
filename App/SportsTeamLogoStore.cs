@@ -12,7 +12,7 @@ namespace FamilyPlanner
     internal static class SportsTeamLogoStore
     {
         const string RawRoot = "https://raw.githubusercontent.com/fernandokkang/baseball_community/develop/src/main/resources/static/images/emblems/";
-        static readonly string Folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "kbo-team-logos-v1");
+        static readonly string Folder = Path.Combine(AppDataPaths.Root, "kbo-team-logos");
         static readonly string[] Teams = { "KIA", "KT", "LG", "NC", "SSG", "두산", "롯데", "삼성", "키움", "한화" };
         static bool ready;
         internal static IEnumerable<string> Names { get { return Teams; } }

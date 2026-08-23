@@ -1,4 +1,4 @@
-param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.1-local-test.exe'))
+param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe'))
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path -LiteralPath $Exe).Path)
 $type = $assembly.GetType('FamilyPlanner.V21Migration', $true)
@@ -9,11 +9,11 @@ try {
     New-Item -ItemType Directory -Path $source | Out-Null
     [IO.File]::WriteAllText((Join-Path $source 'settings.json'), 'settings-v2')
     [IO.File]::WriteAllText((Join-Path $source 'items-local.json'), 'items-v2')
-    [IO.File]::WriteAllText((Join-Path $source 'google-v3.token'), 'secret')
+    [IO.File]::WriteAllText((Join-Path $source 'google-token.dat'), 'secret')
     $method.Invoke($null, [object[]]@([string]$source, [string]$target)) | Out-Null
     if ([IO.File]::ReadAllText((Join-Path $target 'settings.json')) -ne 'settings-v2') { throw 'Settings snapshot mismatch.' }
     if ([IO.File]::ReadAllText((Join-Path $target 'items-local.json')) -ne 'items-v2') { throw 'Items snapshot mismatch.' }
-    if (Test-Path -LiteralPath (Join-Path $target 'google-v3.token')) { throw 'Google token must not be copied.' }
+    if (Test-Path -LiteralPath (Join-Path $target 'google-token.dat')) { throw 'Google token must not be copied.' }
     if (-not (Test-Path -LiteralPath (Join-Path $target 'completed.txt'))) { throw 'Migration marker is missing.' }
     [IO.File]::WriteAllText((Join-Path $source 'settings.json'), 'changed')
     $method.Invoke($null, [object[]]@([string]$source, [string]$target)) | Out-Null

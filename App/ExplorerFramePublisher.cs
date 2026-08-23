@@ -14,7 +14,7 @@ namespace FamilyPlanner
 {
     sealed class ExplorerFramePublisher : IDisposable
     {
-        const string MappingName = "Local\\OnharuV3.DesktopFrame";
+        const string MappingName = "Local\\Onharu.DesktopFrame";
         const int Magic = 0x3356484F, HitMapMagic = 0x32544948, HeaderBytes = 64, MaxWidth = 4096, MaxHeight = 2160, MaxHitRecords = 256;
         const long SlotCapacity = (long)MaxWidth * MaxHeight * 4;
         const int HitMapBytes = 16 + MaxHitRecords * 28;

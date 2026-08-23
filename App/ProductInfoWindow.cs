@@ -21,7 +21,7 @@ namespace FamilyPlanner
             OnharuPopupChrome.EnableDrag(this, header); panel.Children.Add(header);
             panel.Children.Add(new TextBlock { Text = "바탕화면에서 시작하는 나의 하루", FontSize = 14,
                 Foreground = Brush("#6366F1"), Margin = new Thickness(0, 0, 0, 17) });
-            panel.Children.Add(Card("버전", "2.1.0"));
+            panel.Children.Add(Card("버전", "2.2.0"));
             panel.Children.Add(Card("데이터", "로컬 일정은 내 PC에 저장 · Google 일정은 Google에서 관리"));
             panel.Children.Add(Card("주요 기능", "바탕화면 달력 · Google 동기화 · Todo · 반복 일정 · D-Day · 기념일"));
             panel.Children.Add(new TextBlock { Text = "개인 명의 프리웨어 · 광고 및 유료 기능 잠금 없음\nMADE BY JUAN.HJLEE",

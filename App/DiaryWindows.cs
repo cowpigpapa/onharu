@@ -100,7 +100,7 @@ namespace FamilyPlanner
             Grid.SetRow(body, 2); root.Children.Add(body);
 
             var footer = new DockPanel { Margin = new Thickness(0, 12, 0, 0), LastChildFill = false };
-            var save = OnharuPopupChrome.Button("✓  일기 저장", 112, "#4F46E5", "#FFFFFF");
+            var save = OnharuPopupChrome.PrimaryButton("✓  일기 저장", 112);
             save.FontWeight = FontWeights.Bold; save.Background = SaveGradient(); DockPanel.SetDock(save, Dock.Right); footer.Children.Add(save);
             var localOnly = new TextBlock { Text = "이 PC에만 안전하게 저장됩니다.", Foreground = Brush("#94A3B8"), FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
             DockPanel.SetDock(localOnly, Dock.Left); footer.Children.Add(localOnly);
@@ -177,9 +177,8 @@ namespace FamilyPlanner
         readonly TextBlock readingTitle = new TextBlock();
         readonly TextBlock readingBody = new TextBlock();
         readonly TextBox search = new TextBox();
-        readonly Button modeButton;
-        readonly Button newestButton;
-        readonly Button oldestButton;
+        readonly OnharuSegmentedSwitch modeSwitch;
+        readonly OnharuSegmentedSwitch sortSwitch;
         readonly Button previousButton;
         readonly Button nextButton;
         List<DiaryEntry> entries = new List<DiaryEntry>();
@@ -199,17 +198,13 @@ namespace FamilyPlanner
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); root.RowDefinitions.Add(new RowDefinition());
             var header = new DockPanel { Margin = new Thickness(0, 0, 0, 12), Background = Brushes.Transparent };
             var close = OnharuPopupChrome.CloseButton(this); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
-            var add = OnharuPopupChrome.Button("＋ 새 일기", 88, "#4F46E5", "#FFFFFF"); add.FontWeight = FontWeights.Bold; add.Margin = new Thickness(0, 0, 8, 0);
+            var add = OnharuPopupChrome.PrimaryButton("＋ 새 일기", 92); add.Margin = new Thickness(0, 0, 8, 0);
             DockPanel.SetDock(add, Dock.Right); header.Children.Add(add);
-            modeButton = OnharuPopupChrome.Button("한 장 보기", 88, "#EEF2FF", "#4338CA"); modeButton.Margin = new Thickness(0, 0, 8, 0);
-            DockPanel.SetDock(modeButton, Dock.Right); header.Children.Add(modeButton);
-            var sortButtons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 8, 0) };
-            newestButton = OnharuPopupChrome.Button("최신순", 58, "#4F46E5", "#FFFFFF"); newestButton.Height = 32;
-            oldestButton = OnharuPopupChrome.Button("오래된순", 68, "#F1F5F9", "#64748B"); oldestButton.Height = 32; oldestButton.Margin = new Thickness(4, 0, 0, 0);
-            sortButtons.Children.Add(newestButton); sortButtons.Children.Add(oldestButton); DockPanel.SetDock(sortButtons, Dock.Right); header.Children.Add(sortButtons);
-            var title = new StackPanel { Orientation = Orientation.Horizontal };
-            title.Children.Add(new Border { Width = 36, Height = 36, Margin = new Thickness(0, 0, 10, 0), Background = Brush("#EEF2FF"), BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Child = new TextBlock { Text = "✎", FontSize = 19, FontFamily = new FontFamily("Segoe UI Symbol"), Foreground = Brush("#4F46E5"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } });
-            title.Children.Add(new TextBlock { Text = "나의 일기장", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Brush("#1E293B"), VerticalAlignment = VerticalAlignment.Center }); header.Children.Add(title);
+            modeSwitch = new OnharuSegmentedSwitch(new[] { "목록 보기", "한 장 보기" }, new[] { 72.0, 72.0 }, 0, delegate(int index) { SetPageMode(index == 1); });
+            modeSwitch.Margin = new Thickness(0, 0, 8, 0); DockPanel.SetDock(modeSwitch, Dock.Right); header.Children.Add(modeSwitch);
+            sortSwitch = new OnharuSegmentedSwitch(new[] { "최신순", "오래된순" }, new[] { 58.0, 68.0 }, 0, delegate(int index) { oldestFirst = index == 1; SortEntries(); RefreshList(); });
+            sortSwitch.Margin = new Thickness(0, 0, 8, 0); DockPanel.SetDock(sortSwitch, Dock.Right); header.Children.Add(sortSwitch);
+            header.Children.Add(OnharuPopupChrome.FeatureTitle("✎", "나의 일기장"));
             OnharuPopupChrome.EnableDrag(this, header); root.Children.Add(header);
 
             bodyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(270) }); bodyGrid.ColumnDefinitions.Add(new ColumnDefinition());
@@ -246,9 +241,7 @@ namespace FamilyPlanner
             edit.Click += delegate { if (current != null) Edit(current.Date, current); };
             previousButton.Click += delegate { Move(false); }; nextButton.Click += delegate { Move(true); };
             search.TextChanged += delegate { RefreshList(); };
-            newestButton.Click += delegate { oldestFirst = false; UpdateSortButtons(); SortEntries(); RefreshList(); };
-            oldestButton.Click += delegate { oldestFirst = true; UpdateSortButtons(); SortEntries(); RefreshList(); };
-            modeButton.Click += delegate { pageMode = !pageMode; bodyGrid.ColumnDefinitions[0].Width = pageMode ? new GridLength(0) : new GridLength(270); left.Visibility = pageMode ? Visibility.Collapsed : Visibility.Visible; modeButton.Content = pageMode ? "목록 보기" : "한 장 보기"; };
+            listPanel = left;
             Content = OnharuPopupChrome.Shell(root); Loaded += delegate { Reload(initialDate); };
         }
 
@@ -304,10 +297,12 @@ namespace FamilyPlanner
             entries = oldestFirst ? entries.OrderBy(x => x.Date).ToList() : entries.OrderByDescending(x => x.Date).ToList();
         }
 
-        void UpdateSortButtons()
+        FrameworkElement listPanel;
+
+        void SetPageMode(bool singlePage)
         {
-            newestButton.Background = Brush(oldestFirst ? "#F1F5F9" : "#4F46E5"); newestButton.Foreground = Brush(oldestFirst ? "#64748B" : "#FFFFFF");
-            oldestButton.Background = Brush(oldestFirst ? "#4F46E5" : "#F1F5F9"); oldestButton.Foreground = Brush(oldestFirst ? "#FFFFFF" : "#64748B");
+            pageMode = singlePage; bodyGrid.ColumnDefinitions[0].Width = pageMode ? new GridLength(0) : new GridLength(270);
+            if (listPanel != null) listPanel.Visibility = pageMode ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void Move(bool newer)

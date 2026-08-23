@@ -1,9 +1,9 @@
-# ONHARU 2.1 프로젝트 인덱스
+# ONHARU 2.2 프로젝트 인덱스
 
 ## 한눈에 보는 구조
 
 ```text
-Onharu_v2.1
+Onharu_v2.2
 ├─ App               ① 달력 프로그램 개발 소스
 ├─ ExplorerLayer     ② 아이콘 아래 표시 기술 개발 소스
 ├─ Installer         ③ 설치 파일 제작 설정
@@ -75,7 +75,7 @@ ONHARU의 핵심 특수 기술을 담당하는 C++ 소스다. App이 만든 달�
 - `README.md`: 사용자 기능과 사용법
 - `PRD.md`: 제품 요구사항
 - `BUILD_AND_RELEASE.md`: 소스에서 설치 파일을 만드는 전체 과정
-- `V2.1_ROADMAP.md`: 2.1 기능 목록과 진행 상태
+- `TODO_NEXT.md`: 2.2 스킨 검증과 이후 장기 계획
 - `V2.1_TEST_CHECKLIST.md`: 실제 화면·Explorer·Google 수동 시험 순서
 - `TODO_NEXT.md`: `onharu.net`, 다국어, 자동 업데이트, 일반 공개 배포와 향후 Google Plus 전환을 위한 확정 작업 목록
 - `AGENTS.md`: 코드 책임 분리, ONHARU 디자인, 검증·기록을 이후 작업에도 유지하는 프로젝트 전용 지침
@@ -83,7 +83,8 @@ ONHARU의 핵심 특수 기술을 담당하는 C++ 소스다. App이 만든 달�
 - `DEVELOPMENT_HISTORY.md`: V1부터 이어진 제품 결정
 - `build-release.ps1`: App + ExplorerLayer + Installer를 한 번에 만드는 공식 빌드 명령
 - `build-local-test.ps1`: 최신 App + ExplorerLayer 로컬 시험본을 `Tests/LocalTest` 한 곳에 생성
-- `check-v21.ps1`: 빌드와 자동 검사 13종을 한 번에 실행
+- `check-v22.ps1`: 빌드와 자동 검사 16종을 한 번에 실행
+- `Docs/Architecture/THEME_SYSTEM_2.2.md`: 스킨 팔레트, 안정성 경계와 확장 규칙
 
 시험 산출물은 `Tests`, 사용자 배포물은 `Release`로 분리한다. 경로를 바꿀 때는 빌드·검사 스크립트도 함께 수정해야 한다.
 

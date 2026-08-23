@@ -9,6 +9,7 @@ namespace FamilyPlanner
     {
         void HandleDesktopAction(int action, int value)
         {
+            if (ActivateBlockingDialog()) return;
             if (action == 109 && PlacementTrace.IsEnabled)
             {
                 if (positionLocked) EnterEditMode();
@@ -36,7 +37,7 @@ namespace FamilyPlanner
             else if (action == 20) { settings.SidebarVisible = !settings.SidebarVisible; Store.SaveSettings(settings); }
             else if (action == 25) { ExecuteCloseButtonAction(); return; }
             else if (action == 28) { OpenCloseContextMenu(); return; }
-            else if (action == 26) { settings.Opacity = Math.Max(.10, Math.Min(.98, value / 100.0)); Opacity = settings.Opacity; explorerFrame.UpdateOpacity(settings.Opacity); Store.SaveSettings(settings); }
+            else if (action == 26) { settings.Opacity = Math.Max(.10, Math.Min(1.0, value / 100.0)); Opacity = settings.Opacity; explorerFrame.UpdateOpacity(settings.Opacity); Store.SaveSettings(settings); }
             else return;
             RenderAll();
         }

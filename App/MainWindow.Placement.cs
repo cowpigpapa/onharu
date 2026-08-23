@@ -57,6 +57,7 @@ namespace FamilyPlanner
 
         void LockCurrentPlacement()
         {
+            if (RestoreBlockingDialog()) { UpdateModeButtons(); return; }
             if (positionLocked) return;
             positionLocked = true;
             settings.HasPosition = true; settings.Left = Left; settings.Top = Top;

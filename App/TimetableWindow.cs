@@ -35,15 +35,12 @@ namespace FamilyPlanner
             root.RowDefinitions.Add(new RowDefinition());
             var header = new DockPanel { Margin = new Thickness(0, 0, 0, 8), Background = Brushes.Transparent };
             var close = OnharuPopupChrome.CloseButton(this); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
-            var save = OnharuPopupChrome.Button("✓  시간표 저장", 118, "#4F46E5", "#FFFFFF");
-            save.Height = 32; save.Margin = new Thickness(0, 0, 8, 0); save.FontWeight = FontWeights.Bold; save.Background = SaveGradient();
+            var save = OnharuPopupChrome.PrimaryButton("✓  시간표 저장", 118);
+            save.Height = 32; save.Margin = new Thickness(0, 0, 8, 0);
             DockPanel.SetDock(save, Dock.Right); header.Children.Add(save);
             var toggle = OnharuPopupChrome.Button("⚙  시간표 설정", 104, "#EEF2FF", "#4338CA"); toggle.Margin = new Thickness(0, 0, 8, 0);
             DockPanel.SetDock(toggle, Dock.Right); header.Children.Add(toggle);
-            var title = new StackPanel { Orientation = Orientation.Horizontal };
-            title.Children.Add(new Border { Width = 32, Height = 32, Margin = new Thickness(0, 0, 9, 0), Background = Brush("#EEF2FF"), BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), VerticalAlignment = VerticalAlignment.Center, Child = new TextBlock { Text = "▦", FontSize = 16, FontFamily = new FontFamily("Segoe UI Symbol"), FontWeight = FontWeights.Bold, Foreground = Brush("#4F46E5"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } });
-            title.Children.Add(new TextBlock { Text = "나의 시간표", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = GradientText(), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 2, 0, 0) });
-            header.Children.Add(title);
+            header.Children.Add(OnharuPopupChrome.FeatureTitle("▦", "나의 시간표"));
             OnharuPopupChrome.EnableDrag(this, header);
             root.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
             {
@@ -134,8 +131,6 @@ namespace FamilyPlanner
         static ComboBoxItem Item(string text, int tag) { return new ComboBoxItem { Content = text, Tag = tag }; }
         static int SelectedTag(ComboBox combo) { return (int)((ComboBoxItem)combo.SelectedItem).Tag; }
         static void Select(ComboBox combo, int value) { foreach (ComboBoxItem item in combo.Items) if ((int)item.Tag == value) { combo.SelectedItem = item; return; } combo.SelectedIndex = 0; }
-        static LinearGradientBrush SaveGradient() { var value = new LinearGradientBrush { StartPoint = new Point(0, .5), EndPoint = new Point(1, .5) }; value.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#3977E8"), 0)); value.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#7C5CE5"), 1)); return value; }
-        static LinearGradientBrush GradientText() { var value = new LinearGradientBrush { StartPoint = new Point(0, .5), EndPoint = new Point(1, .5) }; value.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0EA5E9"), 0)); value.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#7C3AED"), 1)); return value; }
         static bool HasInteractiveParent(DependencyObject source) { while (source != null) { if (source is Button || source is ComboBox || source is TextBox || source is CheckBox || source is RadioButton) return true; source = VisualTreeHelper.GetParent(source); } return false; }
         static SolidColorBrush Brush(string hex) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); }
     }

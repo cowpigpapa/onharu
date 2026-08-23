@@ -59,6 +59,10 @@ namespace FamilyPlanner
         {
             if (!string.IsNullOrWhiteSpace(settings.BusinessColor)) Colors["업무일정"] = settings.BusinessColor;
             if (!string.IsNullOrWhiteSpace(settings.PersonalColor)) Colors["개인일정"] = settings.PersonalColor;
+            if (!string.IsNullOrWhiteSpace(settings.BaseballColor)) Colors["야구"] = settings.BaseballColor;
+            if (!string.IsNullOrWhiteSpace(settings.DdayColor)) Colors["D-Day"] = settings.DdayColor;
+            if (!string.IsNullOrWhiteSpace(settings.AnniversaryColor)) Colors["기념일"] = settings.AnniversaryColor;
+            if (!string.IsNullOrWhiteSpace(settings.HolidayColor)) Colors["국경일"] = settings.HolidayColor;
             positionLocked = settings.HasPosition ? settings.PositionLocked : true;
             calendarMinimized = false;
             if (settings.StartupPositionMode == "locked") positionLocked = true;
@@ -69,14 +73,15 @@ namespace FamilyPlanner
 
             var startDate = settings.StartViewMode == "last" && settings.LastShownDate.Year >= 1900
                 ? settings.LastShownDate : DateTime.Today;
-            shownMonth = settings.CalendarRangeMode == "weeks" ? startDate
+            temporaryMonthView = settings.UseMonthView;
+            shownMonth = !temporaryMonthView ? startDate
                 : new DateTime(startDate.Year, startDate.Month, 1);
             selectedDate = startDate.Date;
             Title = "온하루"; Width = settings.Width >= 820 ? settings.Width : 1120;
             Height = settings.Height >= 560 ? settings.Height : 700; MinWidth = 820; MinHeight = 560;
             WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
             FontSize = settings.FontSize > 0 ? settings.FontSize : 12;
-            UpdateCompactHeaderTypography(); monthTitle.Foreground = Brush("#4338CA"); selectedTitle.FontSize = Ui(16);
+            UpdateCompactHeaderTypography(); monthTitle.Foreground = BrandBrush(); selectedTitle.Foreground = T("Text"); selectedTitle.FontSize = Ui(16);
             Opacity = settings.Opacity;
             if (settings.HasPosition)
             {
@@ -101,6 +106,7 @@ namespace FamilyPlanner
                 else ShowPositionEditor();
                 if (GoogleCalendar.IsConnected) await SyncGoogle(false);
                 StartAutoSync();
+                await CheckForUpdatesAsync(false);
             };
             Closing += delegate
             {

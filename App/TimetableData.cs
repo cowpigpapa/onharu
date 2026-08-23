@@ -30,7 +30,7 @@ namespace FamilyPlanner
 
     internal static class TimetableStorage
     {
-        static readonly string Folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3");
+        static readonly string Folder = AppDataPaths.Root;
         static readonly string PathName = Path.Combine(Folder, "timetable.json");
 
         internal static TimetableData Load()

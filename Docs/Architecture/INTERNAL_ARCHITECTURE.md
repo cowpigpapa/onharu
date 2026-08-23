@@ -10,9 +10,9 @@
 
 ## 저장 격리
 
-- 프로세스 mutex: `Local\\OnharuV3.SingleInstance`
-- 데이터 mutex: `Local\\OnharuV3.DataFileLock`
-- 사용자 데이터: `%LOCALAPPDATA%\\OnharuV3`
+- 프로세스 mutex: `Local\\Onharu.SingleInstance`
+- 데이터 mutex: `Local\\Onharu.DataFileLock`
+- 사용자 데이터와 백업: `%LOCALAPPDATA%\\Onharu`
 - 최초 실행 때 `%LOCALAPPDATA%\\FamilyPlanner`를 읽기 전용 원본으로 한 번 복사한다.
 - V1 위치·크기·디자인 설정과 일정, 백업, Google 토큰은 2.0부터 분리된 내부 저장소 복사본에서만 이후 수정된다.
 

@@ -101,6 +101,7 @@ namespace FamilyPlanner
 
         void EnterEditMode()
         {
+            if (RestoreBlockingDialog()) { UpdateModeButtons(); return; }
             PlacementTrace.Write("ENTER_EDIT begin");
             positionLocked = false;
             settings.PositionLocked = false;
@@ -108,6 +109,11 @@ namespace FamilyPlanner
             UpdateModeButtons();
             ShowPositionEditor();
             PlacementTrace.Write("ENTER_EDIT queued-show");
+        }
+
+        bool RestoreBlockingDialog()
+        {
+            return ActivateBlockingDialog();
         }
 
         void ShowPositionEditor()

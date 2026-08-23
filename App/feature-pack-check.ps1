@@ -31,8 +31,8 @@ foreach ($nativeFrameFeature in @('Native.GetWindowRect(handle, out nativeWindow
     if (-not $publisherSource.Contains($nativeFrameFeature)) { throw "Native HWND frame authority is missing: $nativeFrameFeature" }
 }
 if ((Get-Content (Join-Path $PSScriptRoot 'NoticeWindow.cs') -Raw -Encoding UTF8).Contains('"✓  일정 가져오기"')) { throw 'Notice heading must not be hard-coded to import.' }
-$exe = if ([string]::IsNullOrWhiteSpace($ExePath)) { Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.1-local-test.exe' } else { $ExePath }
-if (-not (Test-Path -LiteralPath $exe)) { throw 'Build OnharuV3.App.exe first.' }
+$exe = if ([string]::IsNullOrWhiteSpace($ExePath)) { Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe' } else { $ExePath }
+if (-not (Test-Path -LiteralPath $exe)) { throw 'Build Onharu.App.exe first.' }
 
 $assembly = [Reflection.Assembly]::LoadFrom($exe)
 $backupType = $assembly.GetType('FamilyPlanner.BackupWindow', $true)
@@ -55,7 +55,9 @@ foreach ($case in $cases) {
 
 $settingsType = $assembly.GetType('FamilyPlanner.PlannerSettings', $true)
 $settings = [Activator]::CreateInstance($settingsType)
-if ($settings.Version -ne 26) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.Version -ne 39) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.ThemeId -ne 'classic') { throw "Theme must default to classic: $($settings.ThemeId)" }
+if (-not $settings.AutomaticUpdateChecks) { throw 'Automatic update checks must default to enabled.' }
 if ($settings.ShowGoogleTasks) { throw 'Google Tasks must be opt-in by default.' }
 if ($settings.UseTimetable) { throw 'Timetable must be opt-in by default.' }
 if (-not $settings.UseDiary) { throw 'Diary must be visible by default.' }
@@ -127,8 +129,14 @@ foreach ($dataActionFeature in @('enum SettingsDataAction', 'RequestedDataAction
 foreach ($removedDataFlag in @('public bool ImportItemsFile', 'public bool ExportItems', 'resetDataAction')) {
     if ($settingsWindowSource.Contains($removedDataFlag)) { throw "일정 데이터 작업 bool 플래그가 다시 추가됐습니다: $removedDataFlag" }
 }
-foreach ($ddayCardFeature in @('(x.Start.Date - DateTime.Today).Days >= -7', 'isToday ? "D-Day"', '"#E0F2FE"', '"#FDF2F8"')) {
+foreach ($ddayCardFeature in @('(x.Start.Date - DateTime.Today).Days >= -7', 'isToday ? "D-Day"', 'Colors["D-Day"]', 'Colors["기념일"]', 'CategoryColorSystem.DetailBackground')) {
     if (-not $mainSource.Contains($ddayCardFeature)) { throw "D-Day 카드 7일 보존 규칙이 누락됐습니다: $ddayCardFeature" }
+}
+$sportsSource = Get-Content (Join-Path $PSScriptRoot 'SportsCalendarWindow.cs') -Raw -Encoding UTF8
+$sportsApiSource = Get-Content (Join-Path $PSScriptRoot 'SportsApiWindows.cs') -Raw -Encoding UTF8
+$plannerSettingsSource = Get-Content (Join-Path $PSScriptRoot 'PlannerSettings.cs') -Raw -Encoding UTF8
+foreach ($sportsScaleFeature in @('SportsCalendarScale = 1.0', 'ViewScaleChanged', 'settings.SportsCalendarScale', 'Store.SaveSettings(settings)')) {
+    if (-not (($plannerSettingsSource + $sportsSource + $sportsApiSource).Contains($sportsScaleFeature))) { throw "KBO view scale persistence is missing: $sportsScaleFeature" }
 }
 if (-not $mainSource.Contains('if (opacitySlider != null) settings.Opacity = Math.Max(opacitySlider.Minimum')) {
     throw '고정 레이어 임시 WPF Opacity가 사용자 설정으로 저장될 수 있습니다.'
@@ -234,9 +242,10 @@ foreach ($settingsGroupingFeature in @('Text = "화면과 동작"', 'Text = "시
 foreach ($independentWeekFeature in @('DayOfWeek ConfiguredFirstDay()', 'settings.WeekNumberRule == "iso" ? DayOfWeek.Monday : DayOfWeek.Sunday')) {
     if (-not $mainSource.Contains($independentWeekFeature)) { throw "Independent week-start or week-number rule is missing: $independentWeekFeature" }
 }
-foreach ($buttonFeedbackFeature in @('System.Windows.Controls.Button.IsPressedProperty', 'System.Windows.Controls.Button.IsMouseOverProperty', 'void FlashDesktopButton(Button button)', 'SettingsGlyph()')) {
+foreach ($buttonFeedbackFeature in @('System.Windows.Controls.Button.IsPressedProperty', 'void FlashDesktopButton(Button button)', 'SettingsGlyph(Brush foreground)')) {
     if (-not $mainSource.Contains($buttonFeedbackFeature)) { throw "Header button feedback or vector settings icon is missing: $buttonFeedbackFeature" }
 }
+if ($mainSource.Contains('System.Windows.Controls.Button.IsMouseOverProperty')) { throw 'Default header buttons must use cursor-only hover feedback.' }
 foreach ($recurrenceDurationFeature in @('durationDays <= 7 && frequency == "weekly"', 'durationDays >= 8 && frequency == "monthly"', 'UpdateEndDateButton(); UpdateRecurrenceAvailability();')) {
     if (-not $addItemSource.Contains($recurrenceDurationFeature)) { throw "Multi-day recurrence duration rule is missing: $recurrenceDurationFeature" }
 }
@@ -308,7 +317,7 @@ foreach ($tenMinuteFeature in @('minuteGrid = new UniformGrid { Columns = 6', 'n
 foreach ($yearlyModeFeature in @('yearlyNth.IsChecked == true ? "yearly_nth" : "yearly_date"', '매년 같은 날짜', '매년 같은 주·요일')) {
     if (-not $addItemSource.Contains($yearlyModeFeature)) { throw "Context-aware yearly recurrence UI is missing: $yearlyModeFeature" }
 }
-foreach ($compactDetailFeature in @('titleText.Inlines.Add(new System.Windows.Documents.Run', 'Foreground = Brush("#94A3B8")', 'if (!item.AllDay && IsMultiDay(item))', 'Margin = new Thickness(0, 8, 0, 0)')) {
+foreach ($compactDetailFeature in @('titleText.Inlines.Add(new System.Windows.Documents.Run', 'Foreground = T("Disabled")', 'if (!item.AllDay && IsMultiDay(item))', 'Margin = new Thickness(0, 8, 0, 0)')) {
     if (-not $mainSource.Contains($compactDetailFeature)) { throw "Compact detail layout is missing: $compactDetailFeature" }
 }
 $categoryOrderSource = Get-Content (Join-Path $PSScriptRoot 'CategoryOrderWindow.cs') -Raw -Encoding UTF8

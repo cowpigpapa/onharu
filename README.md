@@ -2,11 +2,15 @@
 
 ## 다운로드
 
-- [ONHARU 2.1.0 설치 프로그램과 ZIP 다운로드](https://github.com/cowpigpapa/onharu/releases/tag/v2.1.0)
+- [ONHARU 2.2.0 설치 프로그램과 ZIP 다운로드](https://github.com/cowpigpapa/onharu/releases/tag/v2.2.0)
 - 지원 환경: Windows 10/11 x64
 - 이번 개인 프리웨어 배포판은 코드 서명되지 않아 Windows SmartScreen에서 `알 수 없는 게시자` 경고가 나타날 수 있습니다. 공식 릴리스의 `SHA256SUMS.txt`로 파일 무결성을 확인할 수 있습니다.
 
-2.1 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 2.1.0)`로 표시합니다.
+2.2 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.0)`로 표시합니다.
+
+## 2.2 디자인 스킨
+
+2.2는 2.1의 기능과 Explorer 레이어를 유지하면서 `기본`, `블랙`, `컬러` 3종 외형을 선택할 수 있게 합니다. 스킨은 화면 코드를 복제하지 않고 공통 의미 팔레트를 교체하므로 기능 수정은 모든 스킨에 동일하게 반영됩니다. 현재 2.2는 로컬 테스트 단계이며 정식 2.1 설치판을 대체하지 않습니다.
 
 Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격 증명은 공개 저장소에 올리지 않고 로컬 빌드 전용 파일에서 주입합니다.
 
@@ -36,12 +40,12 @@ Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격
 
 ## 1. 실행하기
 
-1. `ONHARU-2.1.0-Setup.exe`를 실행해 설치합니다.
+1. `ONHARU-2.2.0-Setup.exe`를 실행해 설치합니다.
 2. 온하루는 작업표시줄의 일반 창이 아니라 바탕화면 레이어에 표시됩니다.
 3. 화면 오른쪽 아래 알림 영역에도 온하루 아이콘이 생깁니다.
 4. 오른쪽 위 `×`의 기본 동작은 트레이 최소화입니다. 완전히 종료하려면 트레이 메뉴의 `종료`를 사용합니다.
 
-설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 기존 ONHARU 설치판이 있으면 같은 AppId를 사용해 제거 없이 2.1.0으로 업그레이드하고 일정·설정·Google 연결 데이터는 보존합니다. 자동 업데이트와 Windows 코드 서명은 2.1.0에 포함되지 않습니다.
+설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 기존 ONHARU 설치판이 있으면 같은 AppId를 사용해 제거 없이 2.2.0으로 업그레이드하고 일정·설정·Google 연결 데이터는 보존합니다. 자동 업데이트와 Windows 코드 서명은 2.2.0에 포함되지 않습니다.
 
 파일명이 다른 이전/새 버전 EXE를 함께 실행할 수 없습니다. 온하루는 계정·설정·Google 토큰을 안전하게 관리하기 위해 Windows 사용자당 한 창만 실행됩니다.
 
@@ -271,7 +275,7 @@ Google 휴일 또는 설정에서 수정 불가로 지정한 캘린더는 수정
 
 ## 11. 저장과 백업
 
-데이터는 `%LOCALAPPDATA%\OnharuV3`에 저장됩니다. 내부 `V3` 이름은 2.0 데이터 호환을 위해 유지합니다.
+데이터와 자동 백업은 `%LOCALAPPDATA%\Onharu`에 통합 저장됩니다.
 
 - 일정: Google 계정별 또는 로그아웃 로컬 JSON
 - 설정: 창 위치, 크기, 잠금, 색상, 필터, 정렬 등
@@ -317,8 +321,8 @@ Google 휴일 또는 설정에서 수정 불가로 지정한 캘린더는 수정
 PowerShell에서 소스 폴더로 이동한 뒤 실행합니다.
 
 ```powershell
-cd .\Onharu_v2.1
-.\check-v21.ps1 -Build
+cd .\Onharu_v2.2
+.\check-v22.ps1 -Build
 ```
 
 Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하며 외부 패키지는 사용하지 않습니다.
@@ -339,19 +343,19 @@ Windows의 .NET Framework 4.x C# 컴파일러와 WPF 어셈블리를 사용하�
 반복 일정 계산 검사는 다음처럼 실행할 수 있습니다.
 
 ```powershell
-cd .\Onharu_v2.1
-.\check-v21.ps1
+cd .\Onharu_v2.2
+.\check-v22.ps1
 ```
 
 로컬 시험본은 `Tests\LocalTest`에만 생성됩니다.
 
-2.1 개발 소스는 `Onharu_v2.1` 작업 트리에 보존하며, 배포 후보 실행 파일은 `Release\ONHARU-2.1.0\ONHARU.exe`, 설치 파일은 `Release\Installer\ONHARU-2.1.0-Setup.exe`입니다. 2.0은 별도 `Onharu_v2` 폴더에 동결되어 있습니다.
+2.1 개발 소스는 `Onharu_v2.1` 작업 트리에 보존하며, 배포 후보 실행 파일은 `Release\ONHARU-2.2.0\ONHARU.exe`, 설치 파일은 `Release\Installer\ONHARU-2.2.0-Setup.exe`입니다. 2.0은 별도 `Onharu_v2` 폴더에 동결되어 있습니다.
 
 ### 설치와 제거
 
 - 설치 위치: `%LOCALAPPDATA%\Programs\ONHARU`
 - 제거: Windows 설정의 `설치된 앱` 또는 시작 메뉴의 ONHARU 제거 프로그램
-- 제거 후에도 일정·설정·Google 연결 데이터는 `%LOCALAPPDATA%\OnharuV3`에 보존됩니다.
+- 제거할 때 일정·설정·Google 연결 정보를 보관할지 선택할 수 있습니다. 기본값은 재설치를 위한 보관이며, `모든 사용자 데이터 삭제`를 확인한 경우에만 `%LOCALAPPDATA%\Onharu` 전체를 삭제합니다.
 - 사용자 데이터까지 완전히 지우려면 먼저 일정 내보내기와 백업을 확인한 뒤 해당 폴더를 사용자가 직접 삭제해야 합니다.
 - 코드 서명 전 설치 파일은 Windows SmartScreen 경고가 나타날 수 있습니다.
 

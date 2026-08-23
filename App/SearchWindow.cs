@@ -84,7 +84,9 @@ namespace FamilyPlanner
             {
                 query.Focus();
                 results.Children.Add(new TextBlock { Text = "일정을 불러오는 중…", Foreground = Brush("#94A3B8"), TextAlignment = TextAlignment.Center, Margin = new Thickness(12, 35, 12, 0) });
-                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate { UiRound.SoftenScrollBars(resultScroller); ScheduleRender(); }));
+                resultScroller.ApplyTemplate();
+                UiRound.SoftenScrollBars(resultScroller);
+                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(ScheduleRender));
             };
         }
 

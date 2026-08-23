@@ -17,18 +17,26 @@ namespace FamilyPlanner
     {
         const string ClientId = "397166784516-g8l18umimg4uvp3l4tjcnlguedoa4c1j.apps.googleusercontent.com";
         const string ClientSecret = OAuthCredentials.ClientSecret;
-        const string Scope = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/tasks";
-        static readonly string TokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "google-v3.token");
-        static readonly string AccountPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "google-account-v3.dat");
-        static readonly string TasksScopePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OnharuV3", "google-tasks-scope-v1.dat");
+        const string Scope = "openid email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/tasks";
+        static readonly string TokenPath = Path.Combine(AppDataPaths.Root, "google-token.dat");
+        static readonly string AccountPath = Path.Combine(AppDataPaths.Root, "google-account.dat");
+        static readonly string TasksScopePath = Path.Combine(AppDataPaths.Root, "google-tasks-scope.dat");
         static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         static string accessToken;
+        static string identityToken;
         static DateTime expiresAt;
         static HttpListener pendingListener;
 
         public static bool IsConnected { get { return File.Exists(TokenPath); } }
         public static bool HasTasksPermission { get { return File.Exists(TasksScopePath); } }
         public static async Task<string> AccessTokenAsync() { await EnsureToken(); return accessToken; }
+        public static async Task<string> IdentityTokenAsync()
+        {
+            await EnsureToken();
+            if (string.IsNullOrWhiteSpace(identityToken))
+                throw new InvalidOperationException("메일 백업 보안을 위해 Google 계정을 한 번 다시 연결해 주세요.");
+            return identityToken;
+        }
         public static string ConnectedAccountId
         {
             get
@@ -86,7 +94,7 @@ namespace FamilyPlanner
 
         public static void Disconnect()
         {
-            accessToken = null; expiresAt = DateTime.MinValue;
+            accessToken = null; identityToken = null; expiresAt = DateTime.MinValue;
             if (File.Exists(TokenPath)) File.Delete(TokenPath);
             if (File.Exists(AccountPath)) File.Delete(AccountPath);
             if (File.Exists(TasksScopePath)) File.Delete(TasksScopePath);
@@ -397,7 +405,12 @@ namespace FamilyPlanner
         }
 
         static bool InSyncRange(DateTime value) { return value >= DateTime.Today.AddYears(-1) && value < DateTime.Today.AddYears(2); }
-        static void SetAccessToken(GoogleToken token) { accessToken = token.AccessToken; expiresAt = DateTime.UtcNow.AddSeconds(Math.Max(60, token.ExpiresIn)); }
+        static void SetAccessToken(GoogleToken token)
+        {
+            accessToken = token.AccessToken;
+            if (!string.IsNullOrWhiteSpace(token.IdToken)) identityToken = token.IdToken;
+            expiresAt = DateTime.UtcNow.AddSeconds(Math.Max(60, token.ExpiresIn));
+        }
         static byte[] RandomBytes(int count) { var bytes = new byte[count]; using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(bytes); return bytes; }
         static string Base64Url(byte[] bytes) { return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_'); }
         static string E(string value) { return Uri.EscapeDataString(value ?? ""); }
