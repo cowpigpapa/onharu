@@ -105,8 +105,10 @@ ONHARU를 개인 PC용 실험 프로그램이 아니라 누구나 내려받아 �
 
 1. 로컬 일정 메일 발송 서버의 production access 승인과 공개 사용자 인증 설계
 2. Google OAuth 공개 검증 제출 (브랜딩 저장·프로덕션 게시 완료, 인증 센터 제출 남음)
-3. 사용자 승인형 자동 업데이트
+3. [완료] 사용자 승인형 자동 업데이트 구현 및 GitHub v2.2.0 Release 경로 검증
 4. 한국어·영어 다국어
+
+배포 현황: GitHub 소스와 `v2.2.0` 정식 Release는 게시 완료했다. 실제 `onharu.app`은 아직 2.1이며 `Publish/ONHARU-Web-Publish-2.2.0.zip`을 서버에 게시해야 한다. Google 동기화는 현재 외부·프로덕션 앱이므로 Google 계정으로 접근할 수 있지만, 민감 범위 공개 검증 전에는 미검증 경고와 프로젝트 수명 전체 100명 신규 사용자 상한 때문에 `누구나 안정적으로 사용 가능`한 상태로 판정하지 않는다.
 
 메일 발송은 Amazon SES 서울 리전과 `ONHARU <noreply@onharu.app>` 발신자로 확정했다. Lambda/API Gateway 중계 API와 실제 JSON 첨부 시험은 완료했다. 다음은 SES production access 승인과 공개 사용자가 임의 수신 주소를 악용하지 못하도록 하는 인증 경계를 확정하는 일이다.
 
