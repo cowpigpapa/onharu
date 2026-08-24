@@ -38,7 +38,7 @@ namespace FamilyPlanner
         public static List<PlannerItem> Load()
         {
             if (!File.Exists(FilePath) && File.Exists(LegacyFilePath)) File.Copy(LegacyFilePath, FilePath);
-            if (!File.Exists(FilePath)) return accountKey == "local" ? Samples() : new List<PlannerItem>();
+            if (!File.Exists(FilePath)) return new List<PlannerItem>();
             try
             {
                 return ReadItems(FilePath);
@@ -429,22 +429,5 @@ namespace FamilyPlanner
             catch (Exception ex) { ErrorLog.Write("External item backup", ex); }
         }
 
-        static List<PlannerItem> Samples()
-        {
-            var today = DateTime.Today;
-            return new List<PlannerItem>
-            {
-                New("가족 저녁 식사", today.AddHours(19), today.AddHours(20), false, false, "개인일정"),
-                New("주간 업무 보고", today.AddHours(10), today.AddHours(10.5), false, true, "업무일정"),
-                New("결혼기념일", today.AddDays(3), today.AddDays(4), true, false, "개인일정"),
-                New("자동차 보험 갱신", today.AddDays(1).AddHours(14), today.AddDays(1).AddHours(14.5), false, true, "개인일정")
-            };
-        }
-
-        static PlannerItem New(string title, DateTime start, DateTime end, bool allDay, bool todo, string category)
-        {
-            return new PlannerItem { Id = Guid.NewGuid().ToString(), Title = title, Start = start,
-                End = end, AllDay = allDay, IsTodo = todo, Category = category };
-        }
     }
 }

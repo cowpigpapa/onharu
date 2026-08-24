@@ -69,6 +69,7 @@ foreach ($token in @('OnharuColorPresets.Names', 'OnharuColorPresets.Palettes()'
 foreach ($token in @('ActionAccentColor()', 'opacitySlider.Foreground = ActionAccentBrush()', 'calendarRangeSwitch.SetAccent(ActionAccentBrush(), Brushes.White)', 'OnharuStateColors.DetailTab(settings.ThemeId, entry.Item2, ActionAccentColor())')) {
     if (-not (($themeSource + $layoutSource + $detailSource).Contains($token))) { throw "Preset representative action color is missing: $token" }
 }
+if (-not $themeSource.Contains('return OnharuColorPresets.RepresentativeColor(settings.SelectedPaletteIndex);')) { throw 'Action accent must use the fixed preset representative color.' }
 foreach ($token in @('refreshPastelThemeCard', 'CategoryColorSystem.Background("classic", accent)', 'PaletteEditorBackground(c)', 'PaletteEditorForeground(c)')) {
     if (-not $settingsSource.Contains($token)) { throw "Pastel settings preview rule is missing: $token" }
 }

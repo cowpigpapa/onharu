@@ -4,6 +4,7 @@ $ErrorActionPreference = 'Stop'
 $mainSources = (Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'MainWindow*.cs' | ForEach-Object { Get-Content $_.FullName -Raw -Encoding UTF8 }) -join "`n"
 $settingsSource = Get-Content (Join-Path $PSScriptRoot 'SettingsWindow.cs') -Raw -Encoding UTF8
 $storageSource = Get-Content (Join-Path $PSScriptRoot 'LocalStorage.cs') -Raw -Encoding UTF8
+if ($storageSource.Contains('Samples()') -or $storageSource.Contains('가족 저녁 식사') -or $storageSource.Contains('주간 업무 보고')) { throw 'Clean install must not create sample schedules.' }
 $calendarStyleSource = Get-Content (Join-Path $PSScriptRoot 'OnharuCalendarStyle.cs') -Raw -Encoding UTF8
 $deleteSource = Get-Content (Join-Path $PSScriptRoot 'LocalDataDeleteWindow.cs') -Raw -Encoding UTF8
 foreach ($dataAction in @('ExportFile', 'ExportEmail', 'DeleteLocalData')) {

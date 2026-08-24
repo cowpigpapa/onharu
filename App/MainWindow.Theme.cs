@@ -67,13 +67,7 @@ namespace FamilyPlanner
 
         string ActionAccentColor()
         {
-            if (GoogleCalendar.IsConnected && settings.GoogleCalendars != null)
-            {
-                var primary = settings.GoogleCalendars.Find(x => x.Primary && !string.IsNullOrWhiteSpace(x.Color));
-                if (primary != null) return primary.Color;
-            }
-            return !string.IsNullOrWhiteSpace(settings.BusinessColor) ? settings.BusinessColor
-                : OnharuColorPresets.RepresentativeColor(settings.SelectedPaletteIndex);
+            return OnharuColorPresets.RepresentativeColor(settings.SelectedPaletteIndex);
         }
 
         Brush ActionAccentBrush() { return Brush(ActionAccentColor()); }
