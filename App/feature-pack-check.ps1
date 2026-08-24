@@ -55,16 +55,24 @@ foreach ($case in $cases) {
 
 $settingsType = $assembly.GetType('FamilyPlanner.PlannerSettings', $true)
 $settings = [Activator]::CreateInstance($settingsType)
-if ($settings.Version -ne 39) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.Version -ne 41) { throw "Unexpected settings version: $($settings.Version)" }
 if ($settings.ThemeId -ne 'classic') { throw "Theme must default to classic: $($settings.ThemeId)" }
 if (-not $settings.AutomaticUpdateChecks) { throw 'Automatic update checks must default to enabled.' }
+if ($settings.CalendarRangeMode -ne 'weeks' -or $settings.MonthRangeMode -ne 'monthAuto' -or $settings.UseMonthView -or $settings.VisibleWeekCount -ne 4 -or $settings.TodayRow -ne 2) { throw 'Clean-install calendar must default to a four-week view without overriding saved settings.' }
+if ($settings.PositionLocked -or $settings.StartupPositionMode -ne 'editable' -or $settings.Width -ne 1120 -or $settings.Height -ne 700) { throw 'Clean-install placement defaults are invalid.' }
+if ($settings.ThemeId -ne 'classic' -or $settings.FontSize -ne 12 -or $settings.Opacity -ne .95 -or $settings.SelectedPaletteIndex -ne 0) { throw 'Clean-install visual defaults are invalid.' }
+if (-not $settings.MultiDayFirst -or $settings.CompletedDisplayMode -ne 'fade' -or $settings.CloseButtonAction -ne 'confirm_exit') { throw 'Clean-install behavior defaults are invalid.' }
+if (-not $settings.ShowWeekNumbers -or $settings.WeekNumberRule -ne 'iso' -or $settings.WeekStartDay -ne 'sunday') { throw 'Clean-install week defaults are invalid.' }
+if ($settings.SelectedDateStyle -ne 'border' -or $settings.SelectedDateBorderColor -ne '#EC4899' -or $settings.TodayStyle -ne 'icon') { throw 'Clean-install date marker defaults are invalid.' }
+if (-not $settings.ShowLunar -or -not $settings.ShowSolarTerms -or -not $settings.UseRollover -or $settings.AutoSyncMinutes -ne 5) { throw 'Clean-install display and sync defaults are invalid.' }
+if ($settings.BusinessColor -ne '#00A6C8' -or $settings.PersonalColor -ne '#2859C5' -or $settings.BaseballColor -ne '#38A169' -or $settings.DdayColor -ne '#E67E22' -or $settings.AnniversaryColor -ne '#C2418C' -or $settings.HolidayColor -ne '#DC2626') { throw 'Clean-install category colors are invalid.' }
 if ($settings.ShowGoogleTasks) { throw 'Google Tasks must be opt-in by default.' }
 if ($settings.UseTimetable) { throw 'Timetable must be opt-in by default.' }
 if (-not $settings.UseDiary) { throw 'Diary must be visible by default.' }
 if (-not $settings.DdayPanelVisible) { throw 'D-Day panel must default to visible.' }
 if (-not $settings.CompletedLast) { throw 'CompletedLast must default to true.' }
 if ($settings.DefaultCalendarKey -ne 'local:business' -or -not $settings.DefaultAllDay -or $settings.DefaultStartHour -ne 9 -or $settings.DefaultDurationMinutes -ne 30) { throw 'New-item defaults are invalid.' }
-if ($settings.CompletedDisplayMode -ne 'normal' -or $settings.StartViewMode -ne 'today' -or $settings.StartupPositionMode -ne 'remember' -or $settings.CloseButtonAction -ne 'minimize') { throw '2.1 display defaults are invalid.' }
+if ($settings.StartViewMode -ne 'today') { throw 'Clean-install start date must be today.' }
 if (-not $settings.ReminderSound -or $settings.QuietStartHour -ne 22 -or $settings.QuietEndHour -ne 7) { throw 'Reminder defaults are invalid.' }
 if ($null -eq $settings.DateBackgroundColors) { throw 'DateBackgroundColors must be initialized.' }
 foreach ($typeName in @('FamilyPlanner.TimetableData', 'FamilyPlanner.TimetableSlot', 'FamilyPlanner.TimetableWindow')) {
@@ -151,7 +159,7 @@ foreach ($positionEditorFeature in @('void ShowPositionEditor()', 'Topmost = fal
     if (-not $mainSource.Contains($positionEditorFeature)) { throw "Position editor foreground behavior is missing: $positionEditorFeature" }
 }
 $explorerLayerSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.ExplorerLayer.cs') -Raw -Encoding UTF8
-foreach ($compactTitleFeature in @('void UpdateCompactHeaderTypography()', 'monthTitle.FontSize = Ui(17)')) {
+foreach ($compactTitleFeature in @('void UpdateCompactHeaderTypography()', 'monthTitle.FontSize = 17')) {
     if (-not $mainSource.Contains($compactTitleFeature)) { throw "작은 화면용 고정 날짜 제목이 누락됐습니다: $compactTitleFeature" }
 }
 if ($explorerLayerSource -notmatch '(?s)DwmwaCloak = 13.*?void PublishAndCloak\(\).*?explorerFrame\.Publish.*?LayerHostController\.Start.*?explorerFrame\.SetActionSink.*?SetWindowCloaked\(true\).*?void ShowPreparedWpf.*?Opacity = 0;.*?SetWindowCloaked\(false\).*?BeginPreparedWpfSettle.*?Opacity = intendedOpacity;.*?explorerFrame\.Disable\(\)') {
@@ -159,7 +167,7 @@ if ($explorerLayerSource -notmatch '(?s)DwmwaCloak = 13.*?void PublishAndCloak\(
 }
 if ($mainSource.Contains('Topmost = true; ShowInTaskbar = true;')) { throw 'Position editor is incorrectly pinned above every application.' }
 if ($mainSource.Contains('DragMove(); DesktopLayer.Lower(this);')) { throw 'Dragging the position editor still lowers it behind other windows.' }
-foreach ($closeFeature in @('ExecuteCloseButtonAction(); }, 34', 'action == 25) { ExecuteCloseButtonAction(); return;', 'action == 28) { OpenCloseContextMenu(); return;', 'settings.CloseButtonAction == "confirm_exit"', 'ContextMenu CreateCloseContextMenu()', 'exit.Click += delegate { ExitApplication(); };', 'void CloseAuxiliaryWindows()')) {
+foreach ($closeFeature in @('OpenLogoMenu(logo)', 'action == 25) { ExecuteCloseButtonAction(); return;', 'action == 28) { OpenCloseContextMenu(); return;', 'settings.CloseButtonAction == "confirm_exit"', 'ContextMenu CreateCloseContextMenu()', 'exit.Click += delegate { ExitApplication(); };', 'void CloseAuxiliaryWindows()')) {
     if (-not $mainSource.Contains($closeFeature)) { throw "Configurable close behavior is missing: $closeFeature" }
 }
 foreach ($exitRestoreFeature in @('var wasMinimized = calendarMinimized;', 'calendarMinimized = false; UpdateTrayVisibilityText();', 'if (wasMinimized) { MinimizeToTray(); return; }', 'if (!wasLocked) ShowPositionEditor();')) {
@@ -236,7 +244,7 @@ foreach ($calendarTodoFeature in @('localPoint.X <= Ui(23)', 'await SetTodoCompl
     if (-not $mainSource.Contains($calendarTodoFeature)) { throw "Calendar Todo checkbox interaction is missing: $calendarTodoFeature" }
 }
 $settingsUiSource = Get-Content (Join-Path $PSScriptRoot 'SettingsWindow.cs') -Raw -Encoding UTF8
-foreach ($settingsGroupingFeature in @('Text = "화면과 동작"', 'Text = "시작 요일"', 'GroupName = "WeekStartDay"', 'Text = "주차 방식"', 'weekRuleRow.Visibility', 'displayGroup.Children.Add(weekRuleRow); displayGroup.Children.Add(otherDisplayOptions)')) {
+foreach ($settingsGroupingFeature in @('Text = "화면과 동작"', 'Text = "시작 요일"', 'GroupName = "WeekStartDay"', 'weekRuleRow.Children.Add(showWeek); weekRuleRow.Children.Add(weekRules)', 'weekRules.Visibility = showWeek.IsChecked == true', 'displayGroup.Children.Add(calendarOptions)', 'displayGroup.Children.Add(otherDisplayOptions)')) {
     if (-not $settingsUiSource.Contains($settingsGroupingFeature)) { throw "Settings display grouping is missing: $settingsGroupingFeature" }
 }
 foreach ($independentWeekFeature in @('DayOfWeek ConfiguredFirstDay()', 'settings.WeekNumberRule == "iso" ? DayOfWeek.Monday : DayOfWeek.Sunday')) {

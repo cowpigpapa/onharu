@@ -67,6 +67,7 @@ namespace FamilyPlanner
                                 !string.IsNullOrWhiteSpace(item.GoogleCalendarId) ? "완료 상태는 이 PC에 저장됩니다." : null,
                             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 8, 0) };
                         StyleThemeCheckBox(check, ItemColor(item));
+                        if (settings.ThemeId == "dark") check.BorderBrush = Brushes.White;
                         check.Click += async delegate { await SetTodoCompleted(item, check.IsChecked == true); };
                         DockPanel.SetDock(check, Dock.Left); row.Children.Add(check);
                     }
@@ -122,7 +123,8 @@ namespace FamilyPlanner
         IEnumerable<List<PlannerItem>> DetailGroups(List<PlannerItem> orderedItems)
         {
             if (settings.CalendarOrderMode != "time")
-                return orderedItems.GroupBy(DisplayGroup).OrderBy(x => GroupOrder(x.First())).Select(x => x.ToList()).ToList();
+                return orderedItems.GroupBy(x => Tuple.Create(ImportantRank(x), DisplayGroup(x)))
+                    .OrderBy(x => x.Key.Item1).ThenBy(x => GroupOrder(x.First())).Select(x => x.ToList()).ToList();
 
             var groups = new List<List<PlannerItem>>();
             foreach (var item in orderedItems)
@@ -136,18 +138,22 @@ namespace FamilyPlanner
 
         Button DetailTab(string text, string mode)
         {
-            var button = Button(text, null, 80); button.Height = 31; button.Margin = new Thickness(2, 0, 2, 0); button.FontSize = Ui(11);
+            var button = Button(text, null, 88); button.Height = 31; button.Margin = new Thickness(0); button.FontSize = Ui(11);
             button.Click += delegate { detailMode = mode; RenderDetail(); };
             return button;
         }
 
         void UpdateDetailTabs()
         {
-            foreach (var entry in new[] { Tuple.Create(selectedDayButton, "selected"), Tuple.Create(thisWeekButton, "this_week"), Tuple.Create(nextWeekButton, "next_week") })
+            foreach (var entry in new[]
+            {
+                Tuple.Create(selectedDayButton, detailMode == "selected"),
+                Tuple.Create(thisWeekButton, detailMode == "this_week"),
+                Tuple.Create(nextWeekButton, detailMode == "next_week")
+            })
             {
                 if (entry.Item1 == null) continue;
-                var selected = detailMode == entry.Item2;
-                var colors = OnharuStateColors.DetailTab(settings.ThemeId, selected);
+                var colors = OnharuStateColors.DetailTab(settings.ThemeId, entry.Item2, ActionAccentColor());
                 entry.Item1.Background = new SolidColorBrush(colors.Background);
                 entry.Item1.Foreground = new SolidColorBrush(colors.Foreground);
                 entry.Item1.BorderBrush = new SolidColorBrush(colors.Border);

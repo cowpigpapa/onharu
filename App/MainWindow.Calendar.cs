@@ -127,13 +127,13 @@ namespace FamilyPlanner
             }
             if (settings.ShowLunar)
             {
-                var lunar = new TextBlock { Text = Lunar(date), Foreground = Brush("#8B5CF6"), FontSize = Ui(11), Tag = diaryTarget,
+                var lunar = new TextBlock { Text = Lunar(date), Foreground = T("Muted"), FontSize = Ui(11), Tag = diaryTarget,
                     VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 1, 1, 2), ToolTip = settings.UseDiary ? "더블클릭하여 일기 쓰기" : null };
                 if (settings.UseDiary) lunar.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(lunar);
             }
             var solarTerm = settings.ShowSolarTerms ? SolarTerm(date) : null;
             if (!string.IsNullOrWhiteSpace(solarTerm))
-                dateHeader.Children.Add(new TextBlock { Text = solarTerm, Foreground = Brush("#0F766E"), FontSize = Ui(11),
+                dateHeader.Children.Add(new TextBlock { Text = solarTerm, Foreground = T("Weekday"), FontSize = Ui(11),
                     FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 1, 2) });
             if (settings.UseDiary && diaryDates.Contains(date.Date))
             {
@@ -143,7 +143,7 @@ namespace FamilyPlanner
             }
             var holidays = string.Join(", ", dateItems.Where(x => x.Category == "국경일").Select(x => x.Title).ToArray());
             if (date == DateTime.Today)
-                dateHeader.Children.Add(new TextBlock { Text = "오늘", Foreground = Brush("#2563EB"), FontSize = Ui(10),
+                dateHeader.Children.Add(new TextBlock { Text = "오늘", Foreground = T("Accent"), FontSize = Ui(11),
                     FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 0, 2) });
             if (!string.IsNullOrWhiteSpace(holidays))
                 dateHeader.Children.Add(new TextBlock { Text = (date == DateTime.Today ? ". " : "") + holidays, Foreground = Brush(Colors["국경일"]), FontSize = Ui(11),
@@ -187,12 +187,12 @@ namespace FamilyPlanner
                 x.Start.Date <= weekEnd && (x.End > x.Start ? x.End.AddTicks(-1).Date : x.Start.Date) >= weekStart);
             if (settings.CalendarOrderMode == "time")
                 weekItems = settings.MultiDayFirst
-                    ? weekItems.OrderBy(CompletedRank).ThenByDescending(IsMultiDay).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title)
-                    : weekItems.OrderBy(CompletedRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
+                    ? weekItems.OrderBy(CompletedRank).ThenBy(ImportantRank).ThenBy(x => x.AllDay ? 0 : 1).ThenByDescending(IsMultiDay).ThenBy(x => x.Start).ThenBy(x => x.Title)
+                    : weekItems.OrderBy(CompletedRank).ThenBy(ImportantRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
             else
                 weekItems = settings.MultiDayFirst
-                    ? weekItems.OrderBy(CompletedRank).ThenByDescending(IsMultiDay).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start)
-                    : weekItems.OrderBy(CompletedRank).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+                    ? weekItems.OrderBy(CompletedRank).ThenBy(ImportantRank).ThenBy(x => x.AllDay ? 0 : 1).ThenByDescending(IsMultiDay).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.Start)
+                    : weekItems.OrderBy(CompletedRank).ThenBy(ImportantRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.Start);
             // The configured order is not necessarily chronological.  Tracking only
             // the last end date therefore created artificial empty lanes whenever a
             // later date was encountered before an earlier one.  Keep the occupied

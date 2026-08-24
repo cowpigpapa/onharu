@@ -32,7 +32,7 @@ namespace FamilyPlanner
         readonly List<PlannerItem> items;
         readonly Grid calendar = new Grid();
         readonly StackPanel detail = new StackPanel();
-        readonly Button monthTitle = new Button { FontSize = 25, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center,
+        readonly Button monthTitle = new Button { FontSize = 17, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), Cursor = Cursors.Hand,
             HorizontalContentAlignment = HorizontalAlignment.Left, ToolTip = "연·월 바로 이동" };
         readonly TextBlock selectedTitle = new TextBlock { FontSize = 16, FontWeight = FontWeights.Bold,
@@ -50,13 +50,11 @@ namespace FamilyPlanner
         bool publishPending;
         object lastDesktopClickTarget;
         OnharuSegmentedSwitch positionModeSwitch;
-        TextBlock positionStatus;
         FrameworkElement resizeSurface;
         Grid mainFrame;
         Canvas floatingOverlay;
         Border sidebarPanel;
         ColumnDefinition sidebarColumn;
-        Button sidebarButton;
         Button collapseSidebarButton;
         Button googleButton;
         Border googleAccountCard;
@@ -64,8 +62,6 @@ namespace FamilyPlanner
         Button diaryButton;
         Button sportsButton;
         SportsCalendarWindow sportsWindow;
-        Button previousPeriodButton;
-        Button nextPeriodButton;
         Button todayButton;
         OnharuSegmentedSwitch calendarRangeSwitch;
         OnharuSegmentedSwitch themeQuickSwitch;

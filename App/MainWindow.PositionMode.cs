@@ -15,11 +15,6 @@ namespace FamilyPlanner
             positionModeSwitch.SetAccent(positionLocked ? "#22C55E" : "#F59E0B");
             var targetMode = positionLocked ? 1 : 0;
             positionModeSwitch.SetSelected(targetMode, positionModeSwitch.SelectedIndex != targetMode);
-            if (positionStatus != null)
-            {
-                positionStatus.Text = positionLocked ? "📌 고정됨" : "↔ 이동 가능";
-                positionStatus.Foreground = positionLocked ? Brush("#16A34A") : Brush("#D97706");
-            }
             if (resizeSurface != null && positionLocked) resizeSurface.Cursor = Cursors.Arrow;
             if (trayPositionItem != null) trayPositionItem.Text = positionLocked ? "위치·크기 조정" : "이 위치·크기로 고정";
         }

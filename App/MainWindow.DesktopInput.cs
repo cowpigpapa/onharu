@@ -48,6 +48,7 @@ namespace FamilyPlanner
             var root = Content as Visual;
             var current = root == null ? null : FindDesktopElement(root, root, point);
             object target = null;
+            FrameworkElement targetElement = null;
             while (current != null)
             {
                 var slider = current as Slider;
@@ -57,7 +58,7 @@ namespace FamilyPlanner
                 var check = current as CheckBox;
                 if (check != null) { target = check; break; }
                 var element = current as FrameworkElement;
-                if (element != null && (element.Tag as string == "open_pending_sync" || element.Tag as string == "google_sync" || element.Tag as string == "open_anniversary")) { target = element.Tag; break; }
+                if (element != null && (element.Tag as string == "open_pending_sync" || element.Tag as string == "google_sync" || element.Tag as string == "open_anniversary" || element.Tag as string == "logo_menu")) { target = element.Tag; targetElement = element; break; }
                 if (element != null && (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget)) { target = element.Tag; break; }
                 current = VisualTreeHelper.GetParent(current);
             }
@@ -67,6 +68,11 @@ namespace FamilyPlanner
             var targetButton = target as Button;
             if (targetButton != null)
             {
+                var navigation = targetButton.Tag as string;
+                if (navigation == "calendar_previous" || navigation == "calendar_next")
+                {
+                    HandleCalendarNavigationClick(navigation == "calendar_previous" ? -1 : 1, doubleClick); return;
+                }
                 if (doubleClick)
                 {
                     // Explorer can deliver WM_LBUTTONDBLCLK without a fresh
@@ -93,6 +99,7 @@ namespace FamilyPlanner
             var targetSlider = target as Slider;
             if (targetSlider != null && !doubleClick) { AdjustDesktopOpacity(packedPoint, true, true); return; }
             if (target as string == "google_sync" && !doubleClick) { GoogleClick(null, null); return; }
+            if (target as string == "logo_menu" && !doubleClick) { OpenLogoMenu(targetElement); return; }
             if (target as string == "open_pending_sync" && !doubleClick) { OpenPendingSync(null, null); SchedulePublish(); return; }
             if (target as string == "open_anniversary" && !doubleClick) { OpenAnniversary(null); return; }
             var targetCheck = target as CheckBox;

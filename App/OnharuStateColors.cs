@@ -13,9 +13,14 @@ namespace FamilyPlanner
     {
         public static OnharuStateColorSet DetailTab(string theme, bool selected)
         {
+            return DetailTab(theme, selected, theme == "dark" ? "#6366F1" : "#4F46E5");
+        }
+
+        public static OnharuStateColorSet DetailTab(string theme, bool selected, string accent)
+        {
             var palette = OnharuThemePalette.For(theme);
             return selected
-                ? Set(theme == "dark" ? "#6366F1" : "#4F46E5", "#FFFFFF", theme == "dark" ? "#6366F1" : "#4F46E5")
+                ? Set(accent, "#FFFFFF", accent)
                 : Set(palette["Button"], palette["Muted"], palette["Grid"]);
         }
 

@@ -318,15 +318,21 @@ namespace FamilyPlanner
                         settings.ThemeId = OnharuThemePalette.Normalize(settings.ThemeId);
                         settings.Version = 37;
                     }
-                    if (settings.Version < 38)
-                    {
-                        settings.ShowThemeQuickSwitch = true;
-                        settings.Version = 38;
-                    }
+                    if (settings.Version < 38) settings.Version = 38;
                     if (settings.Version < 39)
                     {
                         settings.SportsCalendarScale = 1.0;
                         settings.Version = 39;
+                    }
+                    if (settings.Version < 40)
+                    {
+                        settings.ImportantFirst = true;
+                        settings.Version = 40;
+                    }
+                    if (settings.Version < 41)
+                    {
+                        settings.LockPalettePlacement = false;
+                        settings.Version = 41;
                     }
                     if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();
                     settings.ThemeId = OnharuThemePalette.Normalize(settings.ThemeId);

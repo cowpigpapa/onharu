@@ -54,6 +54,8 @@ namespace FamilyPlanner
             return item.Start.Date != (item.End > item.Start ? item.End.AddTicks(-1).Date : item.Start.Date);
         }
 
+        int ImportantRank(PlannerItem item) { return settings.ImportantFirst && item.Important ? 0 : 1; }
+
         string TimeText(DateTime value)
         {
             return settings.Use24HourTime ? value.ToString("HH:mm") : value.ToString("tt h:mm", new CultureInfo("ko-KR"));

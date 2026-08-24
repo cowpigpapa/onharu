@@ -27,7 +27,7 @@ namespace FamilyPlanner
             "#0F172A", "#475569", "#64748B", "#4338CA", "#EEF2FF", "#C7D2FE", "#FFFFFF", "#94A3B8", "#0F766E", "#111827"); }
 
         static OnharuThemePalette Dark() { return Create(
-            "#F2121212", "#F21A1A1A", "#F2181818", "#FF333333", "#FF3F3F46",
+            "#F2121212", "#F21A1A1A", "#F2181818", "#FF52525B", "#FF3F3F46",
             "#F8FAFC", "#E2E8F0", "#CBD5E1", "#A5B4FC", "#FF312E4B", "#FF6366F1", "#FF1F2937", "#94A3B8", "#5EEAD4", "#FFFFFF"); }
 
         static OnharuThemePalette Create(string shell, string calendar, string sidebar, string cardBorder, string grid,

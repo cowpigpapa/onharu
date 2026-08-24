@@ -4,6 +4,7 @@
 
 - `Architecture/THEME_SYSTEM_2.2.md`: 3종 스킨 팔레트, 안정성 경계와 확장 규칙
 - `Design/COLOR_PALETTE_STANDARD.md`: 2.1 기반 추천색, 카테고리 의미색, 스킨별 톤과 색상 검증 표준
+- `Design/MAIN_HEADER_UI_STANDARD.md`: 메인 헤더 아이콘·버튼 크기, 슬라이딩 버튼과 패널 기준선
 
 - `Architecture/INTERNAL_ARCHITECTURE.md`: App, 공유 프레임, Explorer 훅의 역할
 - `Audits/EXPLORER_LAYER_INTERACTION_AND_FUNCTION_AUDIT.md`: 고정 레이어 입력과 기능 감사

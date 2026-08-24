@@ -1,4 +1,14 @@
-# ONHARU 2.1 빌드 및 배포 과정
+# ONHARU 빌드 및 배포 과정
+
+## 버전 정책
+
+- 정식 공개 버전은 `MAJOR.MINOR.PATCH` 세 자리로 통일한다.
+- GitHub에 한 번 공개한 버전 번호와 태그는 수정본에 재사용하지 않는다.
+- 버그 수정·기본 설정 보완은 PATCH를 올린다. 예: `2.2.1 → 2.2.2`.
+- 기능 묶음 추가는 MINOR를 올린다. 예: `2.2.x → 2.3.0`.
+- 호환성이 크게 바뀌면 MAJOR를 올린다.
+- 내부 시험 파일은 `2.2.2-local-test`, 필요하면 배포 후보는 `2.2.2-rc1`로 구분하되 GitHub 최신 정식 Release에는 올리지 않는다.
+- Assembly, 화면 버전, Inno Setup, 설치 파일명, Portable ZIP, README, 웹 다운로드, GitHub 태그를 같은 버전으로 맞춘다.
 
 ## 사용자 승인형 자동 업데이트
 
@@ -120,7 +130,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 - `Release/ONHARU-2.1.0/ONHARU.exe.config`
 - `Release/ONHARU-2.1.0/Onharu.LayerHost.exe`
 - `Release/ONHARU-2.1.0/Onharu.DesktopHook.dll`
-- `Release/Installer/ONHARU-2.2.1-Setup.exe`
+- `Release/Installer/ONHARU-2.2.2-Setup.exe`
 
 ## 6. 설치와 업그레이드
 

@@ -20,15 +20,15 @@ namespace FamilyPlanner
             var localCleanupNeeded = localItems.Count != allLocalItems.Count;
             var backupCount = Store.Backups().Length; PlacementTrace.Write("SETTINGS data-ready ms=" + settingsWatch.ElapsedMilliseconds); settingsWatch.Restart();
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], Colors["야구"], Colors["D-Day"], Colors["기념일"], Colors["국경일"], settings.FontSize,
-                settings.CalendarOrderMode, settings.MultiDayFirst, settings.CompletedLast, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule, settings.WeekStartDay, settings.RestDays,
+                settings.CalendarOrderMode, settings.ImportantFirst, settings.MultiDayFirst, settings.CompletedLast, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule, settings.WeekStartDay, settings.RestDays,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
                 GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
-                settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex,
+                settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex, settings.LockPalettePlacement,
                 settings.MonthRangeMode, settings.VisibleWeekCount, settings.TodayRow, settings.SelectedDateStyle,
                 settings.SelectedDateFillColor, settings.SelectedDateBorderColor, settings.TodayColor, settings.TodayStyle, settings.TodayBorderColor, settings.DefaultCalendarKey, settings.DefaultAllDay,
                 settings.DefaultStartHour, settings.DefaultStartMinute, settings.DefaultDurationMinutes, settings.DefaultReminderMinutes,
                 settings.CompletedDisplayMode, settings.StartViewMode, settings.ReminderSound, settings.QuietStartHour, settings.QuietEndHour,
-                settings.StartupPositionMode, settings.CloseButtonAction, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ShowThemeQuickSwitch, settings.ThemeId,
+                settings.StartupPositionMode, settings.CloseButtonAction, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ThemeId,
                 settings.HolidayVisible, settings.BaseballVisible && settings.UseProBaseball, settings.DdayPanelVisible, settings.AnniversaryVisible);
             PlacementTrace.Write("SETTINGS ui-created ms=" + settingsWatch.ElapsedMilliseconds);
             window.PrintRequested += delegate
@@ -50,6 +50,7 @@ namespace FamilyPlanner
             settings.BaseballColor = window.BaseballColor; settings.DdayColor = window.DdayColor;
             settings.AnniversaryColor = window.AnniversaryColor; settings.HolidayColor = window.HolidayColor;
             settings.FontSize = window.SelectedFontSize; settings.CalendarOrderMode = window.OrderMode;
+            settings.ImportantFirst = window.ImportantFirst;
             settings.MultiDayFirst = window.MultiDayFirst;
             settings.CompletedLast = window.CompletedLast;
             settings.CompletedDisplayMode = window.CompletedDisplayMode;
@@ -64,6 +65,7 @@ namespace FamilyPlanner
             settings.PaletteNames = window.PaletteNames;
             settings.SavedPalettes = window.SavedPalettes;
             settings.SelectedPaletteIndex = window.PaletteSelectionIndex;
+            settings.LockPalettePlacement = window.LockPalettePlacement;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule; settings.WeekStartDay = window.WeekStartDay;
             settings.RestDays = window.RestDays == null ? new List<int> { 0, 6 } : window.RestDays;
             settings.MonthRangeMode = window.CalendarRangeMode; settings.VisibleWeekCount = window.VisibleWeekCount; settings.TodayRow = window.TodayRow;
@@ -77,9 +79,7 @@ namespace FamilyPlanner
             settings.ShowGoogleTasks = window.ShowGoogleTasks;
             settings.UseProBaseball = window.UseProBaseball;
             settings.AutomaticUpdateChecks = window.AutomaticUpdateChecks;
-            settings.ShowThemeQuickSwitch = window.ShowThemeQuickSwitch;
             settings.ThemeId = OnharuThemePalette.Normalize(window.ThemeId);
-            if (themeQuickSwitch != null) themeQuickSwitch.Visibility = settings.ShowThemeQuickSwitch ? Visibility.Visible : Visibility.Collapsed;
             if (googleTasksChanged && settings.ShowGoogleTasks)
                 foreach (var source in settings.GoogleCalendars.Where(x => GoogleTasks.IsSource(x.Id))) source.Editable = true;
             if (timetableButton != null) timetableButton.Visibility = settings.UseTimetable ? Visibility.Visible : Visibility.Collapsed;

@@ -42,6 +42,24 @@ namespace FamilyPlanner
             return menu;
         }
 
+        void OpenLogoMenu(FrameworkElement logo)
+        {
+            var menu = CreateCloseContextMenu();
+            ((MenuItem)menu.Items[1]).Header = "최소화";
+            ((MenuItem)menu.Items[2]).Header = "종료";
+            if (!positionLocked) { menu.PlacementTarget = logo; menu.Placement = PlacementMode.Right; menu.HorizontalOffset = 5; }
+            else
+            {
+                var point = logo.PointToScreen(new Point(logo.ActualWidth + 5, 0));
+                var source = PresentationSource.FromVisual(logo);
+                if (source != null && source.CompositionTarget != null)
+                    point = source.CompositionTarget.TransformFromDevice.Transform(point);
+                menu.Placement = PlacementMode.AbsolutePoint;
+                menu.HorizontalOffset = point.X; menu.VerticalOffset = point.Y;
+            }
+            menu.IsOpen = true;
+        }
+
         void OpenCloseContextMenu()
         {
             var menu = CreateCloseContextMenu(); menu.IsOpen = true;

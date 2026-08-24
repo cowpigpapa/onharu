@@ -21,18 +21,18 @@ namespace FamilyPlanner
         internal OnharuSegmentedSwitch(string[] labels, double[] segmentWidths, int selected, Action<int> onChanged)
         {
             widths = new double[labels.Length];
-            for (var i = 0; i < labels.Length; i++) widths[i] = Math.Max(segmentWidths[i], 20 + labels[i].Length * 10);
+            for (var i = 0; i < labels.Length; i++) widths[i] = Math.Max(segmentWidths[i], LabelWidth(labels[i]) + 4);
             changed = onChanged; selectedIndex = selected;
             Height = 27; CornerRadius = new CornerRadius(10); BorderThickness = new Thickness(1);
             BorderBrush = Brush("#C7D2FE"); Background = Brush("#F8FAFC"); Padding = new Thickness(1); ClipToBounds = true;
-            var grid = new Grid(); var canvas = new Canvas(); grid.Children.Add(canvas);
+            var grid = new Grid(); var canvas = new Canvas { Height = 23, VerticalAlignment = VerticalAlignment.Center }; grid.Children.Add(canvas);
             thumb = new Border { Height = 23, Width = widths[selected], CornerRadius = new CornerRadius(8), Background = Brush("#4F46E5"), RenderTransform = shift };
             canvas.Children.Add(thumb);
-            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Height = 23, VerticalAlignment = VerticalAlignment.Center };
             for (var i = 0; i < labels.Length; i++)
             {
-                var index = i; var button = new Button { Content = labels[i], Width = widths[i], Height = 23, Padding = new Thickness(8, 0, 8, 0),
-                    Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, FontSize = 11.5, FontWeight = FontWeights.SemiBold };
+                var index = i; var button = new Button { Content = labels[i], Width = widths[i], Height = 23, Padding = new Thickness(2, 0, 2, 0),
+                    Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, FontSize = 12.5, FontWeight = FontWeights.SemiBold };
                 var buttonBorder = new FrameworkElementFactory(typeof(Border));
                 buttonBorder.SetValue(Border.BackgroundProperty, Brushes.Transparent);
                 var content = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -63,7 +63,17 @@ namespace FamilyPlanner
         {
             thumb.Background = Brush(background); selectedForeground = Brush(foreground); SetSelected(selectedIndex, false);
         }
+        internal void SetAccent(Brush background, Brush foreground)
+        {
+            thumb.Background = background; selectedForeground = foreground; SetSelected(selectedIndex, false);
+        }
         internal int SelectedIndex { get { return selectedIndex; } }
+        static double LabelWidth(string text)
+        {
+            var probe = new TextBlock { Text = text, FontSize = 12.5, FontWeight = FontWeights.SemiBold };
+            probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return Math.Ceiling(probe.DesiredSize.Width);
+        }
         static Brush Brush(string value) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value)); }
     }
 }

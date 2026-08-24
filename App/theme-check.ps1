@@ -27,6 +27,7 @@ $calendarSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.
 $colorSystemSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CategoryColorSystem.cs') -Raw
 $presetSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'OnharuColorPresets.cs') -Raw
 $stateColorSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'OnharuStateColors.cs') -Raw
+$detailSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Detail.cs')
 foreach ($token in @('FilterColor(entry.Key, entry.Value)', 'StyleThemeCheckBox(entry.Value, color)', 'EventBackgroundBrush(ItemColor(item)', 'EventTextBrush(ItemColor(item)')) {
     if (-not (($themeSource + $layoutSource + $googleSource + $calendarSource) -like ('*' + $token + '*'))) { throw "Colorful skin coverage token is missing: $token" }
 }
@@ -36,10 +37,10 @@ if (-not $mainSource.Contains('OnharuColorPresets.DefaultCategories()')) { throw
 if (-not $layoutSource.Contains('Tag = Colors[category]') -or -not $googleSource.Contains('Tag = color') -or -not $googleSource.Contains('StyleThemeCheckBox(box, color)')) { throw 'All sidebar filters must carry and immediately apply their category color.' }
 if (-not $themeSource.Contains("Width='14' Height='14'") -or -not $themeSource.Contains("ContentPresenter Margin='4,0,0,0'")) { throw 'Colorful checkbox footprint must remain compatible with the 2.1 sidebar layout.' }
 if (-not $layoutSource.Contains('Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top')) { throw 'Special Day filters must align with the first local filter row.' }
-foreach ($token in @('dateNavigation.Children.Add(previousPeriodButton)', 'dateNavigation.Children.Add(nextPeriodButton); dateNavigation.Children.Add(todayButton)', 'Button("«"', 'Button("»"', '"월 전체"', 'settings.VisibleWeekCount)) + "주"', 'brandLine.Margin = new Thickness(52', 'new TemplateBindingExtension(Control.PaddingProperty)', 'var todayIcon =', 'settings.TodayStyle == "fill_icon"')) {
+foreach ($token in @('BindCalendarNavigation(previousButton, -1)', 'BindCalendarNavigation(nextButton, 1)', 'brandNavigation.Children.Add(todayButton)', 'monthTitle.Width = 306', 'monthTitle.HorizontalContentAlignment = HorizontalAlignment.Left', 'upperActions.Children.Add(opacitySlider)', 'lowerActions.Children.Add(positionModeSwitch)', '"월 전체"', 'settings.VisibleWeekCount)) + "주"', 'brandLine.Margin = new Thickness(0)', 'new TemplateBindingExtension(Control.PaddingProperty)', 'var todayIcon =', 'settings.TodayStyle == "fill_icon"')) {
     if (-not (($layoutSource + $calendarSource) -like ('*' + $token + '*'))) { throw "Colorful header or today-highlight token is missing: $token" }
 }
-if (-not $layoutSource.Contains('new[] { 41.0, 55.0 }') -or -not $layoutSource.Contains('Margin = new Thickness(36, 0, 0, 0)')) { throw 'View switch width and feature-icon spacing must preserve the sidebar alignment.' }
+if (-not $layoutSource.Contains('new[] { 41.0, 55.0 }') -or -not $layoutSource.Contains('featureActions.Children.Add(searchButton)')) { throw 'View switch width and feature icons must remain in their two-level header rows.' }
 if (-not $layoutSource.Contains('new[] { "이동", "고정" }') -or -not $layoutSource.Contains('Task.Delay(140)') -or -not $layoutSource.Contains('new OnharuSegmentedSwitch')) { throw 'Position mode must finish its segmented transition before locking.' }
 if ($layoutSource.Contains('Button.IsMouseOverProperty')) { throw 'Default main buttons must use cursor-only hover feedback.' }
 if (-not $mainSource.Contains('monthTitle.Template = ContentOnlyButtonTemplate();')) { throw 'The clickable date title must not use the Windows hover inversion.' }
@@ -50,22 +51,25 @@ $sportsSource = Get-Content -Raw (Join-Path $PSScriptRoot 'SportsCalendarWindow.
 if (($sportsSource | Select-String -Pattern 'new OnharuSegmentedSwitch' -AllMatches).Matches.Count -lt 3) { throw 'Sports view, range, and size controls must use segmented switches.' }
 $segmentSource = Get-Content -Raw (Join-Path $PSScriptRoot 'OnharuSegmentedSwitch.cs')
 if (-not $segmentSource.Contains('button.Template = new ControlTemplate') -or -not $segmentSource.Contains('Border.BackgroundProperty, Brushes.Transparent')) { throw 'Segment buttons must not show the Windows hover inversion.' }
-foreach ($token in @('20 + labels[i].Length * 10', 'Padding = new Thickness(8, 0, 8, 0)', 'new TemplateBindingExtension(Control.PaddingProperty)')) {
+foreach ($token in @('LabelWidth(labels[i]) + 4', 'Padding = new Thickness(2, 0, 2, 0)', 'new TemplateBindingExtension(Control.PaddingProperty)')) {
     if (-not $segmentSource.Contains($token)) { throw "Segment width or padding rule is missing: $token" }
 }
-if (-not $segmentSource.Contains('FontSize = 11.5') -or -not $layoutSource.Contains('Text = "📌 고정됨"') -or -not (Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.PositionMode.cs')).Contains('"↔ 이동 가능"')) { throw 'Segment text visibility or position-status icons are missing.' }
+if (-not $segmentSource.Contains('FontSize = 12.5') -or -not $layoutSource.Contains('new[] { "이동", "고정" }')) { throw 'Segment text visibility or position-mode labels are missing.' }
 $layerSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.ExplorerLayer.cs')
 $placementSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Placement.cs')
 if (-not $layerSource.Contains('if (RestoreBlockingDialog()) { UpdateModeButtons(); return; }') -or -not $placementSource.Contains('if (RestoreBlockingDialog()) { UpdateModeButtons(); return; }') -or $layerSource.Contains('if (IsEnabled) return false;')) { throw 'Visible ONHARU dialogs must block and roll back both position-mode transitions.' }
 $settingsSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'SettingsWindow.cs') -Raw
 if ($settingsSource.Contains('static string[][] ThemePresetPalettes') -or $settingsSource.Contains('static string[] ThemePresetNames')) { throw 'Preset policy must not return to SettingsWindow.' }
-foreach ($presetToken in @('오션블루','핫핑크','라임펄스','바이올렛','시안나이트','#DC2626')) {
+foreach ($presetToken in @('오션블루','핫핑크','라임펄스','바이올렛','앰버선셋','#DC2626')) {
     if (-not $presetSource.Contains($presetToken)) { throw "Preset module is missing: $presetToken" }
 }
-foreach ($token in @('OnharuColorPresets.Names', 'OnharuColorPresets.Palettes()', 'names[selectedPaletteIndex] + " 변경"', 'SavedPalettes[selectedPaletteIndex]', '"내 설정으로 저장"', 'ColorEditor("야구"', 'ColorEditor("D-Day"', 'ColorEditor("기념일"', 'ColorEditor("국경일"', 'Tuple.Create("파스텔", "classic"')) {
+foreach ($token in @('OnharuColorPresets.Names', 'OnharuColorPresets.Palettes()', '"내 설정으로 저장"', 'ColorEditor("야구"', 'ColorEditor("D-Day"', 'ColorEditor("기념일"', 'ColorEditor("국경일"', 'Tuple.Create("파스텔", "classic"')) {
     if (-not $settingsSource.Contains($token)) { throw "Theme preset or local color editor is missing: $token" }
 }
-foreach ($token in @('"#E7E9FF"', '"#4338CA"', 'PaletteEditorBackground(c)', 'PaletteEditorForeground(c)')) {
+foreach ($token in @('ActionAccentColor()', 'opacitySlider.Foreground = ActionAccentBrush()', 'calendarRangeSwitch.SetAccent(ActionAccentBrush(), Brushes.White)', 'OnharuStateColors.DetailTab(settings.ThemeId, entry.Item2, ActionAccentColor())')) {
+    if (-not (($themeSource + $layoutSource + $detailSource).Contains($token))) { throw "Preset representative action color is missing: $token" }
+}
+foreach ($token in @('refreshPastelThemeCard', 'CategoryColorSystem.Background("classic", accent)', 'PaletteEditorBackground(c)', 'PaletteEditorForeground(c)')) {
     if (-not $settingsSource.Contains($token)) { throw "Pastel settings preview rule is missing: $token" }
 }
 foreach ($token in @('specialColorGrid.Children.Add(holidayEditor)', 'PaletteEditorBackground(c)', 'PaletteEditorForeground(c)', 'CategoryColorSystem.Foreground(ThemeId, color)')) {
@@ -106,7 +110,6 @@ if ($settingsSource.Contains('GroupName = "TodayStyle", IsChecked = todayStyle =
 foreach ($token in @('CategoryColorSystem.Foreground(settings.ThemeId, itemColor)', 'CategoryColorSystem.Background(settings.ThemeId, itemColor)')) {
     if (-not $themeSource.Contains($token)) { throw "Shared category color system is missing from the calendar: $token" }
 }
-$detailSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Detail.cs')
 foreach ($stateHex in @('#6366F1','#4F46E5','#BE185D','#F472B6','#F1F5F9','#94A3B8')) {
     if ($detailSource.Contains($stateHex)) { throw "State color policy must not return to MainWindow.Detail: $stateHex" }
     if (-not $stateColorSource.Contains($stateHex)) { throw "State color module is missing: $stateHex" }
@@ -149,10 +152,19 @@ foreach ($token in @('CategoryColorSystem.DetailBackground(settings.ThemeId, gro
     if (-not (($detailSource + $anniversarySource).Contains($token))) { throw "Right detail card palette token is missing: $token" }
 }
 $settings = [Activator]::CreateInstance($assembly.GetType('FamilyPlanner.PlannerSettings', $true))
-if ($settings.Version -ne 39 -or $settings.ThemeId -ne 'classic' -or -not $settings.ShowThemeQuickSwitch) { throw 'Theme settings defaults are invalid.' }
+if ($settings.Version -ne 41 -or $settings.ThemeId -ne 'classic' -or -not $settings.ImportantFirst -or $settings.LockPalettePlacement) { throw 'Theme settings defaults are invalid.' }
 $themeDefinitionSource = Get-Content -Raw (Join-Path $PSScriptRoot 'OnharuTheme.cs')
 if ($themeDefinitionSource.Contains('colorful') -or $settingsSource.Contains('"컬러"')) { throw 'Removed colorful skin code must not remain.' }
-foreach ($token in @('new[] { "파스텔", "블랙" }', 'settings.ShowThemeQuickSwitch', '상단 스킨 전환 버튼 표시', 'actions.Children.Add(themeQuickSwitch)', 'SetAccent("#DDE7FF", "#4338CA")')) {
-    if (-not (($layoutSource + $settingsSource + $themeSource).Contains($token))) { throw "Theme quick-switch token is missing: $token" }
+foreach ($token in @('ShowThemeQuickSwitch', '상단 스킨 전환 버튼 표시', '선택 프리셋 변경', '색상 설정 초기화')) {
+    if (($layoutSource + $settingsSource + $themeSource).Contains($token)) { throw "Removed theme/color control remains: $token" }
+}
+foreach ($token in @('panel.Children.Insert(0, SectionCard(themeGroup))', 'panel.Children.Add(SectionCard(paletteGroup))', 'paletteGroup.Children.Add(presets)', 'paletteGroup.Children.Add(paletteSaveRow)', 'names[selectedPaletteIndex] + " 변경"', '내 설정으로 저장', 'selectedKeys.Count < 1', 'swapPair.Count == 2', 'colorSelectionOrder', '추천색 초기화', 'SelectionName(swapPair[0]) + " ⇄ " + SelectionName(swapPair[1])')) {
+    if (-not $settingsSource.Contains($token)) { throw "Theme settings layout token is missing: $token" }
+}
+foreach ($token in @('현재 색상 배치 고정', 'RandomizeRecommendedPalettePlacement()', 'settings.SelectedPaletteIndex >= 5', 'primary.Color = representative', 'settings.DdayColor = next()', 'settings.AnniversaryColor = next()')) {
+    if (-not (($settingsSource + $themeSource + (Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Startup.cs'))).Contains($token))) { throw "Palette placement token is missing: $token" }
+}
+foreach ($token in @('lowerActions.Children.Add(themeQuickSwitch)', 'UpdateThemeQuickSwitchStyle()', 'CategoryColorSystem.Background("classic", ActionAccentColor())', 'refreshPaletteChangeButton')) {
+    if (-not (($layoutSource + $settingsSource + $themeSource).Contains($token))) { throw "Always-visible theme switch or preset button style is missing: $token" }
 }
 Write-Host 'ONHARU 2.2 theme palette checks passed.'

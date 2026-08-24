@@ -160,8 +160,8 @@ namespace FamilyPlanner
         static ControlTemplate ContentOnlyButtonTemplate()
         {
             var content = new FrameworkElementFactory(typeof(ContentPresenter));
-            content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            content.SetValue(ContentPresenter.HorizontalAlignmentProperty, new TemplateBindingExtension(Control.HorizontalContentAlignmentProperty));
+            content.SetValue(ContentPresenter.VerticalAlignmentProperty, new TemplateBindingExtension(Control.VerticalContentAlignmentProperty));
             content.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(System.Windows.Controls.Button.ContentProperty));
             return new ControlTemplate(typeof(System.Windows.Controls.Button)) { VisualTree = content };
         }

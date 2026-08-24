@@ -65,3 +65,15 @@ CSV는 Google을 포함한 전체 일정 보고서다. 사용자가 CSV를 명�
 - 분당·일일 제한과 최대 첨부 크기
 - 개인정보처리방침의 메일 발송 데이터 흐름 반영
 - 실제 계정 2개로 성공·오류·재시도·중복 발송 시험
+
+## 공개 사용자 운영 전환 추가 조건 (2026-08-24)
+
+- 서버는 Google ID token의 서명, `aud`, `iss`, 만료, `email_verified`, `sub`를 검증한다.
+- 수신 주소는 클라이언트가 임의 지정하지 못하게 하고 검증된 Google 계정 이메일로 고정한다.
+- 발신자는 `ONHARU <noreply@onharu.app>`로 고정하며 임의 From/CC/BCC/Reply-To를 허용하지 않는다.
+- 사용자별 원자적 일일·주간 한도와 idempotency key를 적용하고 API Gateway 제한만 신뢰하지 않는다.
+- WAF, Lambda reserved concurrency, SES 내부 한도, AWS Budget 경보로 남용과 비용을 제한한다.
+- SES Configuration Set으로 delivery/reject/bounce/complaint/rendering failure를 수집하고 suppression list를 활성화한다.
+- 첨부 본문·일정 제목·토큰·원문 이메일을 로그나 영구 저장소에 남기지 않는다.
+- 개인정보처리방침에는 첨부가 ONHARU 중계 서버·AWS·수신 메일 사업자를 통과하며 별도 영구 보관하지 않는다고 정확히 고지한다.
+- SES mailbox simulator와 실제 계정으로 정상, 잘못된 토큰, 다른 수신자, 중복 요청, 과대 첨부, 연속 요청을 시험한다.

@@ -51,11 +51,29 @@ namespace FamilyPlanner
             shownMonth = candidate; RenderAll();
         }
 
+        void BindCalendarNavigation(Button button, int direction)
+        {
+            button.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                HandleCalendarNavigationClick(direction, e.ClickCount > 1); e.Handled = true;
+            };
+        }
+
+        void HandleCalendarNavigationClick(int direction, bool doubleClick)
+        {
+            if (!doubleClick) { MoveCalendarSingleStep(direction); return; }
+            if (ActiveCalendarRangeMode == "weeks")
+            {
+                try { shownMonth = shownMonth.AddDays(-direction * 7); }
+                catch (ArgumentOutOfRangeException) { return; }
+                MoveCalendar(direction);
+            }
+            // Month view already moved once on the first click. The second
+            // half of a double-click intentionally adds no further month.
+        }
+
         void UpdatePeriodNavigationButtons()
         {
-            var enabled = ActiveCalendarRangeMode == "weeks";
-            if (previousPeriodButton != null) { previousPeriodButton.IsEnabled = enabled; previousPeriodButton.Opacity = enabled ? 1.0 : .38; }
-            if (nextPeriodButton != null) { nextPeriodButton.IsEnabled = enabled; nextPeriodButton.Opacity = enabled ? 1.0 : .38; }
             if (calendarRangeSwitch != null) { calendarRangeSwitch.SetLabel(0, Math.Max(1, Math.Min(6, settings.VisibleWeekCount)) + "주"); calendarRangeSwitch.SetSelected(temporaryMonthView ? 1 : 0, false); }
         }
 
@@ -170,8 +188,8 @@ namespace FamilyPlanner
         {
             var day = ProjectItems(date.Date, date.Date).Where(x => OccursOnDate(x, date) && IsItemVisible(x) && ShowCompleted(x));
             if (settings.CalendarOrderMode == "time")
-                return day.OrderBy(CompletedRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
-            return day.OrderBy(CompletedRank).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start);
+                return day.OrderBy(CompletedRank).ThenBy(ImportantRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(x => x.Start).ThenBy(x => x.Title);
+            return day.OrderBy(CompletedRank).ThenBy(ImportantRank).ThenBy(x => x.AllDay ? 0 : 1).ThenBy(GroupOrder).ThenBy(DisplayGroup).ThenBy(x => x.Start);
         }
     }
 }
