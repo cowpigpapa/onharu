@@ -93,7 +93,8 @@ namespace FamilyPlanner
         {
             return Text(left.Title) == Text(right.Title) && left.Start == right.Start && left.End == right.End && left.AllDay == right.AllDay &&
                 left.IsTodo == right.IsTodo && left.Completed == right.Completed && Text(left.Category) == Text(right.Category) && Text(left.Notes) == Text(right.Notes) &&
-                left.Important == right.Important && left.ShowDday == right.ShowDday && left.AnniversaryDate == right.AnniversaryDate &&
+                left.Important == right.Important && left.ImportantBackgroundColor == right.ImportantBackgroundColor &&
+                left.ImportantTextColor == right.ImportantTextColor && left.ShowDday == right.ShowDday && left.AnniversaryDate == right.AnniversaryDate &&
                 Text(left.AnniversaryType) == Text(right.AnniversaryType) && Text(left.RecurrenceFrequency) == Text(right.RecurrenceFrequency) &&
                 Text(left.RecurrenceMode) == Text(right.RecurrenceMode) && Text(left.RecurrenceDays) == Text(right.RecurrenceDays) &&
                 left.RecurrenceUntil == right.RecurrenceUntil && left.RecurrenceCount == right.RecurrenceCount &&

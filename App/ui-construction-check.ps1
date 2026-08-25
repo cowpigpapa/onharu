@@ -1,4 +1,4 @@
-param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe'))
+﻿param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe'))
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path -LiteralPath $Exe).Path)
 if ([Threading.Thread]::CurrentThread.ApartmentState -ne 'STA') { throw 'UI construction check requires STA.' }
@@ -14,9 +14,9 @@ $settingsArgs = [object[]]@(
     '#2563EB', '#DB2777', '#16A085', '#38A7D8', '#A78BFA', '#EF4444', [double]12, 'category', $true, $false, $true, $true, $false,
     'iso', 'monday', (New-List ([int])).PSObject.BaseObject, $false, [int]15, $calendarList.PSObject.BaseObject, $false, [int]0, $true, $true, '', [int]0,
     $stringList.PSObject.BaseObject, (New-List ([string])).PSObject.BaseObject, $true, (New-List ([string])).PSObject.BaseObject, (New-List ([string])).PSObject.BaseObject, [int]8, $false,
-    'monthAuto', [int]4, [int]2, 'border', '#CCDBEAFE', '#3B82F6', '#CCFCE7F3', 'fill', '#F59E0B',
+    'border', '#CCDBEAFE', '#3B82F6', '#CCFCE7F3', 'fill', '#F59E0B',
     'local:business', $true, [int]9, [int]0, [int]30, [int]-1,
-    'fade', 'last', $true, [int]22, [int]7, 'remember', 'minimize', $true, $true, $true, $false, $false, $true, 'classic', $true, $true, $true, $true
+    'fade', 'last', $true, $true, [int]22, [int]7, 'screen', 'remember', $true, $true, $true, $false, $false, $true, 'classic', $true, $true, $true, $true
 )
 $settings = $settingsType.GetConstructors()[0].Invoke($settingsArgs)
 if ($settings.Width -ne 620) { throw 'Settings window width changed unexpectedly.' }

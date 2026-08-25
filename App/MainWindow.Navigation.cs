@@ -12,7 +12,7 @@ namespace FamilyPlanner
 {
     public partial class MainWindow
     {
-        string ActiveCalendarRangeMode { get { return temporaryMonthView ? settings.MonthRangeMode : "weeks"; } }
+        string ActiveCalendarRangeMode { get { return temporaryMonthView ? "monthAuto" : "weeks"; } }
 
         void SetTemporaryMonthView(bool month)
         {
@@ -21,7 +21,6 @@ namespace FamilyPlanner
             else if (periodViewAnchor != default(DateTime)) shownMonth = periodViewAnchor;
             temporaryMonthView = month;
             settings.UseMonthView = month;
-            settings.CalendarRangeMode = month ? settings.MonthRangeMode : "weeks";
             Store.SaveSettings(settings);
             RenderAll();
         }
@@ -75,6 +74,39 @@ namespace FamilyPlanner
         void UpdatePeriodNavigationButtons()
         {
             if (calendarRangeSwitch != null) { calendarRangeSwitch.SetLabel(0, Math.Max(1, Math.Min(6, settings.VisibleWeekCount)) + "주"); calendarRangeSwitch.SetSelected(temporaryMonthView ? 1 : 0, false); }
+        }
+
+        void OpenWeekCountPopup()
+        {
+            if (weekCountPopup != null && weekCountPopup.IsOpen) { weekCountPopup.IsOpen = false; return; }
+            CloseTransientPopup();
+            var popupWidth = Math.Max(41, calendarRangeSwitch.SegmentWidth(0));
+            var panel = new StackPanel();
+            for (var count = 1; count <= 6; count++)
+            {
+                var selectedCount = count;
+                var selected = settings.VisibleWeekCount == count;
+                var button = Button(count + "주", null, popupWidth - 6); button.Height = 25; button.Margin = new Thickness(0, 1, 0, 1);
+                button.HorizontalContentAlignment = HorizontalAlignment.Center;
+                button.Padding = new Thickness(0); button.BorderThickness = new Thickness(0);
+                button.Background = selected ? ActionAccentBrush() : Brushes.Transparent;
+                button.Foreground = selected ? Brushes.White : T("Text");
+                button.Click += delegate
+                {
+                    settings.VisibleWeekCount = selectedCount;
+                    temporaryMonthView = false; settings.UseMonthView = false;
+                    Store.SaveSettings(settings); weekCountPopup.IsOpen = false; RenderAll();
+                };
+                panel.Children.Add(button);
+            }
+            var popup = new Popup { PlacementTarget = calendarRangeSwitch.SegmentTarget(0), Placement = PlacementMode.Bottom,
+                HorizontalOffset = 0, VerticalOffset = 3, StaysOpen = false, AllowsTransparency = true };
+            popup.Child = new Border { Width = popupWidth, Background = T("Calendar"), BorderBrush = ActionAccentBrush(), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10), Padding = new Thickness(2, 3, 2, 3), Child = panel,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = .18, Color = System.Windows.Media.Colors.Black } };
+            weekCountPopup = popup; transientPopup = popup;
+            popup.Closed += delegate { if (ReferenceEquals(transientPopup, popup)) transientPopup = null; if (ReferenceEquals(weekCountPopup, popup)) weekCountPopup = null; if (positionLocked) PublishAndHide(); };
+            popup.IsOpen = true;
         }
 
         void OpenMonthJump(object sender, RoutedEventArgs e)

@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $releaseRoot = Join-Path $root 'Release'
-$stage = Join-Path $releaseRoot 'ONHARU-2.2.2'
+$stage = Join-Path $releaseRoot 'ONHARU-2.2.3'
 $installerOutput = Join-Path $releaseRoot 'Installer'
 $iscc = Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'
 
@@ -31,8 +31,8 @@ $hashes | ForEach-Object { $_.Hash + '  ' + (Split-Path -Leaf $_.Path) } | Set-C
 if (-not (Test-Path -LiteralPath $iscc)) { throw 'Inno Setup 6 compiler was not found.' }
 & $iscc (Join-Path $root 'Installer\ONHARU.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
-Get-FileHash -LiteralPath (Join-Path $installerOutput 'ONHARU-2.2.2-Setup.exe') -Algorithm SHA256 |
-    ForEach-Object { $_.Hash + '  ONHARU-2.2.2-Setup.exe' } | Set-Content -LiteralPath (Join-Path $installerOutput 'SHA256SUMS.txt') -Encoding ascii
+Get-FileHash -LiteralPath (Join-Path $installerOutput 'ONHARU-2.2.3-Setup.exe') -Algorithm SHA256 |
+    ForEach-Object { $_.Hash + '  ONHARU-2.2.3-Setup.exe' } | Set-Content -LiteralPath (Join-Path $installerOutput 'SHA256SUMS.txt') -Encoding ascii
 
 # Keep source directories clean. Everything below is reproducible from source.
 foreach ($generated in @(
@@ -46,4 +46,4 @@ foreach ($generated in @(
     (Join-Path $root 'ExplorerLayer\LayerHost.obj')
 )) { if (Test-Path -LiteralPath $generated) { [IO.File]::Delete($generated) } }
 Write-Host "Release: $stage"
-Write-Host "Installer: $(Join-Path $installerOutput 'ONHARU-2.2.2-Setup.exe')"
+Write-Host "Installer: $(Join-Path $installerOutput 'ONHARU-2.2.3-Setup.exe')"

@@ -259,6 +259,7 @@ namespace FamilyPlanner
                 { "onharuRollover", string.IsNullOrWhiteSpace(item.RolloverMode) ? "0" : "1" },
                 { "onharuRolloverMode", item.RolloverMode ?? "none" }, { "onharuReminder", item.ReminderMinutes.ToString() },
                 { "onharuImportant", item.Important ? "1" : "0" }, { "onharuDday", item.ShowDday ? "1" : "0" },
+                { "onharuImportantBackground", item.ImportantBackgroundColor ?? "" }, { "onharuImportantText", item.ImportantTextColor ?? "" },
                 { "onharuAnniversaryDate", item.AnniversaryDate.Year >= 1900 ? item.AnniversaryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "" },
                 { "onharuRecurrence", item.RecurrenceFrequency ?? "" },
                 { "onharuRecurrenceMode", item.RecurrenceMode ?? "" }, { "onharuRecurrenceDays", item.RecurrenceDays ?? "" },
@@ -301,6 +302,8 @@ namespace FamilyPlanner
             { item.ReminderMinutes = NormalizeReminderMinutes(reminder, item.AllDay); item.ReminderConfigured = true; }
             else if (!item.ReminderConfigured) { item.ReminderMinutes = item.AllDay ? -1 : 10; item.ReminderConfigured = true; }
             if (p != null && p.TryGetValue("onharuImportant", out value)) item.Important = value == "1";
+            item.ImportantBackgroundColor = p != null && p.TryGetValue("onharuImportantBackground", out value) ? value : null;
+            item.ImportantTextColor = p != null && p.TryGetValue("onharuImportantText", out value) ? value : null;
             if (p != null && p.TryGetValue("onharuDday", out value)) item.ShowDday = value == "1";
             DateTime anniversaryDate;
             if (p != null && p.TryGetValue("onharuAnniversaryDate", out value) &&

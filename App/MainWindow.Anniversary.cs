@@ -61,7 +61,7 @@ namespace FamilyPlanner
                 }
             }
             detail.Children.Add(new Border { Background = ddayBackground, BorderBrush = ddayBorder, BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
+                CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, 7), Margin = new Thickness(0, 8, 0, 0), Child = stack });
         }
 
         Button SmallSectionButton(string text, string background, string border, string foreground)
@@ -124,7 +124,7 @@ namespace FamilyPlanner
             if (anniversarySectionCollapsed)
             {
                 detail.Children.Add(new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
+                    CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, 7), Margin = new Thickness(0, 8, 0, 0), Child = stack });
                 return;
             }
             var visibleCount = AnniversaryVisibleCount(anniversaries.Count, anniversaryCardsExpanded);
@@ -154,7 +154,7 @@ namespace FamilyPlanner
                 toggle.Click += delegate { anniversaryCardsExpanded = !anniversaryCardsExpanded; RenderDetail(); };
                 stack.Children.Add(toggle);
             }
-            detail.Children.Add(new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(11, 8, 11, 8), Margin = new Thickness(0, 8, 0, 0), Child = stack });
+            detail.Children.Add(new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, 7), Margin = new Thickness(0, 8, 0, 0), Child = stack });
         }
 
         static ControlTemplate ContentOnlyButtonTemplate()

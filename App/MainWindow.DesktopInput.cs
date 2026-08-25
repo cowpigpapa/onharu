@@ -34,8 +34,8 @@ namespace FamilyPlanner
             else if (action == 14) { ShowForDialog(); GoogleClick(null, null); return; }
             else if (action == 15) { ShowForDialog(); OpenSearch(null, null); return; }
             else if (action == 16) { ShowForDialog(); OpenSettings(null, null); return; }
-            else if (action == 20) { settings.SidebarVisible = !settings.SidebarVisible; Store.SaveSettings(settings); }
-            else if (action == 25) { ExecuteCloseButtonAction(); return; }
+            else if (action == 20) { ToggleSidebar(null, null); if (positionLocked) SchedulePublish(); return; }
+            else if (action == 25) { MinimizeToTray(); return; }
             else if (action == 28) { OpenCloseContextMenu(); return; }
             else if (action == 26) { settings.Opacity = Math.Max(.10, Math.Min(1.0, value / 100.0)); Opacity = settings.Opacity; explorerFrame.UpdateOpacity(settings.Opacity); Store.SaveSettings(settings); }
             else return;

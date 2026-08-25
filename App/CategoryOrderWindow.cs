@@ -42,14 +42,11 @@ namespace FamilyPlanner
             header.Children.Add(new TextBlock { Text = "☷  카테고리 표시 순서", FontSize = 21, FontWeight = FontWeights.Bold });
             header.MouseLeftButtonDown += delegate { if (Mouse.LeftButton == MouseButtonState.Pressed) DragMove(); }; panel.Children.Add(header);
             panel.Children.Add(new TextBlock { Text = "온하루와 Google 캘린더를 원하는 순서로 이동하세요.", Foreground = Brush("#64748B"), Margin = new Thickness(0, 3, 0, 10) });
-            if (entries.Count <= 6) panel.Children.Add(list);
-            else
-            {
-                scroller = new ScrollViewer { Content = list, Height = 288, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-                scroller.Loaded += delegate { UiRound.SoftenScrollBars(scroller); };
-                panel.Children.Add(scroller);
-            }
+            scroller = new ScrollViewer { Content = list, Height = Math.Min(288, Math.Max(48, entries.Count * 48)),
+                VerticalScrollBarVisibility = entries.Count > 6 ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+            scroller.Loaded += delegate { UiRound.SoftenScrollBars(scroller); };
+            panel.Children.Add(scroller);
             Render();
             var save = new Button { Content = "✓  순서 적용", Height = 42, Background = Brush("#4F46E5"), Foreground = Brushes.White, BorderThickness = new Thickness(0), Margin = new Thickness(0, 10, 0, 0) };
             UiRound.Apply(save, 12);
@@ -99,12 +96,12 @@ namespace FamilyPlanner
         {
             var target = index + direction;
             if (target < 0 || target >= entries.Count) return;
+            var previousOffset = scroller == null ? 0 : scroller.VerticalOffset;
             var value = entries[index]; selectedKey = value.Item1; entries.RemoveAt(index); entries.Insert(target, value); Render();
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate
             {
                 UpdateLayout();
-                var movedCard = list.Children.OfType<Border>().FirstOrDefault(x => string.Equals(x.Tag as string, selectedKey, StringComparison.Ordinal));
-                if (movedCard != null && scroller != null) movedCard.BringIntoView();
+                if (scroller != null) scroller.ScrollToVerticalOffset(Math.Max(0, previousOffset + direction * 48));
                 Mouse.Capture(null); Mouse.Synchronize();
             }));
         }

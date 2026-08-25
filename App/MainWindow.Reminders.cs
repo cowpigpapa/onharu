@@ -36,6 +36,7 @@ namespace FamilyPlanner
 
         void CheckReminders()
         {
+            if (!settings.RemindersEnabled) return;
             var now = DateTime.Now; var due = new List<PlannerItem>(); var keys = new Dictionary<string, string>();
             foreach (var item in items.Where(x => x.ReminderConfigured && !x.Completed))
             {
@@ -62,6 +63,10 @@ namespace FamilyPlanner
             // ShowDialog() on SettingsWindow disables other windows on the main UI
             // thread. A dedicated STA dispatcher keeps reminder buttons independent.
             var reminderItems = due.ToList();
+            var onharuBounds = new Rect(Left, Top, ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
+            var placeOnharu = settings.ReminderPosition == "onharu";
+            var primaryBounds = SystemParameters.WorkArea;
+            var reminderBounds = placeOnharu ? onharuBounds : primaryBounds;
             var thread = new Thread(new ThreadStart(delegate
             {
                 var window = new ReminderWindow(reminderItems, delegate(int? snooze)
@@ -78,7 +83,7 @@ namespace FamilyPlanner
                         }
                         Store.Save(items);
                     }));
-                });
+                }, reminderBounds);
                 window.ShowDialog();
             }));
             thread.IsBackground = true; thread.SetApartmentState(ApartmentState.STA); thread.Start();

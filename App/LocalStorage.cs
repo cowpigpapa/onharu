@@ -230,7 +230,7 @@ namespace FamilyPlanner
                     if (settings.Version < 6) { settings.CompletedLast = true; settings.Version = 6; }
                     if (settings.Version < 7)
                     {
-                        settings.CalendarRangeMode = "month6"; settings.VisibleWeekCount = 1; settings.TodayRow = 1; settings.Version = 7;
+                        settings.VisibleWeekCount = 4; settings.Version = 7;
                     }
                     if (settings.Version < 8)
                     {
@@ -242,7 +242,7 @@ namespace FamilyPlanner
                     if (settings.Version < 10) { settings.StartViewMode = "today"; settings.LastShownDate = DateTime.Today; settings.Version = 10; }
                     if (settings.Version < 11) { settings.ReminderSound = true; settings.QuietStartHour = 22; settings.QuietEndHour = 7; settings.Version = 11; }
                     if (settings.Version < 12) { settings.StartupPositionMode = "remember"; settings.Version = 12; }
-                    if (settings.Version < 13) { settings.CloseButtonAction = "minimize"; settings.Version = 13; }
+                    if (settings.Version < 13) settings.Version = 13;
                     if (settings.Version < 14) { settings.AnniversaryVisible = true; settings.Version = 14; }
                     if (settings.Version < 15) settings.Version = 15;
                     if (settings.Version < 16) { settings.DdayPanelVisible = true; settings.Version = 16; }
@@ -264,8 +264,6 @@ namespace FamilyPlanner
                     if (settings.Version < 28) { settings.ThemeId = "classic"; settings.Version = 28; }
                     if (settings.Version < 29)
                     {
-                        settings.MonthRangeMode = settings.CalendarRangeMode == "weeks" ? "monthAuto" : settings.CalendarRangeMode;
-                        settings.UseMonthView = settings.CalendarRangeMode != "weeks";
                         settings.Version = 29;
                     }
                     if (settings.Version < 30)
@@ -334,7 +332,16 @@ namespace FamilyPlanner
                         settings.LockPalettePlacement = false;
                         settings.Version = 41;
                     }
+                    if (settings.Version < 42)
+                    {
+                        settings.DetailOrderMode = settings.CalendarOrderMode == "time" ? "time" : "category";
+                        settings.Version = 42;
+                    }
+                    if (settings.Version < 43) { settings.ReminderPosition = "screen"; settings.Version = 43; }
+                    if (settings.Version < 44) { settings.RemindersEnabled = true; settings.Version = 44; }
                     if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();
+                    if (settings.DetailOrderMode != "time" && settings.DetailOrderMode != "category") settings.DetailOrderMode = "category";
+                    if (settings.ReminderPosition != "onharu") settings.ReminderPosition = "screen";
                     settings.ThemeId = OnharuThemePalette.Normalize(settings.ThemeId);
                     if (string.IsNullOrWhiteSpace(settings.BaseballColor)) settings.BaseballColor = "#38A169";
                     if (!new[] { .90, 1.0, 1.15 }.Contains(settings.SportsCalendarScale)) settings.SportsCalendarScale = 1.0;
@@ -343,9 +350,6 @@ namespace FamilyPlanner
                     if (string.IsNullOrWhiteSpace(settings.HolidayColor)) settings.HolidayColor = "#E53E3E";
                     if (settings.RestDays == null) settings.RestDays = new List<int> { 0, 6 };
                     settings.RestDays = settings.RestDays.Where(x => x >= 0 && x <= 6).Distinct().ToList();
-                    if (string.IsNullOrWhiteSpace(settings.CalendarRangeMode)) settings.CalendarRangeMode = "month6";
-                    if (!new[] { "monthAuto", "month5", "month6", "weeks" }.Contains(settings.CalendarRangeMode)) settings.CalendarRangeMode = "month6";
-                    if (!new[] { "monthAuto", "month5", "month6" }.Contains(settings.MonthRangeMode)) settings.MonthRangeMode = "monthAuto";
                     if (string.IsNullOrWhiteSpace(settings.SelectedDateStyle)) settings.SelectedDateStyle = "fill";
                     if (settings.SelectedDateStyle != "fill" && settings.SelectedDateStyle != "border" && settings.SelectedDateStyle != "both" && settings.SelectedDateStyle != "none") settings.SelectedDateStyle = "fill";
                     if (string.IsNullOrWhiteSpace(settings.TodayColor)) settings.TodayColor = "#CCFCE7F3";
@@ -360,7 +364,6 @@ namespace FamilyPlanner
                     if (settings.StartViewMode != "today" && settings.StartViewMode != "last") settings.StartViewMode = "today";
                     if (settings.LastShownDate.Year < 1900 || settings.LastShownDate.Year > 9998) settings.LastShownDate = DateTime.Today;
                     if (!new[] { "remember", "locked", "editable" }.Contains(settings.StartupPositionMode)) settings.StartupPositionMode = "remember";
-                    if (!new[] { "minimize", "confirm_exit" }.Contains(settings.CloseButtonAction)) settings.CloseButtonAction = "minimize";
                     if (!new[] { 11.0, 12.0, 14.0 }.Contains(settings.FontSize)) settings.FontSize = 12;
                     if (!new[] { 0, 5, 15, 30, 60 }.Contains(settings.AutoSyncMinutes)) settings.AutoSyncMinutes = 0;
                     if (settings.CalendarOrderMode != "category" && settings.CalendarOrderMode != "time") settings.CalendarOrderMode = "category";
@@ -369,7 +372,6 @@ namespace FamilyPlanner
                         settings.WeekStartDay = settings.WeekNumberRule == "jan1" ? "sunday" : "monday";
                     settings.Opacity = Math.Max(.10, Math.Min(1.0, settings.Opacity));
                     settings.VisibleWeekCount = Math.Max(1, Math.Min(6, settings.VisibleWeekCount));
-                    settings.TodayRow = Math.Max(1, Math.Min(settings.VisibleWeekCount, settings.TodayRow));
                     settings.DefaultStartHour = Math.Max(0, Math.Min(23, settings.DefaultStartHour));
                     settings.DefaultStartMinute = Math.Max(0, Math.Min(59, settings.DefaultStartMinute));
                     if (!new[] { 30, 60, 90, 120 }.Contains(settings.DefaultDurationMinutes)) settings.DefaultDurationMinutes = 30;

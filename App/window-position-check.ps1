@@ -37,6 +37,12 @@ foreach ($physicalPlacementFeature in @('SavePhysicalPlacement()', 'RestorePhysi
 foreach ($dpiPlacementFeature in @('AttachDpiPlacement()', 'ApplyPhysicalMinimums(', 'WM_DPICHANGED', 'DPI_RESTORE')) {
     if (-not $mainSource.Contains($dpiPlacementFeature)) { throw "PMv2 물리 위치 복원이 누락됐습니다: $dpiPlacementFeature" }
 }
+foreach ($mixedDpiMoveFeature in @('WM_ENTERSIZEMOVE', 'WM_EXITSIZEMOVE', 'nativeMoveSizeActive && !positionLocked', 'DPI_MOVE allow suggested')) {
+    if (-not $mainSource.Contains($mixedDpiMoveFeature)) { throw "혼합 DPI 드래그 보호가 누락됐습니다: $mixedDpiMoveFeature" }
+}
+if (-not $mainSource.Contains('Math.Max(MinimumPhysicalWidth / scale, MinimumLayoutWidth)')) {
+    throw '125% DPI에서 헤더가 잘리지 않도록 논리 최소 폭을 보장하지 않습니다.'
+}
 $manifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'app.manifest') -Raw -Encoding UTF8
 $config = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'app.config') -Raw -Encoding UTF8
 if (-not $manifest.Contains('PerMonitorV2, PerMonitor')) { throw 'PerMonitorV2 manifest가 누락됐습니다.' }

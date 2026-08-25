@@ -31,7 +31,7 @@ $checks = @(
 foreach ($name in $checks) {
     Write-Host "[CHECK] $name"
     $path = Join-Path $root "App\$name"
-    if ($name -eq 'feature-pack-check.ps1') {
+    if ($name -in @('feature-pack-check.ps1', 'theme-check.ps1')) {
         & pwsh -NoProfile -File $path -ExePath $exe
         if ($LASTEXITCODE -ne 0) { throw "$name failed with exit code $LASTEXITCODE." }
     }

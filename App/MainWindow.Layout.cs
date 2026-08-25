@@ -25,7 +25,7 @@ namespace FamilyPlanner
             header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var titleRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom };
             var logo = new Border { Width = 44, Height = 44, Background = T("Button"), BorderBrush = T("AccentBorder"),
-                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 0, 14, 0), Padding = new Thickness(7),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(7),
                 Cursor = Cursors.Hand, ToolTip = "온하루 메뉴", Tag = "logo_menu" };
             logo.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) { e.Handled = true; OpenLogoMenu(logo); };
             var logoTiles = new UniformGrid { Rows = 3, Columns = 3 };
@@ -58,7 +58,7 @@ namespace FamilyPlanner
             brandLine.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             brandLine.Children.Add(new TextBlock { Text = "온하루 · ONHARU", FontSize = 17, FontWeight = FontWeights.Bold,
                 Foreground = BrandBrush(), VerticalAlignment = VerticalAlignment.Bottom });
-            var brandNavigation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 0) };
+            var brandNavigation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(10, 0, 0, 0) };
             brandNavigation.Children.Add(previousButton); brandNavigation.Children.Add(todayButton); brandNavigation.Children.Add(nextButton);
             Grid.SetColumn(brandNavigation, 1); brandLine.Children.Add(brandNavigation);
             brandLine.Margin = new Thickness(0); titleStack.Children.Add(brandLine);
@@ -87,13 +87,15 @@ namespace FamilyPlanner
             sportsButton.Height = 28; sportsButton.FontSize = 14; sportsButton.ToolTip = "프로야구 일정";
             sportsButton.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
             featureActions.Children.Add(sportsButton);
-            collapseSidebarButton = IconButton(settings.SidebarVisible ? "❯" : "❮", ToggleSidebar, 28);
+            collapseSidebarButton = IconButton(settings.SidebarVisible ? "❯" : "❮", ToggleSidebar, 20);
+            collapseSidebarButton.Tag = "toggle_sidebar";
             collapseSidebarButton.Height = 27; collapseSidebarButton.Margin = new Thickness(0, 0, 5, 0);
             collapseSidebarButton.ToolTip = settings.SidebarVisible ? "일정 패널 접기" : "일정 패널 펼치기";
             calendarRangeSwitch = new OnharuSegmentedSwitch(
                 new[] { Math.Max(1, Math.Min(6, settings.VisibleWeekCount)) + "주", "월 전체" }, new[] { 41.0, 55.0 }, temporaryMonthView ? 1 : 0,
                 delegate(int index) { SetTemporaryMonthView(index == 1); });
             calendarRangeSwitch.SetAccent(ActionAccentBrush(), Brushes.White);
+            calendarRangeSwitch.Clicked += delegate(int index, bool wasSelected) { if (index == 0 && wasSelected) OpenWeekCountPopup(); };
             calendarRangeSwitch.Margin = new Thickness(0); calendarRangeSwitch.VerticalAlignment = VerticalAlignment.Center;
             Grid.SetColumn(calendarRangeSwitch, 1); lowerActions.Children.Add(calendarRangeSwitch);
             themeQuickSwitch = new OnharuSegmentedSwitch(new[] { "파스텔", "블랙" }, new[] { 45.0, 38.0 }, settings.ThemeId == "dark" ? 1 : 0,
@@ -114,7 +116,7 @@ namespace FamilyPlanner
                     if (!positionLocked) LockCurrentPlacement();
                 });
             AutomationProperties.SetAutomationId(positionModeSwitch, "OnharuPositionMode");
-            positionModeSwitch.Margin = new Thickness(0); positionModeSwitch.Width = 92; positionModeSwitch.Height = 27;
+            positionModeSwitch.Margin = new Thickness(0); positionModeSwitch.Width = 92; positionModeSwitch.Height = 26;
             positionModeSwitch.VerticalAlignment = VerticalAlignment.Center;
             Grid.SetColumn(positionModeSwitch, 5);
             lowerActions.Children.Add(positionModeSwitch);
@@ -127,11 +129,11 @@ namespace FamilyPlanner
             var actionArea = new Grid { Width = 310, Height = 59, VerticalAlignment = VerticalAlignment.Bottom, ClipToBounds = false };
             actionArea.RowDefinitions.Add(new RowDefinition { Height = new GridLength(30) });
             actionArea.RowDefinitions.Add(new RowDefinition { Height = new GridLength(2) });
-            actionArea.RowDefinitions.Add(new RowDefinition { Height = new GridLength(27) });
+            actionArea.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
             actionArea.Children.Add(upperActions);
             Grid.SetRow(lowerActions, 2); actionArea.Children.Add(lowerActions);
             collapseSidebarButton.HorizontalAlignment = HorizontalAlignment.Left;
-            collapseSidebarButton.Margin = new Thickness(-28, 0, 0, 0);
+            collapseSidebarButton.Margin = new Thickness(-20, 0, 0, 0);
             Grid.SetRow(collapseSidebarButton, 2); actionArea.Children.Add(collapseSidebarButton);
             googleStatus = new TextBlock { Text = "동기화 완료", Foreground = Brush("#16A34A"),
                 FontSize = 10.5, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right,
@@ -152,10 +154,10 @@ namespace FamilyPlanner
             var categoryHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 14) };
             accountStatus.RenderTransform = accountStatusShift; Canvas.SetTop(accountStatus, 1); accountStatusViewport.Children.Add(accountStatus);
             accountStatusViewport.SizeChanged += delegate { StartAccountMarquee(); };
-            googleAccountCard = new Border { Background = T("AccentSoft"), CornerRadius = new CornerRadius(9),
-                Padding = new Thickness(10, 6, 10, 6), Child = accountStatusViewport, Cursor = Cursors.Hand,
+            googleAccountCard = new Border { Background = T("AccentSoft"), CornerRadius = new CornerRadius(9), Height = 27,
+                Padding = new Thickness(10, 0, 10, 0), Child = accountStatusViewport, Cursor = Cursors.Hand,
                 ToolTip = "클릭하여 Google Calendar 동기화", Tag = "google_sync" };
-            var googleSettingsButton = Button("G 설정", OpenGoogleAccountSettings, 62); googleSettingsButton.Height = 30;
+            var googleSettingsButton = Button("G 설정", OpenGoogleAccountSettings, 62); googleSettingsButton.Height = 27;
             googleSettingsButton.FontSize = 11; googleSettingsButton.FontWeight = FontWeights.SemiBold; googleSettingsButton.Margin = new Thickness(6, 0, 0, 0);
             googleSettingsButton.Foreground = Brush("#4338CA"); googleSettingsButton.Background = Brush("#EEF2FF");
             googleSettingsButton.ToolTip = "Google 계정 변경·로그아웃";
@@ -179,6 +181,7 @@ namespace FamilyPlanner
             Grid.SetRow(localFilterRow, 1); Grid.SetRow(specialFilterRow, 1); Grid.SetColumn(specialFilterRow, 2);
             foreach (var category in new[] { "업무일정", "개인일정", "야구", "D-Day", "기념일" })
             {
+                if (category == "야구" && !settings.UseProBaseball) continue;
                 var visible = category == "업무일정" ? settings.BusinessVisible : category == "개인일정" ? settings.PersonalVisible :
                     category == "야구" ? settings.BaseballVisible : category == "기념일" ? settings.AnniversaryVisible : settings.DdayPanelVisible;
                 var displayCategory = category == "업무일정" ? "업무" : category == "개인일정" ? "개인" : category;
@@ -202,9 +205,10 @@ namespace FamilyPlanner
             Grid.SetColumn(nextWeekButton, 4); detailTabs.Children.Add(nextWeekButton);
             sideStack.Children.Add(detailTabs);
             var detailHeader = new DockPanel();
-            dateColorButton = Button("★ 중요한 날", null, 82); dateColorButton.Height = 28; dateColorButton.FontSize = 10.5;
-            dateColorButton.Background = Brushes.White; dateColorButton.Foreground = Brush("#64748B");
-            dateColorButton.BorderBrush = Brush("#CBD5E1");
+            dateColorButton = IconButton("important_day", null, 23); dateColorButton.Height = 23;
+            dateColorButton.Margin = new Thickness(5, 0, 0, 0); dateColorButton.Padding = new Thickness(0);
+            dateColorButton.Background = Brushes.Transparent; dateColorButton.Foreground = Brush("#64748B");
+            dateColorButton.BorderBrush = Brushes.Transparent; dateColorButton.BorderThickness = new Thickness(0);
             dateColorButton.Click += delegate
             {
                 var opening = dateColorPalette.Visibility != Visibility.Visible;
@@ -212,8 +216,15 @@ namespace FamilyPlanner
                 if (opening) PositionDateColorPalette();
                 if (positionLocked) SchedulePublish();
             };
-            dateColorButton.ToolTip = "중요한 날 배경색 선택"; DockPanel.SetDock(dateColorButton, Dock.Right); detailHeader.Children.Add(dateColorButton);
-            detailHeader.Children.Add(selectedTitle); sideStack.Children.Add(detailHeader);
+            dateColorButton.ToolTip = "중요한 날";
+            detailOrderSwitch = new OnharuSegmentedSwitch(new[] { "카테고리", "시간순" }, new[] { 58.0, 49.0 }, settings.DetailOrderMode == "time" ? 1 : 0,
+                delegate(int index) { settings.DetailOrderMode = index == 1 ? "time" : "category"; Store.SaveSettings(settings); RenderDetail(); });
+            detailOrderSwitch.SetAccent(ActionAccentBrush(), Brushes.White); detailOrderSwitch.Margin = new Thickness(7, 0, 0, 0);
+            DockPanel.SetDock(detailOrderSwitch, Dock.Right); detailHeader.Children.Add(detailOrderSwitch);
+            var selectedTitleRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            dateColorButton.Margin = new Thickness(0, 0, 5, 0);
+            selectedTitleRow.Children.Add(dateColorButton); selectedTitleRow.Children.Add(selectedTitle);
+            detailHeader.Children.Add(selectedTitleRow); sideStack.Children.Add(detailHeader);
             dateColorPalette = BuildInlineDateColorPalette();
             sideStack.Children.Add(new Border { Height = 1, Background = T("Grid"), Margin = new Thickness(0, 12, 0, 12) });
             detailScroll = new ScrollViewer { Content = detail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -225,7 +236,7 @@ namespace FamilyPlanner
             sideLayout.Children.Add(sideStack); Grid.SetRow(detailScroll, 1); sideLayout.Children.Add(detailScroll);
             sidebarPanel.Child = sideLayout; Grid.SetColumn(sidebarPanel, 1); body.Children.Add(sidebarPanel);
             Grid.SetRow(body, 1); body.Margin = new Thickness(0, 0, 0, 18); root.Children.Add(body);
-            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.2)", FontSize = 10,
+            var credit = new TextBlock { Text = "MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.3)", FontSize = 10,
                 FontWeight = FontWeights.SemiBold, Foreground = T("Heading"),
                 HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(12, 0, 0, 1) };
@@ -318,13 +329,14 @@ namespace FamilyPlanner
             else if (glyph == "«") geometry = "M9,3.5 L4,9 L9,14.5 M14,3.5 L9,9 L14,14.5";
             else if (glyph == "»") geometry = "M4,3.5 L9,9 L4,14.5 M9,3.5 L14,9 L9,14.5";
             else if (glyph == "⌕") geometry = "M8,3 A5,5 0 1 0 8,13 A5,5 0 1 0 8,3 M11.7,11.7 L16,16";
+            else if (glyph == "important_day") geometry = "M9,1.8 L11.1,6.4 L16.1,7 L12.4,10.4 L13.4,15.3 L9,12.8 L4.6,15.3 L5.6,10.4 L1.9,7 L6.9,6.4 Z";
             if (geometry != null)
             {
                 var path = new System.Windows.Shapes.Path
                 {
                     Data = Geometry.Parse(geometry), Stroke = foreground, StrokeThickness = 1.8,
                     StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
-                    StrokeLineJoin = PenLineJoin.Round, Fill = Brushes.Transparent,
+                    StrokeLineJoin = PenLineJoin.Round, Fill = glyph == "important_day" ? foreground : Brushes.Transparent,
                     Width = 18, Height = 18, Stretch = Stretch.None
                 };
                 return new Viewbox { Width = 17, Height = 17, Stretch = Stretch.Uniform, Child = path,

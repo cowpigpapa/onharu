@@ -56,8 +56,13 @@ namespace FamilyPlanner
         readonly TextBox customReminderValue = new TextBox { Text = "15", Width = 48, Height = 27, Padding = new Thickness(4, 0, 4, 0), TextAlignment = TextAlignment.Center,
             IsEnabled = false, MaxLength = 3, VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly ComboBox customReminderUnit = new ComboBox { Width = 80, Height = 27, IsEnabled = false, Margin = new Thickness(6, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        readonly CheckBox important = new CheckBox { Content = "★ 중요 일정", Foreground = new SolidColorBrush(Color.FromRgb(242, 13, 122)), VerticalAlignment = VerticalAlignment.Center };
-        readonly CheckBox showDday = new CheckBox { Content = "D-Day 표시", Foreground = new SolidColorBrush(Color.FromRgb(3, 105, 161)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) };
+        readonly CheckBox important = new CheckBox { Content = "★ 중요 일정", Foreground = new SolidColorBrush(Color.FromRgb(242, 13, 122)),
+            Background = new SolidColorBrush(Color.FromRgb(255, 193, 221)), Padding = new Thickness(3, 1, 3, 1), VerticalAlignment = VerticalAlignment.Center };
+        readonly StackPanel importantColors = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 0), Opacity = 0, IsHitTestVisible = false };
+        Button importantBackgroundButton, importantTextButton;
+        string importantBackgroundColor = "#FFC1DD";
+        string importantTextColor = "#F20D7A";
+        readonly CheckBox showDday = new CheckBox { Content = "D-Day 표시", Foreground = new SolidColorBrush(Color.FromRgb(3, 105, 161)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
         readonly WrapPanel recurrenceOptions = new WrapPanel { Margin = new Thickness(0, 6, 0, 6) };
         readonly Border recurrenceAdvancedCard = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)), BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(10, 8, 10, 4), Margin = new Thickness(0, 0, 0, 6), Visibility = Visibility.Collapsed };
         readonly StackPanel recurrenceAdvanced = new StackPanel();
@@ -128,7 +133,9 @@ namespace FamilyPlanner
             var localChoices = new WrapPanel();
             AddCategoryChoice(localChoices, "업무일정", "local:business", true, true);
             AddCategoryChoice(localChoices, "개인일정", "local:personal", false, true);
-            AddCategoryChoice(localChoices, "야구", "local:baseball", false, true); categories.Children.Add(localChoices);
+            AddCategoryChoice(localChoices, "야구", "local:baseball", false, true);
+            categoryOptions[categoryOptions.Count - 1].Visibility = defaults != null && defaults.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            categories.Children.Add(localChoices);
             if (googleSources.Count > 0)
             {
                 categories.Children.Add(new TextBlock { Text = "Google · 동기화", Foreground = Brush("#64748B"), FontSize = 11, Margin = new Thickness(0, 9, 0, 5) });
@@ -214,9 +221,17 @@ namespace FamilyPlanner
                 Grid.SetColumn(changeDateButton, 1); dateRow.Children.Add(changeDateButton); dateCard.Child = dateRow;
             }
             panel.Children.Add(dateCard);
-            var titleLabelRow = new Grid(); titleLabelRow.ColumnDefinitions.Add(new ColumnDefinition()); titleLabelRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            titleLabelRow.Children.Add(Label("제목"));
-            var titleOptions = new StackPanel { Orientation = Orientation.Horizontal }; titleOptions.Children.Add(important); titleOptions.Children.Add(showDday);
+            var titleLabelRow = new Grid { Height = 24 }; titleLabelRow.ColumnDefinitions.Add(new ColumnDefinition()); titleLabelRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var titleCaption = Label("제목"); titleCaption.VerticalAlignment = VerticalAlignment.Bottom; titleLabelRow.Children.Add(titleCaption);
+            importantBackgroundButton = ImportantColorButton(true); importantTextButton = ImportantColorButton(false);
+            importantColors.Children.Add(new TextBlock { Text = "배경", FontSize = 10.5, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
+            importantColors.Children.Add(importantBackgroundButton);
+            importantColors.Children.Add(new TextBlock { Text = "글씨", FontSize = 10.5, Foreground = Brush("#64748B"), Margin = new Thickness(5, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+            importantColors.Children.Add(importantTextButton);
+            important.Checked += delegate { importantColors.Opacity = 1; importantColors.IsHitTestVisible = true; };
+            important.Unchecked += delegate { importantColors.Opacity = 0; importantColors.IsHitTestVisible = false; };
+            var titleOptions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Right };
+            titleOptions.Children.Add(showDday); titleOptions.Children.Add(important); titleOptions.Children.Add(importantColors);
             Grid.SetColumn(titleOptions, 1); titleLabelRow.Children.Add(titleOptions);
             panel.Children.Add(titleLabelRow); panel.Children.Add(title); panel.Children.Add(validationMessage);
             var timeCardContent = new StackPanel();
@@ -572,6 +587,8 @@ namespace FamilyPlanner
                 RolloverMode = taskTarget || allDay.IsChecked == true ? null : SelectedRolloverMode(),
                 AutoRollover = !taskTarget && allDay.IsChecked != true && noRollover.IsChecked != true,
                 Important = important.IsChecked == true,
+                ImportantBackgroundColor = important.IsChecked == true ? importantBackgroundColor : null,
+                ImportantTextColor = important.IsChecked == true ? importantTextColor : null,
                 ShowDday = showDday.IsChecked == true,
                 ReminderMinutes = taskTarget ? -1 : SelectedReminderMinutes(),
                 ReminderConfigured = true,
@@ -600,7 +617,11 @@ namespace FamilyPlanner
         {
             durationMinutes = item.AllDay ? 30 : Math.Max(1, (int)Math.Round((item.End - item.Start).TotalMinutes));
             title.Text = item.Title; notes.Text = item.Notes ?? "";
-            important.IsChecked = item.Important; showDday.IsChecked = item.ShowDday;
+            importantBackgroundColor = string.IsNullOrWhiteSpace(item.ImportantBackgroundColor) ? "#FFC1DD" : item.ImportantBackgroundColor;
+            importantTextColor = string.IsNullOrWhiteSpace(item.ImportantTextColor) ? "#F20D7A" : item.ImportantTextColor;
+            importantBackgroundButton.Background = Brush(importantBackgroundColor); importantTextButton.Background = Brush(importantTextColor);
+            important.IsChecked = item.Important; importantColors.Opacity = item.Important ? 1 : 0; importantColors.IsHitTestVisible = item.Important;
+            important.Background = Brush(importantBackgroundColor); important.Foreground = Brush(importantTextColor); showDday.IsChecked = item.ShowDday;
             recurrenceUntilDate = item.RecurrenceUntil.Year >= 1900 ? item.RecurrenceUntil : item.Start.Date.AddYears(1);
             recurrenceCountMode.IsChecked = item.RecurrenceCount > 0;
             recurrenceUntilMode.IsChecked = item.RecurrenceCount <= 0;
@@ -747,6 +768,41 @@ namespace FamilyPlanner
         }
 
         static TextBlock Header(string text, double size) { return new TextBlock { Text = text, FontSize = size, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 18) }; }
+        Button ImportantColorButton(bool background)
+        {
+            var value = background ? importantBackgroundColor : importantTextColor;
+            var button = new Button { Width = 22, Height = 22, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(0),
+                Background = Brush(value), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand,
+                ToolTip = background ? "중요 일정 배경색" : "중요 일정 글자색" };
+            Round(button, 7);
+            button.Click += delegate
+            {
+                var colors = background
+                    ? new[] { "#FFC1DD", "#FFD0B5", "#FFF0A6", "#B8F3D3", "#BFDBFE", "#DDD6FE", "#E2E8F0" }
+                    : new[] { "#F20D7A", "#F4511E", "#D97706", "#00A86B", "#2563EB", "#8B5CF6", "#475569" };
+                var swatches = new UniformGrid { Columns = 7, Margin = new Thickness(7) };
+                var popup = new Popup { PlacementTarget = button, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true, VerticalOffset = 4 };
+                foreach (var color in colors)
+                {
+                    var selected = color;
+                    var swatch = new Button { Width = 25, Height = 25, Margin = new Thickness(2), Padding = new Thickness(0),
+                        Background = Brush(color), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
+                    Round(swatch, 8);
+                    swatch.Click += delegate
+                    {
+                        if (background) importantBackgroundColor = selected; else importantTextColor = selected;
+                        button.Background = Brush(selected);
+                        important.Background = Brush(importantBackgroundColor); important.Foreground = Brush(importantTextColor);
+                        popup.IsOpen = false;
+                    };
+                    swatches.Children.Add(swatch);
+                }
+                popup.Child = new Border { Background = Brushes.White, BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(10), Child = swatches };
+                popup.IsOpen = true;
+            };
+            return button;
+        }
         static TextBlock Label(string text) { return new TextBlock { Text = text, Foreground = Brush("#475569"), FontSize = 12 }; }
         static void Round(Button button, double radius)
         {

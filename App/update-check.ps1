@@ -10,7 +10,7 @@ if (-not $service.Contains('SecurityProtocolType.Tls12')) { throw 'GitHub update
 if ($startup.IndexOf('CheckForUpdatesAsync(false)', [StringComparison]::Ordinal) -gt $startup.IndexOf('SyncGoogle(false)', [StringComparison]::Ordinal)) {
     throw 'Startup update check must run before Google synchronization.'
 }
-foreach ($required in @('IsGoogleAuthenticationError', 'invalid_grant', '다시 로그인해 주세요')) {
+foreach ($required in @('IsGoogleAuthenticationError', 'invalid_grant', 'GoogleConnectFailed')) {
     if (-not $google.Contains($required)) { throw "Google authentication recovery is missing: $required" }
 }
 if (-not $flow.Contains('TimeSpan.FromHours(24)')) { throw 'Daily update check throttle is missing.' }

@@ -27,6 +27,8 @@ namespace FamilyPlanner
         [DataMember] public string GoogleCalendarColor;
         [DataMember] public bool GoogleReadOnly;
         [DataMember] public bool Important;
+        [DataMember(EmitDefaultValue = false)] public string ImportantBackgroundColor;
+        [DataMember(EmitDefaultValue = false)] public string ImportantTextColor;
         [DataMember] public bool ShowDday;
         [DataMember(EmitDefaultValue = false)] public DateTime AnniversaryDate;
         [DataMember(EmitDefaultValue = false)] public string AnniversaryType;

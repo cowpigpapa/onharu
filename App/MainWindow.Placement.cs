@@ -19,11 +19,12 @@ namespace FamilyPlanner
 
         const double MinimumPhysicalWidth = 820;
         const double MinimumPhysicalHeight = 560;
+        const double MinimumLayoutWidth = 720;
 
         void ApplyPhysicalMinimums(uint dpi)
         {
             var scale = dpi > 0 ? dpi / 96.0 : 1.0;
-            MinWidth = MinimumPhysicalWidth / scale;
+            MinWidth = Math.Max(MinimumPhysicalWidth / scale, MinimumLayoutWidth);
             MinHeight = MinimumPhysicalHeight / scale;
         }
 

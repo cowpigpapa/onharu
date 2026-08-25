@@ -32,7 +32,8 @@ namespace FamilyPlanner
             {
                 rowCount = Math.Max(1, Math.Min(6, settings.VisibleWeekCount));
                 var anchorOffset = (7 + (int)shownMonth.DayOfWeek - (int)firstDayOfWeek) % 7;
-                first = shownMonth.Date.AddDays(-anchorOffset - (Math.Max(1, Math.Min(rowCount, settings.TodayRow)) - 1) * 7);
+                var todayRow = rowCount <= 2 ? 1 : 2;
+                first = shownMonth.Date.AddDays(-anchorOffset - (todayRow - 1) * 7);
                 var last = first.AddDays(rowCount * 7 - 1);
                 monthTitle.Content = first.Year == last.Year
                     ? first.ToString("yyyy년 M월 d일") + " – " + last.ToString("M월 d일")
@@ -127,9 +128,9 @@ namespace FamilyPlanner
             }
             if (settings.ShowLunar)
             {
-                var lunar = new TextBlock { Text = Lunar(date), Foreground = T("Muted"), FontSize = Ui(11), Tag = diaryTarget,
-                    VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 1, 1, 2), ToolTip = settings.UseDiary ? "더블클릭하여 일기 쓰기" : null };
-                if (settings.UseDiary) lunar.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(lunar);
+                var lunar = new TextBlock { Text = Lunar(date), Foreground = T("Muted"), FontSize = Ui(11),
+                    VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 1, 1, 2) };
+                dateHeader.Children.Add(lunar);
             }
             var solarTerm = settings.ShowSolarTerms ? SolarTerm(date) : null;
             if (!string.IsNullOrWhiteSpace(solarTerm))
@@ -227,11 +228,11 @@ namespace FamilyPlanner
                     ? item.Title + AnniversaryOccurrenceText(item)
                     : DdayText(item) + item.Title;
                 var text = new TextBlock { Text = prefix + (item.Important ? "★ " : "") + calendarTitle,
-                    FontSize = Ui(11), Foreground = EventTextBrush(ItemColor(item), item.Important),
+                    FontSize = Ui(11), Foreground = EventTextBrush(item),
                     FontWeight = item.Important ? FontWeights.Bold : FontWeights.Normal, Padding = new Thickness(5, 1, 4, 1),
                     TextTrimming = TextTrimming.CharacterEllipsis, TextDecorations = item.Completed ? TextDecorations.Strikethrough : null };
                 var bar = new Border { Child = text, Height = Ui(19), CornerRadius = new CornerRadius(4),
-                    Background = EventBackgroundBrush(ItemColor(item), item.Important),
+                    Background = EventBackgroundBrush(item),
                     Margin = new Thickness(2, Ui(29 + lane * 20), 2, 0), VerticalAlignment = VerticalAlignment.Top,
                     Cursor = Cursors.Hand, ToolTip = "클릭하여 날짜 선택 · 더블클릭하여 수정" };
                 bar.Tag = new ItemHitTarget { Item = item, SegmentStart = segmentStart, SegmentEnd = segmentEnd, Element = bar };

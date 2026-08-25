@@ -1,4 +1,4 @@
-param([string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe'))
+﻿param([Alias('ExePath')][string]$Exe = (Join-Path $PSScriptRoot '..\Tests\LocalTest\ONHARU-2.2-local-test.exe'))
 $ErrorActionPreference = 'Stop'
 $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path -LiteralPath $Exe).Path)
 $paletteType = $assembly.GetType('FamilyPlanner.OnharuThemePalette', $true)
@@ -19,16 +19,16 @@ if ($normalize.Invoke($null, @('unknown')) -ne 'classic') { throw 'Unknown theme
 $mainType = $assembly.GetType('FamilyPlanner.MainWindow', $true)
 $templateMethod = $mainType.GetMethod('ColorCheckBoxTemplate', [Reflection.BindingFlags]'NonPublic,Static')
 if ($null -eq $templateMethod -or $null -eq $templateMethod.Invoke($null, @())) { throw 'Colorful checkbox template could not be created.' }
-$themeSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Theme.cs') -Raw
-$layoutSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Layout.cs') -Raw
-$mainSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.cs') -Raw
-$googleSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Display.cs') -Raw
-$calendarSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Calendar.cs') -Raw
-$colorSystemSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CategoryColorSystem.cs') -Raw
-$presetSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'OnharuColorPresets.cs') -Raw
-$stateColorSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'OnharuStateColors.cs') -Raw
-$detailSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Detail.cs')
-foreach ($token in @('FilterColor(entry.Key, entry.Value)', 'StyleThemeCheckBox(entry.Value, color)', 'EventBackgroundBrush(ItemColor(item)', 'EventTextBrush(ItemColor(item)')) {
+$themeSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Theme.cs') -Raw -Encoding UTF8
+$layoutSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Layout.cs') -Raw -Encoding UTF8
+$mainSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.cs') -Raw -Encoding UTF8
+$googleSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Display.cs') -Raw -Encoding UTF8
+$calendarSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWindow.Calendar.cs') -Raw -Encoding UTF8
+$colorSystemSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CategoryColorSystem.cs') -Raw -Encoding UTF8
+$presetSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'OnharuColorPresets.cs') -Raw -Encoding UTF8
+$stateColorSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'OnharuStateColors.cs') -Raw -Encoding UTF8
+$detailSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'MainWindow.Detail.cs')
+foreach ($token in @('FilterColor(entry.Key, entry.Value)', 'StyleThemeCheckBox(entry.Value, color)', 'EventBackgroundBrush(item)', 'EventTextBrush(item)')) {
     if (-not (($themeSource + $layoutSource + $googleSource + $calendarSource) -like ('*' + $token + '*'))) { throw "Colorful skin coverage token is missing: $token" }
 }
 if (-not $themeSource.Contains('CategoryColorSystem.CheckBoxBackground(settings.ThemeId, color)')) { throw 'Sidebar checkboxes must use the stronger category checkbox color.' }
@@ -47,18 +47,18 @@ if (-not $mainSource.Contains('monthTitle.Template = ContentOnlyButtonTemplate()
 foreach ($token in @('SettingsGlyph(T("Icon"))', 'button.Foreground = T("Icon")', 'HeaderGlyph(glyph, T("Icon"))', 'StrokeThickness = 1.8', 'Foreground = BrandBrush()', 'monthTitle.Foreground = BrandBrush()', 'UpdateTodayButtonStyle()', 'todayButton.Foreground = Brushes.White')) {
     if (-not (($layoutSource + $mainSource + $themeSource) -like ('*' + $token + '*'))) { throw "Icon or fixed brand-style token is missing: $token" }
 }
-$sportsSource = Get-Content -Raw (Join-Path $PSScriptRoot 'SportsCalendarWindow.cs')
+$sportsSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'SportsCalendarWindow.cs')
 if (($sportsSource | Select-String -Pattern 'new OnharuSegmentedSwitch' -AllMatches).Matches.Count -lt 3) { throw 'Sports view, range, and size controls must use segmented switches.' }
-$segmentSource = Get-Content -Raw (Join-Path $PSScriptRoot 'OnharuSegmentedSwitch.cs')
+$segmentSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'OnharuSegmentedSwitch.cs')
 if (-not $segmentSource.Contains('button.Template = new ControlTemplate') -or -not $segmentSource.Contains('Border.BackgroundProperty, Brushes.Transparent')) { throw 'Segment buttons must not show the Windows hover inversion.' }
 foreach ($token in @('LabelWidth(labels[i]) + 4', 'Padding = new Thickness(2, 0, 2, 0)', 'new TemplateBindingExtension(Control.PaddingProperty)')) {
     if (-not $segmentSource.Contains($token)) { throw "Segment width or padding rule is missing: $token" }
 }
 if (-not $segmentSource.Contains('FontSize = 12.5') -or -not $layoutSource.Contains('new[] { "이동", "고정" }')) { throw 'Segment text visibility or position-mode labels are missing.' }
-$layerSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.ExplorerLayer.cs')
-$placementSource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Placement.cs')
+$layerSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'MainWindow.ExplorerLayer.cs')
+$placementSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'MainWindow.Placement.cs')
 if (-not $layerSource.Contains('if (RestoreBlockingDialog()) { UpdateModeButtons(); return; }') -or -not $placementSource.Contains('if (RestoreBlockingDialog()) { UpdateModeButtons(); return; }') -or $layerSource.Contains('if (IsEnabled) return false;')) { throw 'Visible ONHARU dialogs must block and roll back both position-mode transitions.' }
-$settingsSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'SettingsWindow.cs') -Raw
+$settingsSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'SettingsWindow.cs') -Raw -Encoding UTF8
 if ($settingsSource.Contains('static string[][] ThemePresetPalettes') -or $settingsSource.Contains('static string[] ThemePresetNames')) { throw 'Preset policy must not return to SettingsWindow.' }
 foreach ($presetToken in @('오션블루','핫핑크','라임펄스','바이올렛','앰버선셋','#DC2626')) {
     if (-not $presetSource.Contains($presetToken)) { throw "Preset module is missing: $presetToken" }
@@ -108,7 +108,7 @@ foreach ($token in @('Content = "날짜 원형"', 'Content = "색상 + 날짜 �
     if (-not $settingsSource.Contains($token)) { throw "Today display option is missing: $token" }
 }
 if ($settingsSource.Contains('GroupName = "TodayStyle", IsChecked = todayStyle == "border"') -or $settingsSource.Contains('GroupName = "TodayStyle", IsChecked = todayStyle == "both"')) { throw 'Legacy today-border choices must not be shown.' }
-foreach ($token in @('CategoryColorSystem.Foreground(settings.ThemeId, itemColor)', 'CategoryColorSystem.Background(settings.ThemeId, itemColor)')) {
+foreach ($token in @('CategoryColorSystem.Foreground(settings.ThemeId, ItemColor(item))', 'CategoryColorSystem.Background(settings.ThemeId, ItemColor(item))')) {
     if (-not $themeSource.Contains($token)) { throw "Shared category color system is missing from the calendar: $token" }
 }
 foreach ($stateHex in @('#6366F1','#4F46E5','#BE185D','#F472B6','#F1F5F9','#94A3B8')) {
@@ -148,13 +148,13 @@ foreach ($id in @('classic','dark')) {
         }
     }
 }
-$anniversarySource = Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Anniversary.cs')
+$anniversarySource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'MainWindow.Anniversary.cs')
 foreach ($token in @('CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor)', 'CategoryColorSystem.DetailForeground(settings.ThemeId, groupColor)', 'Colors["D-Day"]', 'Colors["기념일"]')) {
     if (-not (($detailSource + $anniversarySource).Contains($token))) { throw "Right detail card palette token is missing: $token" }
 }
 $settings = [Activator]::CreateInstance($assembly.GetType('FamilyPlanner.PlannerSettings', $true))
-if ($settings.Version -ne 41 -or $settings.ThemeId -ne 'classic' -or -not $settings.ImportantFirst -or $settings.LockPalettePlacement) { throw 'Theme settings defaults are invalid.' }
-$themeDefinitionSource = Get-Content -Raw (Join-Path $PSScriptRoot 'OnharuTheme.cs')
+if ($settings.Version -ne 44 -or $settings.ThemeId -ne 'classic' -or -not $settings.ImportantFirst -or $settings.LockPalettePlacement) { throw 'Theme settings defaults are invalid.' }
+$themeDefinitionSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'OnharuTheme.cs')
 if ($themeDefinitionSource.Contains('colorful') -or $settingsSource.Contains('"컬러"')) { throw 'Removed colorful skin code must not remain.' }
 foreach ($token in @('ShowThemeQuickSwitch', '상단 스킨 전환 버튼 표시', '선택 프리셋 변경', '색상 설정 초기화')) {
     if (($layoutSource + $settingsSource + $themeSource).Contains($token)) { throw "Removed theme/color control remains: $token" }
@@ -163,7 +163,7 @@ foreach ($token in @('panel.Children.Insert(0, SectionCard(themeGroup))', 'panel
     if (-not $settingsSource.Contains($token)) { throw "Theme settings layout token is missing: $token" }
 }
 foreach ($token in @('현재 색상 배치 고정', 'RandomizeRecommendedPalettePlacement()', 'settings.SelectedPaletteIndex >= 5', 'primary.Color = representative', 'settings.DdayColor = next()', 'settings.AnniversaryColor = next()')) {
-    if (-not (($settingsSource + $themeSource + (Get-Content -Raw (Join-Path $PSScriptRoot 'MainWindow.Startup.cs'))).Contains($token))) { throw "Palette placement token is missing: $token" }
+    if (-not (($settingsSource + $themeSource + (Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'MainWindow.Startup.cs'))).Contains($token))) { throw "Palette placement token is missing: $token" }
 }
 foreach ($token in @('lowerActions.Children.Add(themeQuickSwitch)', 'UpdateThemeQuickSwitchStyle()', 'CategoryColorSystem.Background("classic", ActionAccentColor())', 'refreshPaletteChangeButton')) {
     if (-not (($layoutSource + $settingsSource + $themeSource).Contains($token))) { throw "Always-visible theme switch or preset button style is missing: $token" }

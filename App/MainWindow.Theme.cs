@@ -105,16 +105,22 @@ namespace FamilyPlanner
             return colorCheckBoxTemplate;
         }
 
-        Brush EventTextBrush(string itemColor, bool important)
+        Brush EventTextBrush(PlannerItem item)
         {
-            if (important) return Brush("#F20D7A");
-            return new SolidColorBrush(CategoryColorSystem.Foreground(settings.ThemeId, itemColor));
+            if (item.Important) return SafeBrush(item.ImportantTextColor, "#F20D7A");
+            return new SolidColorBrush(CategoryColorSystem.Foreground(settings.ThemeId, ItemColor(item)));
         }
 
-        Brush EventBackgroundBrush(string itemColor, bool important)
+        Brush EventBackgroundBrush(PlannerItem item)
         {
-            if (important) return Brush("#FFF1F7");
-            return new SolidColorBrush(CategoryColorSystem.Background(settings.ThemeId, itemColor));
+            if (item.Important) return SafeBrush(item.ImportantBackgroundColor, "#FFC1DD");
+            return new SolidColorBrush(CategoryColorSystem.Background(settings.ThemeId, ItemColor(item)));
+        }
+
+        static Brush SafeBrush(string value, string fallback)
+        {
+            try { return Brush(string.IsNullOrWhiteSpace(value) ? fallback : value); }
+            catch { return Brush(fallback); }
         }
 
         static Brush PastelBrush(Color color, double whiteRatio)

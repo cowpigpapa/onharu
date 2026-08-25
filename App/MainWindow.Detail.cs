@@ -17,9 +17,9 @@ namespace FamilyPlanner
             detail.Children.Clear(); UpdateDetailTabs();
             if (detailMode == "selected")
             {
-                selectedTitle.Text = selectedDate.ToString("M월 d일 dddd", new CultureInfo("ko-KR"));
+                selectedTitle.Text = selectedDate.ToString("M월 d일 (ddd)", new CultureInfo("ko-KR"));
                 AddDetailDay(selectedDate, false);
-                var add = Button("+ 이 날짜에 추가", AddItem, 150); add.Margin = new Thickness(0, 3, 0, 0); detail.Children.Add(add);
+                var add = Button("+ 이 날짜에 추가", AddItem, 150); add.Height = 27; add.Margin = new Thickness(0, 3, 0, 0); detail.Children.Add(add);
                 AddDdayCards(); AddAnniversaryCards();
                 return;
             }
@@ -51,7 +51,8 @@ namespace FamilyPlanner
             foreach (var categoryItems in DetailGroups(dayItems))
             {
                 var groupColor = ItemColor(categoryItems[0]);
-                var cardForeground = new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, groupColor));
+                var cardForeground = categoryItems[0].Important ? EventTextBrush(categoryItems[0])
+                    : new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, groupColor));
                 var cardSecondary = settings.ThemeId == "dark" ? Brushes.White : Brush("#64748B");
                 var group = new StackPanel();
                 group.Children.Add(new TextBlock { Text = "●  " + DisplayGroup(categoryItems[0]), Foreground = cardForeground,
@@ -99,7 +100,7 @@ namespace FamilyPlanner
                         group.Children.Add(new TextBlock { Text = itemNoticeText, Foreground = Brush("#DC2626"), FontSize = Ui(11),
                             FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(item.IsTodo ? 24 : 0, 0, 0, 8) });
                 }
-                detail.Children.Add(new Border { Background = new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor)),
+                detail.Children.Add(new Border { Background = categoryItems[0].Important ? EventBackgroundBrush(categoryItems[0]) : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor)),
                     BorderBrush = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, groupColor)), BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(11), Padding = new Thickness(10, 8, 10, 7), Margin = new Thickness(0, 3, 0, 5), Child = group });
             }
@@ -122,7 +123,7 @@ namespace FamilyPlanner
 
         IEnumerable<List<PlannerItem>> DetailGroups(List<PlannerItem> orderedItems)
         {
-            if (settings.CalendarOrderMode != "time")
+            if (settings.DetailOrderMode != "time")
                 return orderedItems.GroupBy(x => Tuple.Create(ImportantRank(x), DisplayGroup(x)))
                     .OrderBy(x => x.Key.Item1).ThenBy(x => GroupOrder(x.First())).Select(x => x.ToList()).ToList();
 
@@ -138,7 +139,7 @@ namespace FamilyPlanner
 
         Button DetailTab(string text, string mode)
         {
-            var button = Button(text, null, 88); button.Height = 31; button.Margin = new Thickness(0); button.FontSize = Ui(11);
+            var button = Button(text, null, 88); button.Height = 27; button.Margin = new Thickness(0); button.FontSize = Ui(11);
             button.Click += delegate { detailMode = mode; RenderDetail(); };
             return button;
         }
@@ -164,10 +165,11 @@ namespace FamilyPlanner
                 string selectedColor = null;
                 var colored = settings.DateBackgroundColors != null && settings.DateBackgroundColors.TryGetValue(DateKey(selectedDate), out selectedColor);
                 var colors = OnharuStateColors.ImportantDay(colored ? selectedColor : null);
-                dateColorButton.Background = new SolidColorBrush(colors.Background);
+                dateColorButton.Background = Brushes.Transparent;
                 dateColorButton.Foreground = new SolidColorBrush(colors.Foreground);
-                dateColorButton.BorderBrush = new SolidColorBrush(colors.Border);
-                dateColorButton.ToolTip = colored ? "중요한 날 색상 변경" : "중요한 날 배경색 선택";
+                dateColorButton.BorderBrush = Brushes.Transparent;
+                dateColorButton.Content = HeaderGlyph("important_day", new SolidColorBrush(colors.Foreground));
+                dateColorButton.ToolTip = colored ? "중요한 날 · 색상 변경" : "중요한 날로 표시";
             }
         }
 

@@ -29,10 +29,16 @@ namespace FamilyPlanner
     public class ReminderWindow : Window
     {
         bool completed;
-        public ReminderWindow(List<PlannerItem> due, Action<int?> complete)
+        public ReminderWindow(List<PlannerItem> due, Action<int?> complete, Rect targetBounds)
         {
             Width = 410; SizeToContent = SizeToContent.Height; WindowStyle = WindowStyle.None; AllowsTransparency = true;
-            Background = Brushes.Transparent; ShowInTaskbar = false; Topmost = true; ShowActivated = false; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            Background = Brushes.Transparent; ShowInTaskbar = false; Topmost = true; ShowActivated = false;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            ContentRendered += delegate
+            {
+                Left = targetBounds.Left + Math.Max(0, (targetBounds.Width - ActualWidth) / 2);
+                Top = targetBounds.Top + Math.Max(0, (targetBounds.Height - ActualHeight) / 2);
+            };
             OnharuPopupChrome.EnableTopDrag(this);
             var content = new StackPanel { Margin = new Thickness(22, 18, 22, 18) };
             content.Children.Add(new TextBlock { Text = "✦  온하루 알림", FontSize = 17, FontWeight = FontWeights.Bold, Foreground = Brush("#4338CA") });

@@ -15,6 +15,7 @@ namespace FamilyPlanner
         readonly List<Button> buttons = new List<Button>();
         readonly double[] widths;
         readonly Action<int> changed;
+        internal event Action<int, bool> Clicked;
         int selectedIndex;
         Brush selectedForeground = Brushes.White;
 
@@ -23,15 +24,15 @@ namespace FamilyPlanner
             widths = new double[labels.Length];
             for (var i = 0; i < labels.Length; i++) widths[i] = Math.Max(segmentWidths[i], LabelWidth(labels[i]) + 4);
             changed = onChanged; selectedIndex = selected;
-            Height = 27; CornerRadius = new CornerRadius(10); BorderThickness = new Thickness(1);
+            Height = 26; CornerRadius = new CornerRadius(10); BorderThickness = new Thickness(1);
             BorderBrush = Brush("#C7D2FE"); Background = Brush("#F8FAFC"); Padding = new Thickness(1); ClipToBounds = true;
-            var grid = new Grid(); var canvas = new Canvas { Height = 23, VerticalAlignment = VerticalAlignment.Center }; grid.Children.Add(canvas);
-            thumb = new Border { Height = 23, Width = widths[selected], CornerRadius = new CornerRadius(8), Background = Brush("#4F46E5"), RenderTransform = shift };
+            var grid = new Grid(); var canvas = new Canvas { Height = 22, VerticalAlignment = VerticalAlignment.Center }; grid.Children.Add(canvas);
+            thumb = new Border { Height = 22, Width = widths[selected], CornerRadius = new CornerRadius(8), Background = Brush("#4F46E5"), RenderTransform = shift };
             canvas.Children.Add(thumb);
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Height = 23, VerticalAlignment = VerticalAlignment.Center };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Height = 22, VerticalAlignment = VerticalAlignment.Center };
             for (var i = 0; i < labels.Length; i++)
             {
-                var index = i; var button = new Button { Content = labels[i], Width = widths[i], Height = 23, Padding = new Thickness(2, 0, 2, 0),
+                var index = i; var button = new Button { Content = labels[i], Width = widths[i], Height = 22, Padding = new Thickness(2, 0, 2, 0),
                     Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = Cursors.Hand, FontSize = 12.5, FontWeight = FontWeights.SemiBold };
                 var buttonBorder = new FrameworkElementFactory(typeof(Border));
                 buttonBorder.SetValue(Border.BackgroundProperty, Brushes.Transparent);
@@ -41,7 +42,12 @@ namespace FamilyPlanner
                 content.SetValue(ContentPresenter.MarginProperty, new TemplateBindingExtension(Control.PaddingProperty));
                 buttonBorder.AppendChild(content);
                 button.Template = new ControlTemplate(typeof(Button)) { VisualTree = buttonBorder };
-                button.Click += delegate { if (index == selectedIndex) return; SetSelected(index, true); if (changed != null) changed(index); };
+                button.Click += delegate
+                {
+                    var wasSelected = index == selectedIndex;
+                    if (!wasSelected) { SetSelected(index, true); if (changed != null) changed(index); }
+                    if (Clicked != null) Clicked(index, wasSelected);
+                };
                 buttons.Add(button); row.Children.Add(button);
             }
             grid.Children.Add(row); Child = grid; SetSelected(selected, false);
@@ -68,6 +74,8 @@ namespace FamilyPlanner
             thumb.Background = background; selectedForeground = foreground; SetSelected(selectedIndex, false);
         }
         internal int SelectedIndex { get { return selectedIndex; } }
+        internal double SegmentWidth(int index) { return index >= 0 && index < widths.Length ? widths[index] : 0; }
+        internal FrameworkElement SegmentTarget(int index) { if (index >= 0 && index < buttons.Count) return buttons[index]; return this; }
         static double LabelWidth(string text)
         {
             var probe = new TextBlock { Text = text, FontSize = 12.5, FontWeight = FontWeights.SemiBold };

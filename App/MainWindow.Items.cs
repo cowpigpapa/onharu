@@ -35,7 +35,8 @@ namespace FamilyPlanner
                 if (master.RecurrenceCount <= 0 && start.Date > master.RecurrenceUntil.Date) break;
                 items.Add(new PlannerItem { Id = Guid.NewGuid().ToString(), Title = master.Title, Start = start, End = start.Add(duration), AllDay = master.AllDay,
                     IsTodo = master.IsTodo, Category = master.Category, Notes = master.Notes, CreatedInOnharu = true, RolloverMode = master.RolloverMode,
-                    AutoRollover = master.AutoRollover, Important = master.Important, ShowDday = master.ShowDday, ReminderMinutes = master.ReminderMinutes, ReminderConfigured = master.ReminderConfigured,
+                    AutoRollover = master.AutoRollover, Important = master.Important, ImportantBackgroundColor = master.ImportantBackgroundColor,
+                    ImportantTextColor = master.ImportantTextColor, ShowDday = master.ShowDday, ReminderMinutes = master.ReminderMinutes, ReminderConfigured = master.ReminderConfigured,
                     AnniversaryDate = master.AnniversaryDate,
                     AnniversaryType = master.AnniversaryType,
                     RecurrenceFrequency = master.RecurrenceFrequency, RecurrenceMode = master.RecurrenceMode, RecurrenceDays = master.RecurrenceDays,
@@ -119,7 +120,9 @@ namespace FamilyPlanner
                         sibling.Title = window.Result.Title; sibling.Notes = window.Result.Notes; sibling.Category = window.Result.Category;
                         sibling.AllDay = window.Result.AllDay; sibling.IsTodo = window.Result.IsTodo;
                         sibling.RolloverMode = window.Result.RolloverMode; sibling.AutoRollover = window.Result.AutoRollover;
-                        sibling.Important = window.Result.Important; sibling.ShowDday = window.Result.ShowDday; sibling.ReminderMinutes = window.Result.ReminderMinutes; sibling.ReminderConfigured = true;
+                        sibling.Important = window.Result.Important; sibling.ImportantBackgroundColor = window.Result.ImportantBackgroundColor;
+                        sibling.ImportantTextColor = window.Result.ImportantTextColor; sibling.ShowDday = window.Result.ShowDday;
+                        sibling.ReminderMinutes = window.Result.ReminderMinutes; sibling.ReminderConfigured = true;
                         sibling.AnniversaryDate = window.Result.AnniversaryDate;
                         sibling.RecurrenceFrequency = window.Result.RecurrenceFrequency; sibling.RecurrenceMode = window.Result.RecurrenceMode;
                         sibling.RecurrenceDays = window.Result.RecurrenceDays; sibling.RecurrenceUntil = window.Result.RecurrenceUntil; sibling.RecurrenceCount = window.Result.RecurrenceCount;

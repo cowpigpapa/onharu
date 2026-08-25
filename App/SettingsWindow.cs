@@ -55,11 +55,12 @@ namespace FamilyPlanner
         public bool CompletedLast;
         public string CompletedDisplayMode;
         public string StartViewMode;
+        public bool RemindersEnabled;
         public bool ReminderSound;
         public int QuietStartHour;
         public int QuietEndHour;
+        public string ReminderPosition;
         public string StartupPositionMode;
-        public string CloseButtonAction;
         public bool Use24HourTime;
         public string CategoryOrderPreset;
         public List<string> CategoryOrder;
@@ -70,9 +71,6 @@ namespace FamilyPlanner
         public string WeekRule;
         public string WeekStartDay;
         public List<int> RestDays;
-        public string CalendarRangeMode;
-        public int VisibleWeekCount;
-        public int TodayRow;
         public string SelectedDateStyle;
         public string SelectedDateFillColor;
         public string SelectedDateBorderColor;
@@ -113,9 +111,9 @@ namespace FamilyPlanner
         public SettingsWindow(string business, string personal, string baseball, string dday, string anniversary, string holidayColor, double fontSize, string orderMode, bool importantFirst, bool multiDayFirst, bool completedLast, bool use24HourTime, bool showWeeks,
             string weekRule, string weekStartDay, List<int> restDays, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
             List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes, int selectedPaletteIndexValue, bool lockPalettePlacement,
-            string calendarRangeMode, int visibleWeekCount, int todayRow, string selectedDateStyle, string selectedDateFillColor, string selectedDateBorderColor, string todayColor, string todayStyle, string todayBorderColor,
+            string selectedDateStyle, string selectedDateFillColor, string selectedDateBorderColor, string todayColor, string todayStyle, string todayBorderColor,
             string defaultCalendarKey, bool defaultAllDay, int defaultStartHour, int defaultStartMinute, int defaultDurationMinutes, int defaultReminderMinutes,
-            string completedDisplayMode, string startViewMode, bool reminderSound, int quietStartHour, int quietEndHour, string startupPositionMode, string closeButtonAction, bool useTimetable, bool useDiary, bool useRollover, bool showGoogleTasks, bool useProBaseball, bool automaticUpdateChecks, string themeId,
+            string completedDisplayMode, string startViewMode, bool remindersEnabled, bool reminderSound, int quietStartHour, int quietEndHour, string reminderPosition, string startupPositionMode, bool useTimetable, bool useDiary, bool useRollover, bool showGoogleTasks, bool useProBaseball, bool automaticUpdateChecks, string themeId,
             bool holidayColorVisible, bool baseballColorVisible, bool ddayColorVisible, bool anniversaryColorVisible)
         {
             ThemeId = OnharuThemePalette.Normalize(themeId);
@@ -580,11 +578,6 @@ namespace FamilyPlanner
             foreach (var option in new[] { Tuple.Create("이전 상태", "remember"), Tuple.Create("항상 고정", "locked"), Tuple.Create("항상 위치 조정", "editable") })
                 startupPosition.Children.Add(new RadioButton { Content = option.Item1, Tag = option.Item2, GroupName = "StartupPosition",
                     IsChecked = startupPositionMode == option.Item2, Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center });
-            var closeAction = new StackPanel { Orientation = Orientation.Horizontal, Height = 24 };
-            closeAction.Children.Add(new TextBlock { Text = "× 버튼 동작", Width = 120, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
-            foreach (var option in new[] { Tuple.Create("트레이로 최소화", "minimize"), Tuple.Create("종료 확인", "confirm_exit") })
-                closeAction.Children.Add(new RadioButton { Content = option.Item1, Tag = option.Item2, GroupName = "CloseButtonAction",
-                    IsChecked = closeButtonAction == option.Item2, Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center });
             var calendarOptions = new StackPanel { Margin = new Thickness(0, 1, 0, 0) };
             var weekRuleRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 5) };
             showWeek.Margin = new Thickness(0, 0, 20, 0); weekRuleRow.Children.Add(showWeek); weekRuleRow.Children.Add(weekRules);
@@ -738,62 +731,9 @@ namespace FamilyPlanner
             behaviorGroup.Children.Add(new TextBlock { Text = "화면과 동작", Foreground = Brush("#475569"), FontSize = 12,
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             behaviorGroup.Children.Add(startDay); behaviorGroup.Children.Add(restDayRow); behaviorGroup.Children.Add(completedDisplay); behaviorGroup.Children.Add(startView);
-            behaviorGroup.Children.Add(startupPosition); behaviorGroup.Children.Add(closeAction); behaviorGroup.Children.Add(selectionOptions); behaviorGroup.Children.Add(todayOptions);
+            behaviorGroup.Children.Add(startupPosition); behaviorGroup.Children.Add(selectionOptions); behaviorGroup.Children.Add(todayOptions);
             fontRow.Margin = new Thickness(0, 2, 0, 0); behaviorGroup.Children.Add(fontRow);
             panel.Children.Add(SectionCard(behaviorGroup));
-            var rangeGroup = new StackPanel();
-            rangeGroup.Children.Add(new TextBlock { Text = "달력 표시 범위", Foreground = Brush("#475569"), FontSize = 12 });
-            var rangeRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 24 };
-            rangeRow.Children.Add(new TextBlock { Text = "월전체 (1일부터)", Width = 120, VerticalAlignment = VerticalAlignment.Center, Foreground = Brush("#64748B") });
-            var monthFive = new RadioButton { Content = "5주", Tag = "month5", GroupName = "MonthCalendarRange", IsChecked = calendarRangeMode == "month5", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
-            var monthSix = new RadioButton { Content = "6주", Tag = "month6", GroupName = "MonthCalendarRange", IsChecked = calendarRangeMode == "month6", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
-            var monthAuto = new RadioButton { Content = "자동 (4~6주)", Tag = "monthAuto", GroupName = "MonthCalendarRange", IsChecked = calendarRangeMode != "month5" && calendarRangeMode != "month6", Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
-            monthAuto.ToolTip = "해당 월에 필요한 4~6주만 표시";
-            rangeRow.Children.Add(monthFive); rangeRow.Children.Add(monthSix); rangeRow.Children.Add(monthAuto); rangeGroup.Children.Add(rangeRow);
-            var weekChoiceRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 24, Margin = new Thickness(0, -3, 0, 0) };
-            weekChoiceRow.Children.Add(new TextBlock { Text = "사용자 지정", Width = 120, VerticalAlignment = VerticalAlignment.Center, Foreground = Brush("#64748B") });
-            var customWeeks = new List<RadioButton>();
-            for (var count = 1; count <= 6; count++)
-            {
-                var option = new RadioButton { Content = count + "주", Tag = "weeks:" + count, GroupName = "CustomCalendarRange",
-                    IsChecked = visibleWeekCount == count, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
-                customWeeks.Add(option); weekChoiceRow.Children.Add(option);
-            }
-            todayRow = Math.Max(1, Math.Min(Math.Max(1, visibleWeekCount), todayRow > 0 ? todayRow : DefaultTodayRow(visibleWeekCount)));
-            var todayLabel = new TextBlock { Text = "이번 주", FontSize = 11, Foreground = Brush("#64748B"), Margin = new Thickness(3, -17, 0, 0), VerticalAlignment = VerticalAlignment.Top };
-            var todayRowOption = new ComboBox { Width = 108, Height = 22, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"),
-                Foreground = Brush("#4338CA"), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand,
-                VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, 0, 2) };
-            StyleComboBox(todayRowOption);
-            Action<int, int> fillTodayRows = delegate(int count, int selected)
-            {
-                todayRowOption.Items.Clear();
-                for (var row = 1; row <= 6; row++) todayRowOption.Items.Add(new ComboBoxItem { Content = "위에서 " + row + "번째", IsEnabled = row <= count });
-                todayRowOption.SelectedIndex = Math.Max(0, Math.Min(count - 1, selected - 1));
-            };
-            fillTodayRows(Math.Max(1, visibleWeekCount), todayRow);
-            var todayPicker = new Grid { Width = 108, Height = 24, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false };
-            todayPicker.Children.Add(todayRowOption); todayPicker.Children.Add(todayLabel);
-            weekChoiceRow.Children.Add(todayPicker);
-            Action updateRange = delegate
-            {
-                todayLabel.IsEnabled = true; todayRowOption.IsEnabled = true; todayRowOption.Opacity = 1;
-            };
-            foreach (var option in customWeeks)
-            {
-                var selectedOption = option;
-                selectedOption.Checked += delegate
-                {
-                    var count = int.Parse(selectedOption.Tag.ToString().Substring(6));
-                    todayRow = DefaultTodayRow(count); fillTodayRows(count, todayRow); updateRange();
-                };
-            }
-            monthFive.Checked += delegate { updateRange(); }; monthSix.Checked += delegate { updateRange(); };
-            monthAuto.Checked += delegate { updateRange(); };
-            rangeGroup.Children.Add(weekChoiceRow);
-            panel.Children.Add(SectionCard(rangeGroup));
-            updateRange();
             var defaultsGroup = new StackPanel();
             defaultsGroup.Children.Add(new TextBlock { Text = "새 일정 기본값", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 5) });
             var defaultsRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 30 };
@@ -830,8 +770,9 @@ namespace FamilyPlanner
             panel.Children.Add(SectionCard(defaultsGroup));
             var reminderGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28 };
             reminderGroup.Children.Add(new TextBlock { Text = "알림", Width = 120, Foreground = Brush("#475569"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+            var remindersEnabledOption = new CheckBox { Content = "알림 사용", IsChecked = remindersEnabled, Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
             var reminderSoundOption = new CheckBox { Content = "소리 사용", IsChecked = reminderSound, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center };
-            reminderGroup.Children.Add(reminderSoundOption);
+            reminderGroup.Children.Add(remindersEnabledOption); reminderGroup.Children.Add(reminderSoundOption);
             reminderGroup.Children.Add(new TextBlock { Text = "조용한 시간", Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) });
             var quietStart = new ComboBox { Width = 64, Height = 25, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
             var quietEnd = new ComboBox { Width = 64, Height = 25, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
@@ -843,13 +784,24 @@ namespace FamilyPlanner
             quietStart.SelectedIndex = Math.Max(0, Math.Min(23, quietStartHour)); quietEnd.SelectedIndex = Math.Max(0, Math.Min(23, quietEndHour));
             StyleComboBox(quietStart); StyleComboBox(quietEnd); reminderGroup.Children.Add(quietStart);
             reminderGroup.Children.Add(new TextBlock { Text = "~", Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 6, 0) });
-            reminderGroup.Children.Add(quietEnd); panel.Children.Add(SectionCard(reminderGroup));
+            reminderGroup.Children.Add(quietEnd);
+            var reminderPositionGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28, Margin = new Thickness(120, 0, 0, 0) };
+            reminderPositionGroup.Children.Add(new TextBlock { Text = "알림 위치", Width = 72, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
+            foreach (var option in new[] { Tuple.Create("주 모니터 중앙", "screen"), Tuple.Create("온하루 위", "onharu") })
+                reminderPositionGroup.Children.Add(new RadioButton { Content = option.Item1, Tag = option.Item2, GroupName = "ReminderPosition",
+                    IsChecked = reminderPosition == option.Item2, Margin = new Thickness(0, 0, 24, 0), VerticalAlignment = VerticalAlignment.Center });
+            var reminderCard = new StackPanel(); reminderCard.Children.Add(reminderGroup); reminderCard.Children.Add(reminderPositionGroup);
+            panel.Children.Add(SectionCard(reminderCard));
             Action updateQuietHours = delegate
             {
-                var enabled = reminderSoundOption.IsChecked == true;
-                quietStart.IsEnabled = enabled; quietEnd.IsEnabled = enabled;
-                quietStart.Opacity = enabled ? 1 : .45; quietEnd.Opacity = enabled ? 1 : .45;
+                var enabled = remindersEnabledOption.IsChecked == true;
+                reminderSoundOption.IsEnabled = enabled; reminderPositionGroup.IsEnabled = enabled;
+                var quietEnabled = enabled && reminderSoundOption.IsChecked == true;
+                quietStart.IsEnabled = quietEnabled; quietEnd.IsEnabled = quietEnabled;
+                quietStart.Opacity = quietEnabled ? 1 : .45; quietEnd.Opacity = quietEnabled ? 1 : .45;
             };
+            remindersEnabledOption.Checked += delegate { updateQuietHours(); };
+            remindersEnabledOption.Unchecked += delegate { updateQuietHours(); };
             reminderSoundOption.Checked += delegate { updateQuietHours(); };
             reminderSoundOption.Unchecked += delegate { updateQuietHours(); };
             updateQuietHours();
@@ -922,7 +874,6 @@ namespace FamilyPlanner
                 CompletedDisplayMode = completedDisplay.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 StartViewMode = startView.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 StartupPositionMode = startupPosition.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
-                CloseButtonAction = closeAction.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 Use24HourTime = use24Hour.IsChecked == true;
                 ShowWeekNumbers = showWeek.IsChecked == true;
                 ShowLunar = lunar.IsChecked == true;
@@ -951,10 +902,6 @@ namespace FamilyPlanner
                 WeekRule = weekRules.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 WeekStartDay = startDay.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 RestDays = restDayBoxes.Where(x => x.IsChecked == true).Select(x => (int)x.Tag).ToList();
-                CalendarRangeMode = rangeRow.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
-                var selectedCustomRange = customWeeks.First(x => x.IsChecked == true).Tag.ToString();
-                VisibleWeekCount = int.Parse(selectedCustomRange.Substring(6));
-                TodayRow = Math.Max(1, Math.Min(VisibleWeekCount, todayRowOption.SelectedIndex + 1));
                 PastelEventStyle = selectedPastelStyle;
                 AutoSyncMinutes = (int)syncOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
                 DefaultCalendarKey = ((ComboBoxItem)defaultCalendar.SelectedItem).Tag.ToString();
@@ -963,8 +910,10 @@ namespace FamilyPlanner
                 DefaultStartHour = timeValue / 60; DefaultStartMinute = timeValue % 60;
                 DefaultDurationMinutes = (int)((ComboBoxItem)defaultDuration.SelectedItem).Tag;
                 DefaultReminderMinutes = (int)((ComboBoxItem)defaultReminder.SelectedItem).Tag;
+                RemindersEnabled = remindersEnabledOption.IsChecked == true;
                 ReminderSound = reminderSoundOption.IsChecked == true;
                 QuietStartHour = (int)((ComboBoxItem)quietStart.SelectedItem).Tag; QuietEndHour = (int)((ComboBoxItem)quietEnd.SelectedItem).Tag;
+                ReminderPosition = reminderPositionGroup.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 DialogResult = true;
             };
             topSave.Click += delegate { save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); };
@@ -1178,8 +1127,6 @@ namespace FamilyPlanner
             var color = (Color)ColorConverter.ConvertFromString(hex); var s = sliders[name];
             s[0].Value = color.R; s[1].Value = color.G; s[2].Value = color.B; UpdatePreview(name);
         }
-        static int DefaultTodayRow(int count) { return count <= 2 ? 1 : 2; }
-
         static Border SectionCard(UIElement child)
         {
             return new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#E2E8F0"), BorderThickness = new Thickness(1),

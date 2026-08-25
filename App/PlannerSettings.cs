@@ -7,7 +7,7 @@ namespace FamilyPlanner
     [DataContract]
     public class PlannerSettings
     {
-        [DataMember] public int Version = 41;
+        [DataMember] public int Version = 44;
         [DataMember] public string ThemeId = "classic";
         [DataMember] public bool HasPosition;
         [DataMember] public double Left;
@@ -37,6 +37,7 @@ namespace FamilyPlanner
         [DataMember] public List<GoogleCalendarSetting> GoogleCalendars = new List<GoogleCalendarSetting>();
         [DataMember] public int GoogleOptionsVersion = 1;
         [DataMember] public string CalendarOrderMode = "category";
+        [DataMember] public string DetailOrderMode = "category";
         [DataMember] public bool ImportantFirst = true;
         [DataMember] public bool MultiDayFirst = true;
         [DataMember] public bool CompletedLast = true;
@@ -44,10 +45,11 @@ namespace FamilyPlanner
         [DataMember] public string StartViewMode = "today";
         [DataMember] public DateTime LastShownDate;
         [DataMember] public bool ReminderSound = true;
+        [DataMember] public bool RemindersEnabled = true;
         [DataMember] public int QuietStartHour = 22;
         [DataMember] public int QuietEndHour = 7;
+        [DataMember] public string ReminderPosition = "screen";
         [DataMember] public string StartupPositionMode = "editable";
-        [DataMember] public string CloseButtonAction = "confirm_exit";
         [DataMember] public bool AnniversarySeparationComplete;
         [DataMember] public string DefaultCalendarKey = "local:business";
         [DataMember] public bool DefaultAllDay = true;
@@ -60,13 +62,8 @@ namespace FamilyPlanner
         [DataMember] public string WeekNumberRule = "iso";
         [DataMember] public string WeekStartDay = "sunday";
         [DataMember] public List<int> RestDays = new List<int> { 0, 6 };
-        // Clean-install defaults only. LoadSettings keeps every value from an
-        // existing settings.json, so updates never reset the user's view.
-        [DataMember] public string CalendarRangeMode = "weeks";
-        [DataMember] public string MonthRangeMode = "monthAuto";
         [DataMember] public bool UseMonthView;
         [DataMember] public int VisibleWeekCount = 4;
-        [DataMember] public int TodayRow = 2;
         [DataMember] public string SelectedDateStyle = "border";
         [DataMember] public string SelectedDateFillColor = "#CCDBEAFE";
         [DataMember] public string SelectedDateBorderColor = "#EC4899";

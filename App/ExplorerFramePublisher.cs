@@ -152,7 +152,7 @@ namespace FamilyPlanner
             {
                 var record = records[index]; var item = offset + 16 + index * 28;
                 view.Write(item, record.Bounds.Left); view.Write(item + 4, record.Bounds.Top); view.Write(item + 8, record.Bounds.Right); view.Write(item + 12, record.Bounds.Bottom);
-                view.Write(item + 16, record.Kind == 2 ? 104 : record.Kind == 3 ? 107 : 100);
+                view.Write(item + 16, record.Kind == 2 ? 104 : record.Kind == 3 ? 107 : record.Kind == 6 ? 20 : 100);
                 view.Write(item + 20, record.Kind == 1 ? 101 : 0); view.Write(item + 24, record.Kind);
             }
         }
@@ -162,6 +162,7 @@ namespace FamilyPlanner
             if (records.Count >= MaxHitRecords) return;
             var element = parent as FrameworkElement;
             var googleSyncAction = element != null && element.Tag as string == "google_sync";
+            var sidebarToggle = element != null && element.Tag as string == "toggle_sidebar";
             var taggedAction = element != null && (element.Tag as string == "open_pending_sync" || googleSyncAction);
             var contentAction = element != null && (element.Tag is DateTime || element.Tag is PlannerItem || element.Tag is ItemHitTarget);
             var closeButton = element != null && element.Tag as string == "close_button";
@@ -174,7 +175,7 @@ namespace FamilyPlanner
                     var bounds = new NativeRect { Left = (int)Math.Floor(origin.X * toDevice.M11), Top = (int)Math.Floor(origin.Y * toDevice.M22),
                         Right = (int)Math.Ceiling((origin.X + element.ActualWidth) * toDevice.M11), Bottom = (int)Math.Ceiling((origin.Y + element.ActualHeight) * toDevice.M22) };
                     if (detailScroller) bounds.Left = Math.Max(bounds.Left, bounds.Right - (int)Math.Ceiling(18 * toDevice.M11));
-                    records.Add(new NativeHit { Bounds = bounds, Kind = googleSyncAction ? 5 : closeButton ? 4 : element is Slider ? 2 : detailScroller ? 3 : 1 });
+                    records.Add(new NativeHit { Bounds = bounds, Kind = sidebarToggle ? 6 : googleSyncAction ? 5 : closeButton ? 4 : element is Slider ? 2 : detailScroller ? 3 : 1 });
                 }
                 catch { }
             }

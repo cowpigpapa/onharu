@@ -65,6 +65,7 @@ namespace FamilyPlanner
         Button todayButton;
         OnharuSegmentedSwitch calendarRangeSwitch;
         OnharuSegmentedSwitch themeQuickSwitch;
+        OnharuSegmentedSwitch detailOrderSwitch;
         bool temporaryMonthView;
         DateTime periodViewAnchor;
         TextBlock googleStatus;
@@ -74,6 +75,7 @@ namespace FamilyPlanner
         Button nextWeekButton;
         Button dateColorButton;
         FrameworkElement dateColorPalette;
+        Popup weekCountPopup;
         Popup transientPopup;
         Slider opacitySlider;
         ScrollViewer detailScroll;

@@ -2,11 +2,11 @@
 
 ## 다운로드
 
-- [ONHARU 2.2.2 설치 프로그램과 ZIP 다운로드](https://github.com/cowpigpapa/onharu/releases/tag/v2.2.2)
+- [ONHARU 2.2.3 설치 프로그램과 ZIP 다운로드](https://github.com/cowpigpapa/onharu/releases/tag/v2.2.3)
 - 지원 환경: Windows 10/11 x64
 - 이번 개인 프리웨어 배포판은 코드 서명되지 않아 Windows SmartScreen에서 `알 수 없는 게시자` 경고가 나타날 수 있습니다. 공식 릴리스의 `SHA256SUMS.txt`로 파일 무결성을 확인할 수 있습니다.
 
-2.2 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.2)`로 표시합니다.
+2.2 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.3)`로 표시합니다.
 
 ## 2.2 디자인 스킨
 
@@ -40,12 +40,12 @@ Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격
 
 ## 1. 실행하기
 
-1. `ONHARU-2.2.2-Setup.exe`를 실행해 설치합니다.
+1. `ONHARU-2.2.3-Setup.exe`를 실행해 설치합니다.
 2. 온하루는 작업표시줄의 일반 창이 아니라 바탕화면 레이어에 표시됩니다.
 3. 화면 오른쪽 아래 알림 영역에도 온하루 아이콘이 생깁니다.
 4. 오른쪽 위 `×`의 기본 동작은 트레이 최소화입니다. 완전히 종료하려면 트레이 메뉴의 `종료`를 사용합니다.
 
-설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 기존 ONHARU 설치판이 있으면 같은 AppId를 사용해 제거 없이 2.2.2로 업그레이드하고 일정·설정·Google 연결 데이터는 보존합니다. 사용자 승인형 자동 업데이트는 포함되며 Windows 코드 서명은 아직 적용하지 않았습니다.
+설치 프로그램은 시작 메뉴와 제거 프로그램을 만들며, 설치 중 바탕화면 바로가기와 Windows 자동 실행을 선택할 수 있습니다. 기존 ONHARU 설치판이 있으면 같은 AppId를 사용해 제거 없이 2.2.3으로 업그레이드하고 일정·설정·Google 연결 데이터는 보존합니다. 사용자 승인형 자동 업데이트는 포함되며 Windows 코드 서명은 아직 적용하지 않았습니다.
 
 파일명이 다른 이전/새 버전 EXE를 함께 실행할 수 없습니다. 온하루는 계정·설정·Google 토큰을 안전하게 관리하기 위해 Windows 사용자당 한 창만 실행됩니다.
 
@@ -349,7 +349,7 @@ cd .\Onharu_v2.2
 
 로컬 시험본은 `Tests\LocalTest`에만 생성됩니다.
 
-2.1 개발 소스는 `Onharu_v2.1` 작업 트리에 보존하며, 배포 후보 실행 파일은 `Release\ONHARU-2.2.2\ONHARU.exe`, 설치 파일은 `Release\Installer\ONHARU-2.2.2-Setup.exe`입니다. 2.0은 별도 `Onharu_v2` 폴더에 동결되어 있습니다.
+2.1 개발 소스는 `Onharu_v2.1` 작업 트리에 보존하며, 배포 후보 실행 파일은 `Release\ONHARU-2.2.3\ONHARU.exe`, 설치 파일은 `Release\Installer\ONHARU-2.2.3-Setup.exe`입니다. 2.0은 별도 `Onharu_v2` 폴더에 동결되어 있습니다.
 
 ### 설치와 제거
 

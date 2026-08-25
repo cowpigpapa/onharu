@@ -1,15 +1,15 @@
 #define AppName "ONHARU"
-#define AppVersion "2.2.2"
+#define AppVersion "2.2.3"
 #ifdef TestBuild
 #define SetupAppId "{{D61EF3C4-0B0D-44A9-B6CD-79F785C74E54}"
 #define SetupDir "{localappdata}\Programs\ONHARU-InstallTest"
 #define SetupOutputDir "..\Release\InstallTestInstaller"
-#define SetupOutputName "ONHARU-2.2.2-InstallTest"
+#define SetupOutputName "ONHARU-2.2.3-InstallTest"
 #else
 #define SetupAppId "{{C43E8BF2-2B16-4CC7-A85B-D18C2AA7D706}"
 #define SetupDir "{localappdata}\Programs\ONHARU"
 #define SetupOutputDir "..\Release\Installer"
-#define SetupOutputName "ONHARU-2.2.2-Setup"
+#define SetupOutputName "ONHARU-2.2.3-Setup"
 #endif
 
 [Setup]
@@ -66,11 +66,11 @@ Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:Sho
 Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:AutomaticStart}"; Flags: checkedonce
 
 [Files]
-Source: "..\Release\ONHARU-2.2.2\ONHARU.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.2\ONHARU.exe.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.2\Onharu.LayerHost.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.2\Onharu.DesktopHook.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.2\README.md"; DestDir: "{app}"; DestName: "ONHARU-사용설명서.md"; Flags: ignoreversion
+Source: "..\Release\ONHARU-2.2.3\ONHARU.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Release\ONHARU-2.2.3\ONHARU.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Release\ONHARU-2.2.3\Onharu.LayerHost.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Release\ONHARU-2.2.3\Onharu.DesktopHook.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Release\ONHARU-2.2.3\README.md"; DestDir: "{app}"; DestName: "ONHARU-사용설명서.md"; Flags: ignoreversion
 
 [InstallDelete]
 Type: files; Name: "{app}\layer-host.log"

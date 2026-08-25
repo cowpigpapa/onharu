@@ -25,11 +25,6 @@ namespace FamilyPlanner
             if (!wasLocked) ShowPositionEditor();
         }
 
-        void ExecuteCloseButtonAction()
-        {
-            if (settings.CloseButtonAction == "confirm_exit") RequestExit(); else MinimizeToTray();
-        }
-
         ContextMenu CreateCloseContextMenu()
         {
             var menu = new ContextMenu { Placement = PlacementMode.MousePoint };

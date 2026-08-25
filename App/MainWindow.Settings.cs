@@ -24,11 +24,11 @@ namespace FamilyPlanner
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
                 GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
                 settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex, settings.LockPalettePlacement,
-                settings.MonthRangeMode, settings.VisibleWeekCount, settings.TodayRow, settings.SelectedDateStyle,
+                settings.SelectedDateStyle,
                 settings.SelectedDateFillColor, settings.SelectedDateBorderColor, settings.TodayColor, settings.TodayStyle, settings.TodayBorderColor, settings.DefaultCalendarKey, settings.DefaultAllDay,
                 settings.DefaultStartHour, settings.DefaultStartMinute, settings.DefaultDurationMinutes, settings.DefaultReminderMinutes,
-                settings.CompletedDisplayMode, settings.StartViewMode, settings.ReminderSound, settings.QuietStartHour, settings.QuietEndHour,
-                settings.StartupPositionMode, settings.CloseButtonAction, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ThemeId,
+                settings.CompletedDisplayMode, settings.StartViewMode, settings.RemindersEnabled, settings.ReminderSound, settings.QuietStartHour, settings.QuietEndHour, settings.ReminderPosition,
+                settings.StartupPositionMode, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ThemeId,
                 settings.HolidayVisible, settings.BaseballVisible && settings.UseProBaseball, settings.DdayPanelVisible, settings.AnniversaryVisible);
             PlacementTrace.Write("SETTINGS ui-created ms=" + settingsWatch.ElapsedMilliseconds);
             window.PrintRequested += delegate
@@ -55,9 +55,10 @@ namespace FamilyPlanner
             settings.CompletedLast = window.CompletedLast;
             settings.CompletedDisplayMode = window.CompletedDisplayMode;
             settings.StartViewMode = window.StartViewMode;
+            settings.RemindersEnabled = window.RemindersEnabled;
             settings.ReminderSound = window.ReminderSound; settings.QuietStartHour = window.QuietStartHour; settings.QuietEndHour = window.QuietEndHour;
+            settings.ReminderPosition = window.ReminderPosition;
             settings.StartupPositionMode = window.StartupPositionMode;
-            settings.CloseButtonAction = window.CloseButtonAction;
             settings.Use24HourTime = window.Use24HourTime;
             settings.CategoryOrder = window.CategoryOrder;
             settings.CustomPalette = window.CustomPalette;
@@ -68,8 +69,6 @@ namespace FamilyPlanner
             settings.LockPalettePlacement = window.LockPalettePlacement;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule; settings.WeekStartDay = window.WeekStartDay;
             settings.RestDays = window.RestDays == null ? new List<int> { 0, 6 } : window.RestDays;
-            settings.MonthRangeMode = window.CalendarRangeMode; settings.VisibleWeekCount = window.VisibleWeekCount; settings.TodayRow = window.TodayRow;
-            settings.CalendarRangeMode = temporaryMonthView ? settings.MonthRangeMode : "weeks";
             if (!temporaryMonthView && shownMonth == default(DateTime)) shownMonth = DateTime.Today;
             settings.ShowLunar = window.ShowLunar;
             settings.ShowSolarTerms = window.ShowSolarTerms;
@@ -85,6 +84,8 @@ namespace FamilyPlanner
             if (timetableButton != null) timetableButton.Visibility = settings.UseTimetable ? Visibility.Visible : Visibility.Collapsed;
             if (diaryButton != null) diaryButton.Visibility = settings.UseDiary ? Visibility.Visible : Visibility.Collapsed;
             if (sportsButton != null) sportsButton.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            System.Windows.Controls.CheckBox baseballFilter;
+            if (filters.TryGetValue("야구", out baseballFilter)) baseballFilter.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
             if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close();
             diaryDates.Clear(); diaryDatesLoaded = false;
             settings.SelectedDateStyle = window.SelectedDateStyle;

@@ -132,30 +132,25 @@ namespace FamilyPlanner
             {
                 var key = "google:" + source.Id;
                 var color = string.IsNullOrWhiteSpace(source.Color) ? Colors["개인일정"] : source.Color;
-                var box = new CheckBox { Content = (source.Primary ? "내 캘린더 · " : "") + source.Name,
+                var label = (source.Primary ? "내 캘린더 · " : "") + source.Name;
+                var box = new CheckBox { Content = new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis,
+                        ToolTip = label, VerticalAlignment = VerticalAlignment.Center },
                     IsChecked = source.Visible, Foreground = Brush(color), Background = Brush(color), Tag = color,
-                    Margin = new Thickness(0, 0, 8, 6),
-                    HorizontalAlignment = HorizontalAlignment.Left };
+                    Margin = new Thickness(0, 0, 4, 6), HorizontalAlignment = HorizontalAlignment.Stretch };
                 StyleThemeCheckBox(box, color);
                 box.Click += delegate { source.Visible = box.IsChecked == true; Store.SaveSettings(settings); RenderAll(); };
                 filters[key] = box; boxes.Add(box);
             }
-            // Use two equal, predictable columns only when every label fits.  A
-            // WrapPanel split depended on incidental widths and looked irregular.
-            var longest = boxes.Count == 0 ? 0 : boxes.Max(x => ((x.Content ?? "").ToString()).Length);
-            var useTwoColumns = boxes.Count >= 4 && longest <= 15;
-            if (!useTwoColumns)
-            {
-                foreach (var box in boxes) googleFilterPanel.Children.Add(box);
-                return;
-            }
             var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition()); grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(17) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
             var left = new StackPanel(); var right = new StackPanel();
             var split = (boxes.Count + 1) / 2;
             for (var index = 0; index < boxes.Count; index++)
                 (index < split ? left : right).Children.Add(boxes[index]);
-            grid.Children.Add(left); Grid.SetColumn(right, 1); grid.Children.Add(right);
+            var divider = new Border { Width = 1, Background = T("Grid"), Margin = new Thickness(8, 1, 8, 2) };
+            grid.Children.Add(left); Grid.SetColumn(divider, 1); grid.Children.Add(divider); Grid.SetColumn(right, 2); grid.Children.Add(right);
             googleFilterPanel.Children.Add(grid);
         }
 

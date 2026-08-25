@@ -1,4 +1,4 @@
-param([string]$ExePath)
+﻿param([string]$ExePath)
 $ErrorActionPreference = 'Stop'
 
 $mainSources = (Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'MainWindow*.cs' | ForEach-Object { Get-Content $_.FullName -Raw -Encoding UTF8 }) -join "`n"
@@ -56,13 +56,14 @@ foreach ($case in $cases) {
 
 $settingsType = $assembly.GetType('FamilyPlanner.PlannerSettings', $true)
 $settings = [Activator]::CreateInstance($settingsType)
-if ($settings.Version -ne 41) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.Version -ne 44) { throw "Unexpected settings version: $($settings.Version)" }
 if ($settings.ThemeId -ne 'classic') { throw "Theme must default to classic: $($settings.ThemeId)" }
 if (-not $settings.AutomaticUpdateChecks) { throw 'Automatic update checks must default to enabled.' }
-if ($settings.CalendarRangeMode -ne 'weeks' -or $settings.MonthRangeMode -ne 'monthAuto' -or $settings.UseMonthView -or $settings.VisibleWeekCount -ne 4 -or $settings.TodayRow -ne 2) { throw 'Clean-install calendar must default to a four-week view without overriding saved settings.' }
+if ($settings.UseMonthView -or $settings.VisibleWeekCount -ne 4) { throw 'Clean-install calendar must default to a four-week view.' }
+if ($settingsType.GetField('CalendarRangeMode') -or $settingsType.GetField('MonthRangeMode') -or $settingsType.GetField('TodayRow')) { throw 'Removed calendar-range settings must not remain.' }
 if ($settings.PositionLocked -or $settings.StartupPositionMode -ne 'editable' -or $settings.Width -ne 1120 -or $settings.Height -ne 700) { throw 'Clean-install placement defaults are invalid.' }
 if ($settings.ThemeId -ne 'classic' -or $settings.FontSize -ne 12 -or $settings.Opacity -ne .95 -or $settings.SelectedPaletteIndex -ne 0) { throw 'Clean-install visual defaults are invalid.' }
-if (-not $settings.MultiDayFirst -or $settings.CompletedDisplayMode -ne 'fade' -or $settings.CloseButtonAction -ne 'confirm_exit') { throw 'Clean-install behavior defaults are invalid.' }
+if (-not $settings.MultiDayFirst -or $settings.CompletedDisplayMode -ne 'fade' -or -not $settings.RemindersEnabled) { throw 'Clean-install behavior defaults are invalid.' }
 if (-not $settings.ShowWeekNumbers -or $settings.WeekNumberRule -ne 'iso' -or $settings.WeekStartDay -ne 'sunday') { throw 'Clean-install week defaults are invalid.' }
 if ($settings.SelectedDateStyle -ne 'border' -or $settings.SelectedDateBorderColor -ne '#EC4899' -or $settings.TodayStyle -ne 'icon') { throw 'Clean-install date marker defaults are invalid.' }
 if (-not $settings.ShowLunar -or -not $settings.ShowSolarTerms -or -not $settings.UseRollover -or $settings.AutoSyncMinutes -ne 5) { throw 'Clean-install display and sync defaults are invalid.' }
@@ -85,9 +86,10 @@ foreach ($typeName in @('FamilyPlanner.DiaryEntry', 'FamilyPlanner.DiaryStore', 
 foreach ($diaryFeature in @('OpenDiaryEditor(date)', 'OpenDiaryEditor(selectedDate)', 'OpenDiaryReader', 'settings.UseDiary')) {
     if (-not $mainSources.Contains($diaryFeature)) { throw "Diary integration is missing: $diaryFeature" }
 }
-foreach ($diaryInputFeature in @('settings.UseDiary ? new DiaryDateHitTarget(date) : null', 'lunar.MouseLeftButtonDown += openDiary', 'diaryDot.MouseLeftButtonDown += openDiary', 'if (e.ClickCount == 2) AddItem(sender, e)', 'target as DiaryDateHitTarget')) {
+foreach ($diaryInputFeature in @('settings.UseDiary ? new DiaryDateHitTarget(date) : null', 'number.MouseLeftButtonDown += openDiary', 'diaryDot.MouseLeftButtonDown += openDiary', 'if (e.ClickCount == 2) AddItem(sender, e)', 'target as DiaryDateHitTarget')) {
     if (-not $mainSources.Contains($diaryInputFeature)) { throw "Diary date-only input routing is missing: $diaryInputFeature" }
 }
+if ($mainSources.Contains('lunar.MouseLeftButtonDown += openDiary')) { throw 'Lunar text must not open the diary editor.' }
 if (-not $settingsSource.Contains('Content = "일기장 기능"')) { throw 'Diary feature setting is missing.' }
 if (-not $settingsSource.Contains('Content = "Google Tasks 표시·동기화"')) { throw 'Google Tasks opt-in setting is missing.' }
 foreach ($diaryToggleFeature in @('if (!settings.UseDiary)', 'settings.UseDiary && diaryDates.Contains', 'if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close()')) {
@@ -168,8 +170,8 @@ if ($explorerLayerSource -notmatch '(?s)DwmwaCloak = 13.*?void PublishAndCloak\(
 }
 if ($mainSource.Contains('Topmost = true; ShowInTaskbar = true;')) { throw 'Position editor is incorrectly pinned above every application.' }
 if ($mainSource.Contains('DragMove(); DesktopLayer.Lower(this);')) { throw 'Dragging the position editor still lowers it behind other windows.' }
-foreach ($closeFeature in @('OpenLogoMenu(logo)', 'action == 25) { ExecuteCloseButtonAction(); return;', 'action == 28) { OpenCloseContextMenu(); return;', 'settings.CloseButtonAction == "confirm_exit"', 'ContextMenu CreateCloseContextMenu()', 'exit.Click += delegate { ExitApplication(); };', 'void CloseAuxiliaryWindows()')) {
-    if (-not $mainSource.Contains($closeFeature)) { throw "Configurable close behavior is missing: $closeFeature" }
+foreach ($closeFeature in @('OpenLogoMenu(logo)', 'action == 25) { MinimizeToTray(); return;', 'action == 28) { OpenCloseContextMenu(); return;', 'ContextMenu CreateCloseContextMenu()', 'exit.Click += delegate { ExitApplication(); };', 'void CloseAuxiliaryWindows()')) {
+    if (-not $mainSource.Contains($closeFeature)) { throw "Logo menu close behavior is missing: $closeFeature" }
 }
 foreach ($exitRestoreFeature in @('var wasMinimized = calendarMinimized;', 'calendarMinimized = false; UpdateTrayVisibilityText();', 'if (wasMinimized) { MinimizeToTray(); return; }', 'if (!wasLocked) ShowPositionEditor();')) {
     if (-not $mainSource.Contains($exitRestoreFeature)) { throw "Exit cancellation state restoration is missing: $exitRestoreFeature" }
@@ -224,7 +226,7 @@ foreach ($ddayCardFeature in @('void AddDdayCards()', 'string.IsNullOrWhiteSpace
 foreach ($ddayFilterFeature in @('settings.DdayPanelVisible;', 'settings.DdayPanelVisible = filters["D-Day"].IsChecked == true;', 'if (positionLocked) SchedulePublish();')) {
     if (-not $mainSource.Contains($ddayFilterFeature)) { throw "D-Day filter interaction is missing: $ddayFilterFeature" }
 }
-foreach ($detailOrderFeature in @('IEnumerable<List<PlannerItem>> DetailGroups', 'settings.CalendarOrderMode != "time"', 'foreach (var categoryItems in DetailGroups(dayItems))')) {
+foreach ($detailOrderFeature in @('IEnumerable<List<PlannerItem>> DetailGroups', 'settings.DetailOrderMode != "time"', 'foreach (var categoryItems in DetailGroups(dayItems))')) {
     if (-not $mainSource.Contains($detailOrderFeature)) { throw "Detail ordering is missing: $detailOrderFeature" }
 }
 $calendarSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Calendar.cs') -Raw -Encoding UTF8
@@ -233,7 +235,7 @@ foreach ($compactLaneFeature in @('laneOccupancy.FindIndex', 'occupied.All(range
 }
 if ($calendarSource.Contains('⌄  +') -or $calendarSource.Contains('개 일정이 셀 높이를 넘어')) { throw 'Calendar overflow summary bar must remain removed.' }
 $displaySource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Display.cs') -Raw -Encoding UTF8
-foreach ($googleFilterFeature in @('HorizontalAlignment = HorizontalAlignment.Left', 'var useTwoColumns = boxes.Count >= 4', 'var split = (boxes.Count + 1) / 2')) {
+foreach ($googleFilterFeature in @('HorizontalAlignment = HorizontalAlignment.Stretch', 'new ColumnDefinition { Width = new GridLength(17) }', 'var split = (boxes.Count + 1) / 2')) {
     if (-not $displaySource.Contains($googleFilterFeature)) { throw "Google filter hit-area or balanced columns are missing: $googleFilterFeature" }
 }
 $publisherSource = Get-Content (Join-Path $PSScriptRoot 'ExplorerFramePublisher.cs') -Raw -Encoding UTF8
@@ -284,6 +286,9 @@ $desktopInputSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.DesktopIn
 if (-not $publisherSource.Contains('public void UpdateOpacity(double opacity)') -or -not $desktopInputSource.Contains('explorerFrame.UpdateOpacity(settings.Opacity)')) {
     throw 'Fixed-layer opacity must use the cached-frame opacity update path.'
 }
+if (-not $desktopInputSource.Contains('action == 20) { ToggleSidebar(null, null);')) {
+    throw 'Fixed-layer sidebar action must use the same layout update path as WPF mode.'
+}
 foreach ($monthlySpanFeature in @('var startsOnLastDay = selectedDate.Day == DateTime.DaysInMonth', 'if (startsOnLastDay)', '부터 같은 기간')) {
     if (-not $addItemSource.Contains($monthlySpanFeature)) { throw "Context-aware multi-day monthly option is missing: $monthlySpanFeature" }
 }
@@ -320,6 +325,11 @@ $reminderSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Reminders.cs'
 foreach ($independentReminderFeature in @('void ShowIndependentReminder', 'SetApartmentState(ApartmentState.STA)', 'Dispatcher.BeginInvoke')) {
     if (-not $reminderSource.Contains($independentReminderFeature)) { throw "Independent reminder window is missing: $independentReminderFeature" }
 }
+foreach ($reminderPositionFeature in @('settings.ReminderPosition == "onharu"', 'new Rect(Left, Top', 'SystemParameters.WorkArea', 'reminderBounds')) {
+    if (-not $reminderSource.Contains($reminderPositionFeature)) { throw "Reminder placement option is missing: $reminderPositionFeature" }
+}
+$reminderWindowSource = Get-Content (Join-Path $PSScriptRoot 'ReminderWindow.cs') -Raw -Encoding UTF8
+if (-not $reminderWindowSource.Contains('WindowStartupLocation.Manual') -or -not $reminderWindowSource.Contains('targetBounds.Left')) { throw 'Reminder window must support explicit primary-screen and ONHARU placement.' }
 foreach ($tenMinuteFeature in @('minuteGrid = new UniformGrid { Columns = 6', 'new[] { 0, 10, 20, 30, 40, 50 }', 'Margin = new Thickness(0, 4, 4, 4), HorizontalAlignment = HorizontalAlignment.Left')) {
     if (-not $addItemSource.Contains($tenMinuteFeature)) { throw "Ten-minute selector is missing: $tenMinuteFeature" }
 }
@@ -330,7 +340,7 @@ foreach ($compactDetailFeature in @('titleText.Inlines.Add(new System.Windows.Do
     if (-not $mainSource.Contains($compactDetailFeature)) { throw "Compact detail layout is missing: $compactDetailFeature" }
 }
 $categoryOrderSource = Get-Content (Join-Path $PSScriptRoot 'CategoryOrderWindow.cs') -Raw -Encoding UTF8
-foreach ($categoryMoveFeature in @('movedCard.BringIntoView();', 'Mouse.Capture(null); Mouse.Synchronize();')) {
+foreach ($categoryMoveFeature in @('previousOffset + direction * 48', 'Mouse.Capture(null); Mouse.Synchronize();')) {
     if (-not $categoryOrderSource.Contains($categoryMoveFeature)) { throw "Category-order pointer synchronization is missing: $categoryMoveFeature" }
 }
 $completion = $addItem.GetMethod('UsesCompletionCheck', [Reflection.BindingFlags]'NonPublic,Static')

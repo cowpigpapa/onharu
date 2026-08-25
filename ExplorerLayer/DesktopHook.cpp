@@ -300,7 +300,7 @@ static bool IsHandCursorPoint(const OnharuFrameHeader* header, int x, int y)
     const int calendarWidth = header->reserved[2] > 0 ? static_cast<int>(header->reserved[2]) : header->width;
 
     const int hitKind = HitKindAt(header, x, y);
-    if (hitKind != 0) return hitKind == 1 || hitKind == 5;
+    if (hitKind != 0) return hitKind == 1 || hitKind == 5 || hitKind == 6;
     // A current hit map is the authoritative cursor source.  The old broad
     // coordinate estimates are only a recovery fallback for legacy/missing maps.
     if (HasCurrentHitMap(header)) return false;
@@ -438,6 +438,9 @@ static LRESULT CALLBACK ListViewSubclass(HWND hwnd, UINT message, WPARAM wParam,
             const int hitKind = HitKindAt(header, x, y);
             if (message == WM_LBUTTONDOWN && hitKind == 5) {
                 PostDesktopAction(108, 0); return 0;
+            }
+            if (message == WM_LBUTTONDOWN && hitKind == 6) {
+                PostDesktopAction(20, 0); return 0;
             }
             bool beginPointerDrag = hitKind == 3;
             if (message == WM_LBUTTONDOWN && hitKind == 2) {
