@@ -1,6 +1,6 @@
 # ONHARU 웹 운영 인수인계
 
-최종 갱신: 2026-08-24
+최종 갱신: 2026-08-27
 
 ## 운영 환경
 
@@ -52,12 +52,12 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 
 ## 현재 릴리스
 
-- 공개 버전: `2.2.3`
-- 공식 릴리스: `https://github.com/cowpigpapa/onharu/releases/tag/v2.2.3`
-- 설치판: `ONHARU-2.2.3-Setup.exe` / 2,381,238 bytes
-- 설치판 SHA-256: `5F7754F379D50B40D13C04A593F7EC9B6BE7EC071B3F7956D5830F7542178172`
-- 포터블판: `ONHARU-2.2.3-Portable.zip` / 451,127 bytes
-- 포터블판 SHA-256: `D9DC4C3A8ABD6D3EF47209BE66567C83901F5F21789676EA8C4AD80B44A93736`
+- 공개 버전: `2.2.4`
+- 공식 릴리스: `https://github.com/cowpigpapa/onharu/releases/tag/v2.2.4`
+- 설치판: `ONHARU-2.2.4-Setup.exe` / 2,388,167 bytes
+- 설치판 SHA-256: `A488994AD1579D69E10B738623C2DA5D2ADC428AFEB217BBF505E564B77C6CF6`
+- 포터블판: `ONHARU-2.2.4-Portable.zip` / 460,802 bytes
+- 포터블판 SHA-256: `CFD51D4C62FB238BF060704E57ADD36334A8ECB4B4917B8A95032E731DB22C65`
 - 지원 이메일: `support@onharu.app`
 
 2.1·2.2.0 사용자는 자동 업데이트 통신 보완을 위해 2.2.1을 한 번 직접 설치해야 한다. 이후 자동 업데이트는 정상 작동한다.
@@ -86,6 +86,8 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 - onharu.app에서 다시 다운로드한 Setup·Portable의 SHA-256이 로컬 원본과 일치함을 확인했다.
 - 2026-08-26 2.2.3 설치판·포터블·다운로드 페이지·릴리스 노트를 게시했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.3-20260826-005922.tar.gz`이다.
 - 공개 10개 페이지 HTTP 200과 onharu.app에서 재다운로드한 Setup·Portable의 SHA-256 일치를 확인했다.
+- 2026-08-27 2.2.4 설치판·포터블·다운로드 페이지·릴리스 노트를 게시했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.4-20260826-213048.tar.gz`이다.
+- 공개 10개 페이지 HTTP 200, Nginx active, onharu.app에서 재다운로드한 Setup·Portable의 SHA-256 일치를 확인했다.
 
 ## 운영 주의사항
 
