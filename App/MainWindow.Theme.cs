@@ -26,13 +26,28 @@ namespace FamilyPlanner
         void ApplyTheme(string id)
         {
             settings.ThemeId = OnharuThemePalette.Normalize(id);
+            if (Application.Current != null)
+            {
+                Application.Current.Resources["OnharuPopupAccent"] = ActionAccentBrush();
+                Application.Current.Resources["OnharuScrollThumb"] = new SolidColorBrush(
+                    CategoryColorSystem.Background("classic", ActionAccentColor()));
+            }
             if (themeQuickSwitch != null) themeQuickSwitch.SetSelected(settings.ThemeId == "dark" ? 1 : 0, false);
             UpdateThemeQuickSwitchStyle();
             var palette = OnharuThemePalette.For(settings.ThemeId);
             foreach (var entry in themeBrushes) entry.Value.Color = (Color)ColorConverter.ConvertFromString(palette[entry.Key]);
             monthTitle.Foreground = BrandBrush(); selectedTitle.Foreground = T("Text");
             if (opacitySlider != null) opacitySlider.Foreground = ActionAccentBrush();
-            if (calendarRangeSwitch != null) calendarRangeSwitch.SetAccent(ActionAccentBrush(), Brushes.White);
+            if (googleLoginButton != null)
+            {
+                googleLoginButton.Background = Brush("#6750C8"); googleLoginButton.BorderBrush = Brush("#5B45B8");
+                googleLoginButton.Foreground = Brushes.White;
+            }
+            ApplyActionSwitchPalette(calendarRangeSwitch);
+            ApplyActionSwitchPalette(positionModeSwitch);
+            ApplyActionSwitchPalette(detailOrderSwitch);
+            if (collapseSidebarButton != null) collapseSidebarButton.BorderBrush = ActionAccentBrush();
+            StyleDetailScrollBar();
             UpdateTodayButtonStyle();
             foreach (var entry in filters)
             {
@@ -72,6 +87,22 @@ namespace FamilyPlanner
 
         Brush ActionAccentBrush() { return Brush(ActionAccentColor()); }
 
+        void StyleDetailScrollBar()
+        {
+            if (detailScroll == null) return;
+            UiRound.SoftenScrollBars(detailScroll);
+        }
+
+        void ApplyActionSwitchPalette(OnharuSegmentedSwitch control)
+        {
+            if (control == null) return;
+            var accent = (Color)ColorConverter.ConvertFromString(ActionAccentColor());
+            control.SetPalette(new SolidColorBrush(accent), Brushes.White,
+                new SolidColorBrush(CategoryColorSystem.Background("classic", accent)),
+                new SolidColorBrush(CategoryColorSystem.Foreground("classic", accent)),
+                new SolidColorBrush(CategoryColorSystem.EditorBorder("classic", accent)));
+        }
+
         string FilterColor(string key, CheckBox box)
         {
             string color;
@@ -107,13 +138,18 @@ namespace FamilyPlanner
 
         Brush EventTextBrush(PlannerItem item)
         {
-            if (item.Important) return SafeBrush(item.ImportantTextColor, "#F20D7A");
+            if (item.Important)
+            {
+                var background = SafeColor(item.ImportantBackgroundColor, "#FFF1F7");
+                var preferred = SafeColor(item.ImportantTextColor, "#F20D7A");
+                return new SolidColorBrush(CategoryColorSystem.ReadableForeground(background, preferred));
+            }
             return new SolidColorBrush(CategoryColorSystem.Foreground(settings.ThemeId, ItemColor(item)));
         }
 
         Brush EventBackgroundBrush(PlannerItem item)
         {
-            if (item.Important) return SafeBrush(item.ImportantBackgroundColor, "#FFC1DD");
+            if (item.Important) return SafeBrush(item.ImportantBackgroundColor, "#FFF1F7");
             return new SolidColorBrush(CategoryColorSystem.Background(settings.ThemeId, ItemColor(item)));
         }
 
@@ -121,6 +157,12 @@ namespace FamilyPlanner
         {
             try { return Brush(string.IsNullOrWhiteSpace(value) ? fallback : value); }
             catch { return Brush(fallback); }
+        }
+
+        static Color SafeColor(string value, string fallback)
+        {
+            try { return (Color)ColorConverter.ConvertFromString(string.IsNullOrWhiteSpace(value) ? fallback : value); }
+            catch { return (Color)ColorConverter.ConvertFromString(fallback); }
         }
 
         static Brush PastelBrush(Color color, double whiteRatio)

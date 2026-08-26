@@ -28,31 +28,14 @@ namespace FamilyPlanner
         ContextMenu CreateCloseContextMenu()
         {
             var menu = new ContextMenu { Placement = PlacementMode.MousePoint };
-            menu.Items.Add(new MenuItem { Header = "취소" });
             var minimize = new MenuItem { Header = "트레이로 최소화" };
             minimize.Click += delegate { MinimizeToTray(); }; menu.Items.Add(minimize);
-            var exit = new MenuItem { Header = "종료", Foreground = Brush("#DC2626"), FontWeight = FontWeights.Bold };
+            var maximize = new MenuItem { Header = "최대화", IsEnabled = !positionLocked };
+            maximize.Click += delegate { if (!positionLocked) WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; }; menu.Items.Add(maximize);
+            var exit = new MenuItem { Header = "끝내기", Foreground = Brush("#DC2626"), FontWeight = FontWeights.Bold };
             exit.Click += delegate { ExitApplication(); }; menu.Items.Add(exit);
             UiRound.StyleContextMenu(menu);
             return menu;
-        }
-
-        void OpenLogoMenu(FrameworkElement logo)
-        {
-            var menu = CreateCloseContextMenu();
-            ((MenuItem)menu.Items[1]).Header = "최소화";
-            ((MenuItem)menu.Items[2]).Header = "종료";
-            if (!positionLocked) { menu.PlacementTarget = logo; menu.Placement = PlacementMode.Right; menu.HorizontalOffset = 5; }
-            else
-            {
-                var point = logo.PointToScreen(new Point(logo.ActualWidth + 5, 0));
-                var source = PresentationSource.FromVisual(logo);
-                if (source != null && source.CompositionTarget != null)
-                    point = source.CompositionTarget.TransformFromDevice.Transform(point);
-                menu.Placement = PlacementMode.AbsolutePoint;
-                menu.HorizontalOffset = point.X; menu.VerticalOffset = point.Y;
-            }
-            menu.IsOpen = true;
         }
 
         void OpenCloseContextMenu()

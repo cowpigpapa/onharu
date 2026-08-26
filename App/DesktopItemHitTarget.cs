@@ -13,4 +13,9 @@ namespace FamilyPlanner
         public FrameworkElement Element;
         public bool DetailCard;
     }
+
+    sealed class DetailGroupHitTarget
+    {
+        public string GroupKey;
+    }
 }

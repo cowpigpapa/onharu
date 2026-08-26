@@ -42,7 +42,7 @@ namespace FamilyPlanner
             OnharuPopupChrome.EnableTopDrag(this);
             var content = new StackPanel { Margin = new Thickness(22, 18, 22, 18) };
             content.Children.Add(new TextBlock { Text = "✦  온하루 알림", FontSize = 17, FontWeight = FontWeights.Bold, Foreground = Brush("#4338CA") });
-            foreach (var item in due) content.Children.Add(new TextBlock { Text = (item.AllDay ? "오늘" : item.Start.ToString("HH:mm")) + "  ·  " + item.Title,
+            foreach (var item in due) content.Children.Add(new TextBlock { Text = (item.ReminderMinutes > 0 ? item.ReminderMinutes + "분 전 일정입니다" : "일정 시간입니다") + "  ·  " + (item.AllDay ? "오늘" : item.Start.ToString("HH:mm")) + "  ·  " + item.Title,
                 FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 9, 0, 0), TextWrapping = TextWrapping.Wrap });
             var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 15, 0, 0) };
             foreach (var option in new[] { new { Name = "5분 뒤", Minutes = 5 }, new { Name = "10분 뒤", Minutes = 10 }, new { Name = "30분 뒤", Minutes = 30 } })

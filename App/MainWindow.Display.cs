@@ -71,6 +71,7 @@ namespace FamilyPlanner
         bool IsItemVisible(PlannerItem item)
         {
             if (GoogleTasks.IsTask(item) && !settings.ShowGoogleTasks) return false;
+            if (item.Category == "야구" && !settings.UseProBaseball) return false;
             if (!string.IsNullOrWhiteSpace(item.GoogleCalendarId))
             {
                 if (settings.GoogleCalendars == null || !settings.GoogleCalendars.Any(x => x.Id == item.GoogleCalendarId)) return false;

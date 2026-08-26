@@ -37,7 +37,7 @@ if (-not $mainSource.Contains('OnharuColorPresets.DefaultCategories()')) { throw
 if (-not $layoutSource.Contains('Tag = Colors[category]') -or -not $googleSource.Contains('Tag = color') -or -not $googleSource.Contains('StyleThemeCheckBox(box, color)')) { throw 'All sidebar filters must carry and immediately apply their category color.' }
 if (-not $themeSource.Contains("Width='14' Height='14'") -or -not $themeSource.Contains("ContentPresenter Margin='4,0,0,0'")) { throw 'Colorful checkbox footprint must remain compatible with the 2.1 sidebar layout.' }
 if (-not $layoutSource.Contains('Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top')) { throw 'Special Day filters must align with the first local filter row.' }
-foreach ($token in @('BindCalendarNavigation(previousButton, -1)', 'BindCalendarNavigation(nextButton, 1)', 'brandNavigation.Children.Add(todayButton)', 'monthTitle.Width = 306', 'monthTitle.HorizontalContentAlignment = HorizontalAlignment.Left', 'upperActions.Children.Add(opacitySlider)', 'lowerActions.Children.Add(positionModeSwitch)', '"월 전체"', 'settings.VisibleWeekCount)) + "주"', 'brandLine.Margin = new Thickness(0)', 'new TemplateBindingExtension(Control.PaddingProperty)', 'var todayIcon =', 'settings.TodayStyle == "fill_icon"')) {
+foreach ($token in @('BindCalendarNavigation(previousButton, -1)', 'BindCalendarNavigation(nextButton, 1)', 'brandNavigation.Children.Add(todayButton)', 'monthTitle.Width = 306', 'monthTitle.HorizontalContentAlignment = HorizontalAlignment.Left', 'actionArea.Children.Add(opacitySlider)', 'lowerSwitches.Children.Add(positionModeSwitch)', '"월 전체"', 'settings.VisibleWeekCount)) + "주"', 'brandLine.Margin = new Thickness(0)', 'new TemplateBindingExtension(Control.PaddingProperty)', 'var todayIcon =', 'settings.TodayStyle == "fill_icon"')) {
     if (-not (($layoutSource + $calendarSource) -like ('*' + $token + '*'))) { throw "Colorful header or today-highlight token is missing: $token" }
 }
 if (-not $layoutSource.Contains('new[] { 41.0, 55.0 }') -or -not $layoutSource.Contains('featureActions.Children.Add(searchButton)')) { throw 'View switch width and feature icons must remain in their two-level header rows.' }
@@ -66,7 +66,7 @@ foreach ($presetToken in @('오션블루','핫핑크','라임펄스','바이올�
 foreach ($token in @('OnharuColorPresets.Names', 'OnharuColorPresets.Palettes()', '"내 설정으로 저장"', 'ColorEditor("야구"', 'ColorEditor("D-Day"', 'ColorEditor("기념일"', 'ColorEditor("국경일"', 'Tuple.Create("파스텔", "classic"')) {
     if (-not $settingsSource.Contains($token)) { throw "Theme preset or local color editor is missing: $token" }
 }
-foreach ($token in @('ActionAccentColor()', 'opacitySlider.Foreground = ActionAccentBrush()', 'calendarRangeSwitch.SetAccent(ActionAccentBrush(), Brushes.White)', 'OnharuStateColors.DetailTab(settings.ThemeId, entry.Item2, ActionAccentColor())')) {
+foreach ($token in @('ActionAccentColor()', 'opacitySlider.Foreground = ActionAccentBrush()', 'ApplyActionSwitchPalette(calendarRangeSwitch)', 'ApplyActionSwitchPalette(positionModeSwitch)', 'ApplyActionSwitchPalette(detailOrderSwitch)', 'OnharuStateColors.DetailTab(settings.ThemeId, entry.Item2, ActionAccentColor())')) {
     if (-not (($themeSource + $layoutSource + $detailSource).Contains($token))) { throw "Preset representative action color is missing: $token" }
 }
 if (-not $themeSource.Contains('return OnharuColorPresets.RepresentativeColor(settings.SelectedPaletteIndex);')) { throw 'Action accent must use the fixed preset representative color.' }
@@ -111,11 +111,14 @@ if ($settingsSource.Contains('GroupName = "TodayStyle", IsChecked = todayStyle =
 foreach ($token in @('CategoryColorSystem.Foreground(settings.ThemeId, ItemColor(item))', 'CategoryColorSystem.Background(settings.ThemeId, ItemColor(item))')) {
     if (-not $themeSource.Contains($token)) { throw "Shared category color system is missing from the calendar: $token" }
 }
+foreach ($token in @('CategoryColorSystem.ReadableForeground(background, preferred)', 'SafeColor(item.ImportantBackgroundColor', 'SafeColor(item.ImportantTextColor')) {
+    if (-not $themeSource.Contains($token)) { throw "Important event colors must pass through the shared contrast guard: $token" }
+}
 foreach ($stateHex in @('#6366F1','#4F46E5','#BE185D','#F472B6','#F1F5F9','#94A3B8')) {
     if ($detailSource.Contains($stateHex)) { throw "State color policy must not return to MainWindow.Detail: $stateHex" }
     if (-not $stateColorSource.Contains($stateHex)) { throw "State color module is missing: $stateHex" }
 }
-foreach ($token in @('box.Template = ColorCheckBoxTemplate()', 'settings.ThemeId == "dark" ? T("Text")', 'StyleThemeCheckBox(check, ItemColor(item))', 'CategoryColorSystem.SelectionBackground(settings.ThemeId, settings.SelectedDateFillColor)', 'OnharuStateColors.ImportantDay', 'OnharuStateColors.DetailTab')) {
+foreach ($token in @('box.Template = ColorCheckBoxTemplate()', 'settings.ThemeId == "dark" ? T("Text")', 'StyleThemeCheckBox(check, ItemColor(item))', 'CategoryColorSystem.SelectionBackground(settings.ThemeId, settings.SelectedDateFillColor)', 'CategoryColorSystem.StrongAccent(baseColor)', 'starOutline = starFill', 'colored ? 2.05 : 1.15', 'OnharuStateColors.DetailTab')) {
     if (-not (($themeSource + $calendarSource + $detailSource).Contains($token))) { throw "Dark interaction contrast token is missing: $token" }
 }
 $colorType = $assembly.GetType('FamilyPlanner.CategoryColorSystem', $true)
@@ -153,7 +156,7 @@ foreach ($token in @('CategoryColorSystem.DetailBackground(settings.ThemeId, gro
     if (-not (($detailSource + $anniversarySource).Contains($token))) { throw "Right detail card palette token is missing: $token" }
 }
 $settings = [Activator]::CreateInstance($assembly.GetType('FamilyPlanner.PlannerSettings', $true))
-if ($settings.Version -ne 44 -or $settings.ThemeId -ne 'classic' -or -not $settings.ImportantFirst -or $settings.LockPalettePlacement) { throw 'Theme settings defaults are invalid.' }
+if ($settings.Version -ne 45 -or $settings.ThemeId -ne 'classic' -or -not $settings.ImportantFirst -or $settings.LockPalettePlacement) { throw 'Theme settings defaults are invalid.' }
 $themeDefinitionSource = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'OnharuTheme.cs')
 if ($themeDefinitionSource.Contains('colorful') -or $settingsSource.Contains('"컬러"')) { throw 'Removed colorful skin code must not remain.' }
 foreach ($token in @('ShowThemeQuickSwitch', '상단 스킨 전환 버튼 표시', '선택 프리셋 변경', '색상 설정 초기화')) {
@@ -165,7 +168,7 @@ foreach ($token in @('panel.Children.Insert(0, SectionCard(themeGroup))', 'panel
 foreach ($token in @('현재 색상 배치 고정', 'RandomizeRecommendedPalettePlacement()', 'settings.SelectedPaletteIndex >= 5', 'primary.Color = representative', 'settings.DdayColor = next()', 'settings.AnniversaryColor = next()')) {
     if (-not (($settingsSource + $themeSource + (Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'MainWindow.Startup.cs'))).Contains($token))) { throw "Palette placement token is missing: $token" }
 }
-foreach ($token in @('lowerActions.Children.Add(themeQuickSwitch)', 'UpdateThemeQuickSwitchStyle()', 'CategoryColorSystem.Background("classic", ActionAccentColor())', 'refreshPaletteChangeButton')) {
+foreach ($token in @('lowerSwitches.Children.Add(themeQuickSwitch)', 'UpdateThemeQuickSwitchStyle()', 'CategoryColorSystem.Background("classic", ActionAccentColor())', 'refreshPaletteChangeButton')) {
     if (-not (($layoutSource + $settingsSource + $themeSource).Contains($token))) { throw "Always-visible theme switch or preset button style is missing: $token" }
 }
 Write-Host 'ONHARU 2.2 theme palette checks passed.'

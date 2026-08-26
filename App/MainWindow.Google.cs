@@ -49,6 +49,14 @@ namespace FamilyPlanner
             StartAutoSync();
         }
 
+        void ToggleGoogleConnection(object sender, RoutedEventArgs e)
+        {
+            if (!GoogleCalendar.IsConnected) { GoogleClick(sender, e); return; }
+            GoogleCalendar.Disconnect(); Store.SetAccount(null); items.Clear(); items.AddRange(Store.LoadLocal());
+            settings.ActiveGoogleAccountId = null; settings.GoogleCalendars.Clear();
+            Store.SaveSettings(settings); BuildGoogleFilters(); RenderAll(); UpdateGoogleButton(); StartAutoSync();
+        }
+
         void LoadConnectedAccountItems()
         {
             var accountId = GoogleCalendar.ConnectedAccountId;
@@ -265,6 +273,7 @@ namespace FamilyPlanner
         {
             if (accountStatus == null) return;
             googleAccountVisualVersion++;
+            if (googleLoginButton != null) googleLoginButton.Content = GoogleCalendar.IsConnected ? "Logout" : "Login";
             if (googleAccountCard != null) googleAccountCard.Background = Brush("#EEF2FF");
             var primary = settings.GoogleCalendars == null ? null : settings.GoogleCalendars.FirstOrDefault(x => x.Primary);
             if (GoogleCalendar.IsConnected)
@@ -278,7 +287,7 @@ namespace FamilyPlanner
             }
             else
             {
-                accountStatus.Text = "●  로그아웃됨 · 로컬 저장";
+                accountStatus.Text = "G  로그아웃됨 · 로컬 저장";
                 accountStatus.Foreground = Brush("#7C3AED");
             }
             accountStatus.ToolTip = accountStatus.Text;

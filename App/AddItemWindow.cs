@@ -57,10 +57,10 @@ namespace FamilyPlanner
             IsEnabled = false, MaxLength = 3, VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly ComboBox customReminderUnit = new ComboBox { Width = 80, Height = 27, IsEnabled = false, Margin = new Thickness(6, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly CheckBox important = new CheckBox { Content = "★ 중요 일정", Foreground = new SolidColorBrush(Color.FromRgb(242, 13, 122)),
-            Background = new SolidColorBrush(Color.FromRgb(255, 193, 221)), Padding = new Thickness(3, 1, 3, 1), VerticalAlignment = VerticalAlignment.Center };
+            Background = new SolidColorBrush(Color.FromRgb(255, 241, 247)), Padding = new Thickness(3, 1, 3, 1), VerticalAlignment = VerticalAlignment.Center };
         readonly StackPanel importantColors = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 0), Opacity = 0, IsHitTestVisible = false };
         Button importantBackgroundButton, importantTextButton;
-        string importantBackgroundColor = "#FFC1DD";
+        string importantBackgroundColor = "#FFF1F7";
         string importantTextColor = "#F20D7A";
         readonly CheckBox showDday = new CheckBox { Content = "D-Day 표시", Foreground = new SolidColorBrush(Color.FromRgb(3, 105, 161)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
         readonly WrapPanel recurrenceOptions = new WrapPanel { Margin = new Thickness(0, 6, 0, 6) };
@@ -234,6 +234,9 @@ namespace FamilyPlanner
             titleOptions.Children.Add(showDday); titleOptions.Children.Add(important); titleOptions.Children.Add(importantColors);
             Grid.SetColumn(titleOptions, 1); titleLabelRow.Children.Add(titleOptions);
             panel.Children.Add(titleLabelRow); panel.Children.Add(title); panel.Children.Add(validationMessage);
+            panel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#CBD5E1"),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 7, 14, 2),
+                Margin = new Thickness(0, 6, 0, 8), Child = categories });
             var timeCardContent = new StackPanel();
             timeCardContent.Children.Add(new TextBlock { Text = "로컬 일정은 시간 유무와 관계없이 완료 체크할 수 있습니다.", FontSize = 11,
                 Foreground = Brush("#64748B"), Margin = new Thickness(0, 0, 0, 8) });
@@ -259,7 +262,7 @@ namespace FamilyPlanner
             Grid.SetColumn(rolloverOptions, 1); rolloverLine.Children.Add(rolloverOptions); timeCardContent.Children.Add(rolloverLine);
             var reminderLine = new Grid { Margin = new Thickness(0, 3, 0, 3) }; reminderLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34) }); reminderLine.ColumnDefinitions.Add(new ColumnDefinition());
             reminderLine.Children.Add(new TextBlock { Text = "알림", FontSize = 11, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
-            foreach (var option in new[] { new { Name = "없음", Value = -1 }, new { Name = "정시", Value = 0 } })
+            foreach (var option in new[] { new { Name = "없음", Value = -1 } })
                 reminderOptions.Children.Add(new RadioButton { Content = option.Name, Tag = option.Value, GroupName = "Reminder",
                     IsChecked = option.Value == -1, Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center });
             customReminderUnit.Items.Add(new ComboBoxItem { Content = "분 전", Tag = 1 });
@@ -338,11 +341,6 @@ namespace FamilyPlanner
                 recurrenceBody.Visibility = Visibility.Collapsed; UpdateRecurrenceOptions();
             };
             recurrenceCard.Child = recurrenceLine; panel.Children.Add(recurrenceCard);
-            var categoryContent = new StackPanel();
-            categoryContent.Children.Add(categories);
-            panel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#CBD5E1"),
-                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 7, 14, 2),
-                Margin = new Thickness(0, 0, 0, 8), Child = categoryContent });
             UpdateRecurrenceAvailability();
             var recurrenceCalendar = new System.Windows.Controls.Calendar { SelectedDate = recurrenceUntilDate, DisplayDate = recurrenceUntilDate,
                 SelectionMode = CalendarSelectionMode.SingleDate };
@@ -617,7 +615,7 @@ namespace FamilyPlanner
         {
             durationMinutes = item.AllDay ? 30 : Math.Max(1, (int)Math.Round((item.End - item.Start).TotalMinutes));
             title.Text = item.Title; notes.Text = item.Notes ?? "";
-            importantBackgroundColor = string.IsNullOrWhiteSpace(item.ImportantBackgroundColor) ? "#FFC1DD" : item.ImportantBackgroundColor;
+            importantBackgroundColor = string.IsNullOrWhiteSpace(item.ImportantBackgroundColor) ? "#FFF1F7" : item.ImportantBackgroundColor;
             importantTextColor = string.IsNullOrWhiteSpace(item.ImportantTextColor) ? "#F20D7A" : item.ImportantTextColor;
             importantBackgroundButton.Background = Brush(importantBackgroundColor); importantTextButton.Background = Brush(importantTextColor);
             important.IsChecked = item.Important; importantColors.Opacity = item.Important ? 1 : 0; importantColors.IsHitTestVisible = item.Important;
@@ -778,19 +776,27 @@ namespace FamilyPlanner
             button.Click += delegate
             {
                 var colors = background
-                    ? new[] { "#FFC1DD", "#FFD0B5", "#FFF0A6", "#B8F3D3", "#BFDBFE", "#DDD6FE", "#E2E8F0" }
+                    ? new[] { "#FFF1F7", "#FFF3EC", "#FFF9DB", "#ECFDF5", "#EFF6FF", "#F5F3FF", "#F8FAFC" }
                     : new[] { "#F20D7A", "#F4511E", "#D97706", "#00A86B", "#2563EB", "#8B5CF6", "#475569" };
+                var pairedTextColors = new[] { "#F20D7A", "#F4511E", "#D97706", "#00A86B", "#2563EB", "#8B5CF6", "#475569" };
                 var swatches = new UniformGrid { Columns = 7, Margin = new Thickness(7) };
                 var popup = new Popup { PlacementTarget = button, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true, VerticalOffset = 4 };
+                var colorIndex = 0;
                 foreach (var color in colors)
                 {
-                    var selected = color;
+                    var selected = color; var selectedIndex = colorIndex++;
                     var swatch = new Button { Width = 25, Height = 25, Margin = new Thickness(2), Padding = new Thickness(0),
                         Background = Brush(color), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
                     Round(swatch, 8);
                     swatch.Click += delegate
                     {
-                        if (background) importantBackgroundColor = selected; else importantTextColor = selected;
+                        if (background)
+                        {
+                            importantBackgroundColor = selected;
+                            importantTextColor = pairedTextColors[selectedIndex];
+                            if (importantTextButton != null) importantTextButton.Background = Brush(importantTextColor);
+                        }
+                        else importantTextColor = selected;
                         button.Background = Brush(selected);
                         important.Background = Brush(importantBackgroundColor); important.Foreground = Brush(importantTextColor);
                         popup.IsOpen = false;

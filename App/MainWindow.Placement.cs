@@ -33,6 +33,14 @@ namespace FamilyPlanner
             var hwnd = new WindowInteropHelper(this).Handle;
             NativeRect rect;
             if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out rect)) return;
+            // The maximized rectangle is a transient presentation frame, not the
+            // user's normal restore placement. Keep the last normal rectangle so
+            // maximize -> fixed -> movable -> restore returns to the same spot.
+            if (WindowState == WindowState.Maximized)
+            {
+                PlacementTrace.Write("SAVE skipped-maximized native=" + RectText(rect) + " wpf=" + WpfRectText());
+                return;
+            }
             var width = Math.Max(1, rect.Right - rect.Left); var height = Math.Max(1, rect.Bottom - rect.Top);
             var screen = Forms.Screen.FromRectangle(new System.Drawing.Rectangle(rect.Left, rect.Top, width, height));
             settings.MonitorDeviceName = screen.DeviceName;
@@ -99,6 +107,17 @@ namespace FamilyPlanner
             PlacementTrace.Write("MATCH begin frame=" + RectText(frame) + " wpf=" + WpfRectText());
             var hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd == IntPtr.Zero) return false;
+            if (WindowState == WindowState.Maximized)
+            {
+                NativeRect maximized;
+                var ready = GetWindowRect(hwnd, out maximized)
+                    && Math.Abs(maximized.Left - frame.Left) <= 1 && Math.Abs(maximized.Top - frame.Top) <= 1
+                    && Math.Abs((maximized.Right - maximized.Left) - frame.Width) <= 1
+                    && Math.Abs((maximized.Bottom - maximized.Top) - frame.Height) <= 1;
+                PlacementTrace.Write("MATCH preserve-maximized frame=" + RectText(frame) +
+                    " ready=" + ready + " wpf=" + WpfRectText());
+                return ready;
+            }
             var nativeDpi = GetDpiForWindow(hwnd);
             var scale = nativeDpi > 0 ? nativeDpi / 96.0 : 1.0;
             ApplyPhysicalMinimums(nativeDpi);

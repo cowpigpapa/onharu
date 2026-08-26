@@ -18,6 +18,7 @@ namespace FamilyPlanner
         internal event Action<int, bool> Clicked;
         int selectedIndex;
         Brush selectedForeground = Brushes.White;
+        Brush inactiveForeground = Brush("#64748B");
 
         internal OnharuSegmentedSwitch(string[] labels, double[] segmentWidths, int selected, Action<int> onChanged)
         {
@@ -60,7 +61,7 @@ namespace FamilyPlanner
             thumb.Width = widths[index];
             if (animate) shift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(left, TimeSpan.FromMilliseconds(130)) { EasingFunction = new QuadraticEase() });
             else { shift.BeginAnimation(TranslateTransform.XProperty, null); shift.X = left; }
-            for (var i = 0; i < buttons.Count; i++) buttons[i].Foreground = i == selectedIndex ? selectedForeground : Brush("#64748B");
+            for (var i = 0; i < buttons.Count; i++) buttons[i].Foreground = i == selectedIndex ? selectedForeground : inactiveForeground;
         }
 
         internal void SetLabel(int index, string text) { if (index >= 0 && index < buttons.Count) buttons[index].Content = text; }
@@ -72,6 +73,11 @@ namespace FamilyPlanner
         internal void SetAccent(Brush background, Brush foreground)
         {
             thumb.Background = background; selectedForeground = foreground; SetSelected(selectedIndex, false);
+        }
+        internal void SetPalette(Brush selectedBackground, Brush selectedText, Brush inactiveBackground, Brush inactiveText, Brush border)
+        {
+            thumb.Background = selectedBackground; selectedForeground = selectedText; Background = inactiveBackground;
+            inactiveForeground = inactiveText; BorderBrush = border; SetSelected(selectedIndex, false);
         }
         internal int SelectedIndex { get { return selectedIndex; } }
         internal double SegmentWidth(int index) { return index >= 0 && index < widths.Length ? widths[index] : 0; }

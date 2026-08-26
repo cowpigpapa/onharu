@@ -56,7 +56,7 @@ foreach ($case in $cases) {
 
 $settingsType = $assembly.GetType('FamilyPlanner.PlannerSettings', $true)
 $settings = [Activator]::CreateInstance($settingsType)
-if ($settings.Version -ne 44) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.Version -ne 45) { throw "Unexpected settings version: $($settings.Version)" }
 if ($settings.ThemeId -ne 'classic') { throw "Theme must default to classic: $($settings.ThemeId)" }
 if (-not $settings.AutomaticUpdateChecks) { throw 'Automatic update checks must default to enabled.' }
 if ($settings.UseMonthView -or $settings.VisibleWeekCount -ne 4) { throw 'Clean-install calendar must default to a four-week view.' }
@@ -90,8 +90,20 @@ foreach ($diaryInputFeature in @('settings.UseDiary ? new DiaryDateHitTarget(dat
     if (-not $mainSources.Contains($diaryInputFeature)) { throw "Diary date-only input routing is missing: $diaryInputFeature" }
 }
 if ($mainSources.Contains('lunar.MouseLeftButtonDown += openDiary')) { throw 'Lunar text must not open the diary editor.' }
-if (-not $settingsSource.Contains('Content = "일기장 기능"')) { throw 'Diary feature setting is missing.' }
-if (-not $settingsSource.Contains('Content = "Google Tasks 표시·동기화"')) { throw 'Google Tasks opt-in setting is missing.' }
+if (-not $settingsSource.Contains('Content = "일기장"')) { throw 'Diary feature setting is missing.' }
+if (-not $settingsSource.Contains('Content = "Google Tasks 동기화"')) { throw 'Google Tasks opt-in setting is missing.' }
+foreach ($dragFeature in @('EnableItemDrag(bar, item)', 'EnableItemDrag(text, item)', 'EnableCalendarDrop()', 'MoveItemToDate(item, targetDate.Value', 'DragDropEffects.Move | DragDropEffects.Copy', 'CopyItem(item)')) {
+    if (-not $mainSources.Contains($dragFeature)) { throw "Calendar item drag-and-drop is missing: $dragFeature" }
+}
+if (-not $settingsSource.Contains('드래그로 Google 일정 날짜 변경') -or -not $mainSources.Contains('settings.AllowGoogleDragMove')) { throw 'Google drag-move opt-in is missing.' }
+if (-not $mainSources.Contains('IsAutomaticSportsItem(item)') -or -not $mainSources.Contains('item.Category == "야구" && !settings.UseProBaseball')) { throw 'KBO drag and visibility protection is missing.' }
+if (-not $mainSources.Contains('item.GoogleEventType == "birthday"') -or -not $mainSources.Contains('반복 일정 원본은 이동할 수 없습니다.')) { throw 'Google recurring-instance drag policy is invalid.' }
+foreach ($dragFeedback in @('ONHARU_BLOCKED_ITEM_DRAG', 'DragRestriction(item)', 'baseballFeatureEnabled', 'settings.BaseballVisible = true')) {
+    if (-not $mainSources.Contains($dragFeedback)) { throw "Drag feedback or baseball activation is missing: $dragFeedback" }
+}
+foreach ($detailOrderFeature in @('EnableDetailCardOrder(groupHeader, detailCard, groupKey)', 'DetailGroupDragFormat', 'ReorderDetailGroup(source, groupName', 'settings.DetailCategoryOrder')) {
+    if (-not $mainSources.Contains($detailOrderFeature)) { throw "Detail card drag order is missing: $detailOrderFeature" }
+}
 foreach ($diaryToggleFeature in @('if (!settings.UseDiary)', 'settings.UseDiary && diaryDates.Contains', 'if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close()')) {
     if (-not $mainSources.Contains($diaryToggleFeature)) { throw "Diary feature toggle is incomplete: $diaryToggleFeature" }
 }
@@ -170,7 +182,7 @@ if ($explorerLayerSource -notmatch '(?s)DwmwaCloak = 13.*?void PublishAndCloak\(
 }
 if ($mainSource.Contains('Topmost = true; ShowInTaskbar = true;')) { throw 'Position editor is incorrectly pinned above every application.' }
 if ($mainSource.Contains('DragMove(); DesktopLayer.Lower(this);')) { throw 'Dragging the position editor still lowers it behind other windows.' }
-foreach ($closeFeature in @('OpenLogoMenu(logo)', 'action == 25) { MinimizeToTray(); return;', 'action == 28) { OpenCloseContextMenu(); return;', 'ContextMenu CreateCloseContextMenu()', 'exit.Click += delegate { ExitApplication(); };', 'void CloseAuxiliaryWindows()')) {
+foreach ($closeFeature in @('action == 25) { MinimizeToTray(); return;', 'ContextMenu CreateCloseContextMenu()', 'exit.Click += delegate { ExitApplication(); };', 'void CloseAuxiliaryWindows()')) {
     if (-not $mainSource.Contains($closeFeature)) { throw "Logo menu close behavior is missing: $closeFeature" }
 }
 foreach ($exitRestoreFeature in @('var wasMinimized = calendarMinimized;', 'calendarMinimized = false; UpdateTrayVisibilityText();', 'if (wasMinimized) { MinimizeToTray(); return; }', 'if (!wasLocked) ShowPositionEditor();')) {
@@ -264,7 +276,7 @@ if ($addItemSource.Contains('"✓  수정 저장"') -or $addItemSource.Contains(
 foreach ($ddayIndependenceFeature in @('D-Day is an independent summary view', 'Task SetTodoCompleted(PlannerItem item, bool completed)', 'ToggleTodoFromDesktop(itemHit.Item)')) {
     if (-not $mainSource.Contains($ddayIndependenceFeature)) { throw "D-Day independence or detail title toggle is missing: $ddayIndependenceFeature" }
 }
-foreach ($specialDayFilterFeature in @('Text = "Special Day Card"', 'var specialFilterRow = new StackPanel', 'Grid.SetRowSpan(divider, 2)', 'Width = new GridLength(118)', 'var localFilterRow = new UniformGrid { Columns = 2 }', '"야구"')) {
+foreach ($specialDayFilterFeature in @('Text = "Special Day Card"', 'var specialFilterRow = new StackPanel', 'Grid.SetRowSpan(divider, 2)', 'Width = new GridLength(118)', 'localFilterRow = new UniformGrid { Columns = 2 }', '"야구"')) {
     if (-not $mainSource.Contains($specialDayFilterFeature)) { throw "Special Day filter grouping is missing: $specialDayFilterFeature" }
 }
 $detailSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Detail.cs') -Raw -Encoding UTF8

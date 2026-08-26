@@ -7,7 +7,7 @@ namespace FamilyPlanner
     [DataContract]
     public class PlannerSettings
     {
-        [DataMember] public int Version = 44;
+        [DataMember] public int Version = 45;
         [DataMember] public string ThemeId = "classic";
         [DataMember] public bool HasPosition;
         [DataMember] public double Left;
@@ -38,6 +38,8 @@ namespace FamilyPlanner
         [DataMember] public int GoogleOptionsVersion = 1;
         [DataMember] public string CalendarOrderMode = "category";
         [DataMember] public string DetailOrderMode = "category";
+        [DataMember] public List<string> DetailCategoryOrder = new List<string>();
+        [DataMember] public List<string> DetailTimeOrder = new List<string>();
         [DataMember] public bool ImportantFirst = true;
         [DataMember] public bool MultiDayFirst = true;
         [DataMember] public bool CompletedLast = true;
@@ -56,7 +58,7 @@ namespace FamilyPlanner
         [DataMember] public int DefaultStartHour = 9;
         [DataMember] public int DefaultStartMinute;
         [DataMember] public int DefaultDurationMinutes = 30;
-        [DataMember] public int DefaultReminderMinutes = -1;
+        [DataMember] public int DefaultReminderMinutes = 10;
         [DataMember] public bool Use24HourTime = true;
         [DataMember] public bool ShowWeekNumbers = true;
         [DataMember] public string WeekNumberRule = "iso";
@@ -81,6 +83,7 @@ namespace FamilyPlanner
         [DataMember] public bool UseDiary = true;
         [DataMember] public bool UseRollover = true;
         [DataMember] public bool ShowGoogleTasks;
+        [DataMember] public bool AllowGoogleDragMove;
         [DataMember] public bool UseProBaseball;
         [DataMember] public bool BaseballVisible = true;
         [DataMember] public string FavoriteBaseballTeam;
@@ -98,6 +101,10 @@ namespace FamilyPlanner
         [DataMember] public List<string> SavedPalettes = new List<string>();
         [DataMember] public int SelectedPaletteIndex;
         [DataMember] public bool LockPalettePlacement;
+        [DataMember] public bool ShowSearchIcon = true;
+        [DataMember] public bool ShowRangeSwitch = true;
+        [DataMember] public bool ShowThemeSwitch = true;
+        [DataMember] public bool ShowPositionSwitch = true;
     }
 
     [DataContract]

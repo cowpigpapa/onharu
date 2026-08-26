@@ -37,6 +37,10 @@ foreach ($physicalPlacementFeature in @('SavePhysicalPlacement()', 'RestorePhysi
 foreach ($dpiPlacementFeature in @('AttachDpiPlacement()', 'ApplyPhysicalMinimums(', 'WM_DPICHANGED', 'DPI_RESTORE')) {
     if (-not $mainSource.Contains($dpiPlacementFeature)) { throw "PMv2 물리 위치 복원이 누락됐습니다: $dpiPlacementFeature" }
 }
+
+foreach ($maximizeLockFeature in @('SAVE skipped-maximized', 'MATCH preserve-maximized', 'WindowState == WindowState.Maximized')) {
+    if (-not $mainSource.Contains($maximizeLockFeature)) { throw "최대화 후 고정 시 정상 위치 보존이 누락됐습니다: $maximizeLockFeature" }
+}
 foreach ($mixedDpiMoveFeature in @('WM_ENTERSIZEMOVE', 'WM_EXITSIZEMOVE', 'nativeMoveSizeActive && !positionLocked', 'DPI_MOVE allow suggested')) {
     if (-not $mainSource.Contains($mixedDpiMoveFeature)) { throw "혼합 DPI 드래그 보호가 누락됐습니다: $mixedDpiMoveFeature" }
 }

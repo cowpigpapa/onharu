@@ -70,7 +70,9 @@ namespace FamilyPlanner
 
         public static Border EmphasizePopup(Border shell)
         {
-            shell.BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241));
+            shell.BorderBrush = Application.Current != null && Application.Current.Resources.Contains("OnharuPopupAccent")
+                ? Application.Current.Resources["OnharuPopupAccent"] as Brush ?? new SolidColorBrush(Color.FromRgb(99, 102, 241))
+                : new SolidColorBrush(Color.FromRgb(99, 102, 241));
             shell.BorderThickness = new Thickness(2);
             shell.Effect = new System.Windows.Media.Effects.DropShadowEffect
             { Color = Color.FromRgb(30, 41, 59), BlurRadius = 18, ShadowDepth = 5, Opacity = .38 };
@@ -121,6 +123,8 @@ namespace FamilyPlanner
 
         public static void SoftenScrollBars(DependencyObject root)
         {
+            if (Application.Current != null && !Application.Current.Resources.Contains("OnharuScrollThumb"))
+                Application.Current.Resources["OnharuScrollThumb"] = new SolidColorBrush(Color.FromRgb(165, 180, 252));
             for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
             {
                 var child = VisualTreeHelper.GetChild(root, i);
@@ -135,10 +139,10 @@ namespace FamilyPlanner
                     var reversed = horizontal ? "False" : "True";
                     var decrease = horizontal ? "PageLeftCommand" : "PageUpCommand";
                     var increase = horizontal ? "PageRightCommand" : "PageDownCommand";
-                    bar.Template = (ControlTemplate)XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='{x:Type ScrollBar}'><Grid Background='Transparent'><Track x:Name='PART_Track' Orientation='" + orientation + "' IsDirectionReversed='" + reversed + "'><Track.DecreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + decrease + "}' Opacity='0' Focusable='False'/></Track.DecreaseRepeatButton><Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Border Background='#A5B4FC' CornerRadius='4' Margin='1'/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + increase + "}' Opacity='0' Focusable='False'/></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate>");
+                    bar.Template = (ControlTemplate)XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='{x:Type ScrollBar}'><Grid Background='Transparent'><Track x:Name='PART_Track' Orientation='" + orientation + "' IsDirectionReversed='" + reversed + "'><Track.DecreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + decrease + "}' Opacity='0' Focusable='False'/></Track.DecreaseRepeatButton><Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Border Background='{DynamicResource OnharuScrollThumb}' CornerRadius='4' Margin='1'/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + increase + "}' Opacity='0' Focusable='False'/></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate>");
                 }
                 var thumb = child as Thumb;
-                if (thumb != null) { thumb.Background = new SolidColorBrush(Color.FromRgb(165, 180, 252)); thumb.BorderThickness = new Thickness(0); }
+                if (thumb != null) thumb.BorderThickness = new Thickness(0);
                 SoftenScrollBars(child);
             }
         }

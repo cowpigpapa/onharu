@@ -94,8 +94,13 @@ namespace FamilyPlanner
         public bool UseDiary;
         public bool UseRollover;
         public bool ShowGoogleTasks;
+        public bool AllowGoogleDragMove;
         public bool UseProBaseball;
         public bool AutomaticUpdateChecks;
+        public bool ShowSearchIcon;
+        public bool ShowRangeSwitch;
+        public bool ShowThemeSwitch;
+        public bool ShowPositionSwitch;
         public string ThemeId;
         public List<string> CustomPalette;
         public bool CustomPalettePastelStyle;
@@ -109,11 +114,12 @@ namespace FamilyPlanner
         readonly Dictionary<string, CheckBox> editBoxes = new Dictionary<string, CheckBox>();
 
         public SettingsWindow(string business, string personal, string baseball, string dday, string anniversary, string holidayColor, double fontSize, string orderMode, bool importantFirst, bool multiDayFirst, bool completedLast, bool use24HourTime, bool showWeeks,
-            string weekRule, string weekStartDay, List<int> restDays, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
+            string weekRule, string weekStartDay, List<int> restDays, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, bool allowGoogleDragMove, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
             List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes, int selectedPaletteIndexValue, bool lockPalettePlacement,
             string selectedDateStyle, string selectedDateFillColor, string selectedDateBorderColor, string todayColor, string todayStyle, string todayBorderColor,
             string defaultCalendarKey, bool defaultAllDay, int defaultStartHour, int defaultStartMinute, int defaultDurationMinutes, int defaultReminderMinutes,
             string completedDisplayMode, string startViewMode, bool remindersEnabled, bool reminderSound, int quietStartHour, int quietEndHour, string reminderPosition, string startupPositionMode, bool useTimetable, bool useDiary, bool useRollover, bool showGoogleTasks, bool useProBaseball, bool automaticUpdateChecks, string themeId,
+            bool showSearchIcon, bool showRangeSwitch, bool showThemeSwitch, bool showPositionSwitch,
             bool holidayColorVisible, bool baseballColorVisible, bool ddayColorVisible, bool anniversaryColorVisible)
         {
             ThemeId = OnharuThemePalette.Normalize(themeId);
@@ -526,7 +532,7 @@ namespace FamilyPlanner
             var solarTerms = new CheckBox { Content = "24절기 표시", IsChecked = showSolarTerms, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center };
             var timetable = new CheckBox { Content = "시간표", IsChecked = useTimetable, Margin = new Thickness(0, 0, 22, 5),
                 VerticalAlignment = VerticalAlignment.Center, ToolTip = "상단에 시간표 버튼을 표시합니다." };
-            var diary = new CheckBox { Content = "일기장 기능", IsChecked = useDiary, Margin = new Thickness(0, 0, 22, 5),
+            var diary = new CheckBox { Content = "일기장", IsChecked = useDiary, Margin = new Thickness(0, 0, 22, 5),
                 VerticalAlignment = VerticalAlignment.Center, ToolTip = "일기장 아이콘, 작성 표시와 날짜·음력 더블클릭 일기 쓰기를 함께 켜거나 끕니다." };
             var proBaseball = new CheckBox { Content = "프로야구 일정", IsChecked = useProBaseball, Margin = new Thickness(0, 0, 22, 5),
                 VerticalAlignment = VerticalAlignment.Center, ToolTip = "상단에 프로야구 일정 버튼을 표시합니다." };
@@ -538,7 +544,7 @@ namespace FamilyPlanner
             };
             var rollover = new CheckBox { Content = "미완료 Todo 자동 이월", IsChecked = useRollover, Margin = new Thickness(0, 0, 22, 5),
                 VerticalAlignment = VerticalAlignment.Center, ToolTip = "일정 등록·수정 화면에 이월 옵션을 표시합니다." };
-            var googleTasks = new CheckBox { Content = "Google Tasks 표시·동기화", IsChecked = showGoogleTasks,
+            var googleTasks = new CheckBox { Content = "Google Tasks 동기화", IsChecked = showGoogleTasks,
                 Margin = new Thickness(0, 0, 22, 5), VerticalAlignment = VerticalAlignment.Center,
                 ToolTip = "Google Tasks의 제한 사항을 확인한 뒤 오른쪽 목록과 동기화를 사용합니다." };
             googleTasks.Checked += delegate
@@ -587,8 +593,16 @@ namespace FamilyPlanner
             otherDisplayOptions.Children.Add(lunar); otherDisplayOptions.Children.Add(solarTerms);
             otherDisplayOptions.Children.Add(multiDayTop); otherDisplayOptions.Children.Add(completedLastOption); otherDisplayOptions.Children.Add(rollover); otherDisplayOptions.Children.Add(use24Hour);
             otherDisplayOptions.Children.Add(googleTasks);
-            var featureIconOptions = new WrapPanel { Margin = new Thickness(0) };
-            featureIconOptions.Children.Add(timetable); featureIconOptions.Children.Add(diary); featureIconOptions.Children.Add(proBaseball);
+            var featureIconOptions = new StackPanel { Margin = new Thickness(0) };
+            var featureIconRow = new WrapPanel { Margin = new Thickness(0) };
+            var headerSwitchRow = new WrapPanel { Margin = new Thickness(0) };
+            var searchIcon = new CheckBox { Content = "검색", IsChecked = showSearchIcon, Margin = new Thickness(0, 0, 22, 5), VerticalAlignment = VerticalAlignment.Center };
+            var rangeSwitch = new CheckBox { Content = "달력 표시 기간 전환", IsChecked = showRangeSwitch, Margin = new Thickness(0, 0, 22, 5), VerticalAlignment = VerticalAlignment.Center };
+            var themeSwitch = new CheckBox { Content = "스킨 전환", IsChecked = showThemeSwitch, Margin = new Thickness(0, 0, 22, 5), VerticalAlignment = VerticalAlignment.Center };
+            var positionSwitch = new CheckBox { Content = "이동·고정 전환", IsChecked = showPositionSwitch, Margin = new Thickness(0, 0, 22, 5), VerticalAlignment = VerticalAlignment.Center };
+            featureIconRow.Children.Add(searchIcon); featureIconRow.Children.Add(timetable); featureIconRow.Children.Add(diary); featureIconRow.Children.Add(proBaseball);
+            headerSwitchRow.Children.Add(rangeSwitch); headerSwitchRow.Children.Add(themeSwitch); headerSwitchRow.Children.Add(positionSwitch);
+            featureIconOptions.Children.Add(featureIconRow); featureIconOptions.Children.Add(headerSwitchRow);
             var selectionOptions = new StackPanel { Orientation = Orientation.Horizontal, Height = 24 };
             selectedDateFillColor = string.IsNullOrWhiteSpace(selectedDateFillColor) ? "#CCDBEAFE" : selectedDateFillColor;
             selectedDateBorderColor = string.IsNullOrWhiteSpace(selectedDateBorderColor) ? "#3B82F6" : selectedDateBorderColor;
@@ -761,7 +775,7 @@ namespace FamilyPlanner
             StyleComboBox(defaultDuration); defaultsDetail.Children.Add(defaultDuration);
             defaultsDetail.Children.Add(new TextBlock { Text = "기본 알림", Width = 70, Margin = new Thickness(18, 0, 0, 0), Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
             var defaultReminder = new ComboBox { Width = 105, Height = 26, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
-            foreach (var option in new[] { Tuple.Create("없음", -1), Tuple.Create("정시", 0), Tuple.Create("10분 전", 10), Tuple.Create("30분 전", 30), Tuple.Create("1시간 전", 60), Tuple.Create("하루 전", 1440) })
+            foreach (var option in new[] { Tuple.Create("10분 전", 10), Tuple.Create("15분 전", 15), Tuple.Create("30분 전", 30) })
                 defaultReminder.Items.Add(new ComboBoxItem { Content = option.Item1, Tag = option.Item2 });
             defaultReminder.SelectedItem = defaultReminder.Items.OfType<ComboBoxItem>().FirstOrDefault(x => (int)x.Tag == defaultReminderMinutes) ?? defaultReminder.Items[0];
             StyleComboBox(defaultReminder); defaultsDetail.Children.Add(defaultReminder); defaultsGroup.Children.Add(defaultsDetail);
@@ -813,7 +827,12 @@ namespace FamilyPlanner
                 new { Name = "15분", Minutes = 15 }, new { Name = "30분", Minutes = 30 }, new { Name = "60분", Minutes = 60 } })
                 syncOptions.Children.Add(new RadioButton { Content = option.Name, Tag = option.Minutes, GroupName = "AutoSync",
                     IsChecked = autoSyncMinutes == option.Minutes, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center });
-            syncGroup.Children.Add(syncOptions); panel.Children.Add(SectionCard(syncGroup));
+            syncGroup.Children.Add(syncOptions);
+            var googleDragMove = new CheckBox { Content = "드래그로 Google 일정 날짜 변경", IsChecked = allowGoogleDragMove,
+                Margin = new Thickness(120, 3, 0, 1), Foreground = Brush("#475569"),
+                ToolTip = "수정 가능한 Google 일정을 달력의 다른 날짜로 옮기고 Google에 반영합니다." };
+            var syncCard = new StackPanel(); syncCard.Children.Add(syncGroup); syncCard.Children.Add(googleDragMove);
+            panel.Children.Add(SectionCard(syncCard));
             var updateOption = new CheckBox { Content = "새 버전 자동 확인 · 설치 전 항상 확인",
                 IsChecked = automaticUpdateChecks, Foreground = Brush("#475569"), FontSize = 12,
                 Margin = new Thickness(0, 1, 0, 1), VerticalAlignment = VerticalAlignment.Center,
@@ -879,9 +898,14 @@ namespace FamilyPlanner
                 ShowLunar = lunar.IsChecked == true;
                 ShowSolarTerms = solarTerms.IsChecked == true;
                 UseTimetable = timetable.IsChecked == true;
+                ShowSearchIcon = searchIcon.IsChecked == true;
+                ShowRangeSwitch = rangeSwitch.IsChecked == true;
+                ShowThemeSwitch = themeSwitch.IsChecked == true;
+                ShowPositionSwitch = positionSwitch.IsChecked == true;
                 UseDiary = diary.IsChecked == true;
                 UseRollover = rollover.IsChecked == true;
                 ShowGoogleTasks = googleTasks.IsChecked == true;
+                AllowGoogleDragMove = googleDragMove.IsChecked == true;
                 UseProBaseball = proBaseball.IsChecked == true;
                 AutomaticUpdateChecks = updateOption.IsChecked == true;
                 ThemeId = themeOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();

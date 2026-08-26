@@ -43,6 +43,7 @@ namespace FamilyPlanner
         readonly Dictionary<string, CheckBox> filters = new Dictionary<string, CheckBox>();
         readonly Dictionary<DateTime, Border> dayCells = new Dictionary<DateTime, Border>();
         readonly HashSet<DateTime> diaryDates = new HashSet<DateTime>();
+        readonly HashSet<string> collapsedDetailGroups = new HashSet<string>();
         bool diaryDatesLoaded;
         DateTime shownMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         DateTime selectedDate = DateTime.Today;
@@ -56,7 +57,10 @@ namespace FamilyPlanner
         Border sidebarPanel;
         ColumnDefinition sidebarColumn;
         Button collapseSidebarButton;
+        Button searchButton;
+        Button windowMaximizeButton;
         Button googleButton;
+        Button googleLoginButton;
         Border googleAccountCard;
         Button timetableButton;
         Button diaryButton;
@@ -70,12 +74,13 @@ namespace FamilyPlanner
         DateTime periodViewAnchor;
         TextBlock googleStatus;
         StackPanel googleFilterPanel;
+        UniformGrid localFilterRow;
         Button selectedDayButton;
         Button thisWeekButton;
         Button nextWeekButton;
         Button dateColorButton;
         FrameworkElement dateColorPalette;
-        Popup weekCountPopup;
+        FrameworkElement weekCountOverlay;
         Popup transientPopup;
         Slider opacitySlider;
         ScrollViewer detailScroll;
@@ -107,6 +112,8 @@ namespace FamilyPlanner
         Forms.ToolStripMenuItem trayVisibilityItem;
         Forms.ToolStripMenuItem trayPositionItem;
         bool calendarMinimized;
+        Point itemDragStart;
+        PlannerItem itemDragCandidate;
         readonly PlannerSettings settings;
         readonly ExplorerFramePublisher explorerFrame = new ExplorerFramePublisher();
         readonly DesktopActionWindow desktopActions = new DesktopActionWindow();

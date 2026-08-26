@@ -339,6 +339,7 @@ namespace FamilyPlanner
                     }
                     if (settings.Version < 43) { settings.ReminderPosition = "screen"; settings.Version = 43; }
                     if (settings.Version < 44) { settings.RemindersEnabled = true; settings.Version = 44; }
+                    if (settings.Version < 45) { settings.ShowSearchIcon = true; settings.ShowRangeSwitch = true; settings.ShowThemeSwitch = true; settings.ShowPositionSwitch = true; settings.Version = 45; }
                     if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();
                     if (settings.DetailOrderMode != "time" && settings.DetailOrderMode != "category") settings.DetailOrderMode = "category";
                     if (settings.ReminderPosition != "onharu") settings.ReminderPosition = "screen";

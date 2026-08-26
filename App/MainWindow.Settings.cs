@@ -22,13 +22,14 @@ namespace FamilyPlanner
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], Colors["야구"], Colors["D-Day"], Colors["기념일"], Colors["국경일"], settings.FontSize,
                 settings.CalendarOrderMode, settings.ImportantFirst, settings.MultiDayFirst, settings.CompletedLast, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule, settings.WeekStartDay, settings.RestDays,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
-                GoogleCalendar.IsConnected, localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
+                GoogleCalendar.IsConnected, settings.AllowGoogleDragMove, localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
                 settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex, settings.LockPalettePlacement,
                 settings.SelectedDateStyle,
                 settings.SelectedDateFillColor, settings.SelectedDateBorderColor, settings.TodayColor, settings.TodayStyle, settings.TodayBorderColor, settings.DefaultCalendarKey, settings.DefaultAllDay,
                 settings.DefaultStartHour, settings.DefaultStartMinute, settings.DefaultDurationMinutes, settings.DefaultReminderMinutes,
                 settings.CompletedDisplayMode, settings.StartViewMode, settings.RemindersEnabled, settings.ReminderSound, settings.QuietStartHour, settings.QuietEndHour, settings.ReminderPosition,
                 settings.StartupPositionMode, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ThemeId,
+                settings.ShowSearchIcon, settings.ShowRangeSwitch, settings.ShowThemeSwitch, settings.ShowPositionSwitch,
                 settings.HolidayVisible, settings.BaseballVisible && settings.UseProBaseball, settings.DdayPanelVisible, settings.AnniversaryVisible);
             PlacementTrace.Write("SETTINGS ui-created ms=" + settingsWatch.ElapsedMilliseconds);
             window.PrintRequested += delegate
@@ -43,6 +44,7 @@ namespace FamilyPlanner
             if (localCleanupNeeded) Store.SaveLocal(localItems);
             if (!settingsAccepted) return;
             var googleTasksChanged = settings.ShowGoogleTasks != window.ShowGoogleTasks;
+            var baseballFeatureEnabled = !settings.UseProBaseball && window.UseProBaseball;
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             Colors["야구"] = window.BaseballColor; Colors["D-Day"] = window.DdayColor;
             Colors["기념일"] = window.AnniversaryColor; Colors["국경일"] = window.HolidayColor;
@@ -58,6 +60,8 @@ namespace FamilyPlanner
             settings.RemindersEnabled = window.RemindersEnabled;
             settings.ReminderSound = window.ReminderSound; settings.QuietStartHour = window.QuietStartHour; settings.QuietEndHour = window.QuietEndHour;
             settings.ReminderPosition = window.ReminderPosition;
+            settings.ShowSearchIcon = window.ShowSearchIcon; settings.ShowRangeSwitch = window.ShowRangeSwitch;
+            settings.ShowThemeSwitch = window.ShowThemeSwitch; settings.ShowPositionSwitch = window.ShowPositionSwitch;
             settings.StartupPositionMode = window.StartupPositionMode;
             settings.Use24HourTime = window.Use24HourTime;
             settings.CategoryOrder = window.CategoryOrder;
@@ -76,7 +80,10 @@ namespace FamilyPlanner
             settings.UseDiary = window.UseDiary;
             settings.UseRollover = window.UseRollover;
             settings.ShowGoogleTasks = window.ShowGoogleTasks;
+            settings.AllowGoogleDragMove = window.AllowGoogleDragMove;
             settings.UseProBaseball = window.UseProBaseball;
+            if (!settings.UseProBaseball) settings.BaseballVisible = false;
+            else if (baseballFeatureEnabled) settings.BaseballVisible = true;
             settings.AutomaticUpdateChecks = window.AutomaticUpdateChecks;
             settings.ThemeId = OnharuThemePalette.Normalize(window.ThemeId);
             if (googleTasksChanged && settings.ShowGoogleTasks)
@@ -84,8 +91,17 @@ namespace FamilyPlanner
             if (timetableButton != null) timetableButton.Visibility = settings.UseTimetable ? Visibility.Visible : Visibility.Collapsed;
             if (diaryButton != null) diaryButton.Visibility = settings.UseDiary ? Visibility.Visible : Visibility.Collapsed;
             if (sportsButton != null) sportsButton.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            if (searchButton != null) searchButton.Visibility = settings.ShowSearchIcon ? Visibility.Visible : Visibility.Collapsed;
+            if (calendarRangeSwitch != null) calendarRangeSwitch.Visibility = settings.ShowRangeSwitch ? Visibility.Visible : Visibility.Collapsed;
+            if (themeQuickSwitch != null) themeQuickSwitch.Visibility = settings.ShowThemeSwitch ? Visibility.Visible : Visibility.Collapsed;
+            if (positionModeSwitch != null) positionModeSwitch.Visibility = settings.ShowPositionSwitch ? Visibility.Visible : Visibility.Collapsed;
             System.Windows.Controls.CheckBox baseballFilter;
-            if (filters.TryGetValue("야구", out baseballFilter)) baseballFilter.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            if (filters.TryGetValue("야구", out baseballFilter))
+            {
+                if (!settings.UseProBaseball) baseballFilter.IsChecked = false;
+                else if (baseballFeatureEnabled) baseballFilter.IsChecked = true;
+                baseballFilter.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            }
             if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close();
             diaryDates.Clear(); diaryDatesLoaded = false;
             settings.SelectedDateStyle = window.SelectedDateStyle;

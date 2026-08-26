@@ -18,8 +18,8 @@ namespace FamilyPlanner
             }
             if (!positionLocked) return;
             if (action == 29) { CloseTransientPopup(); return; }
-            CloseTransientPopup();
             if (action == 100 || action == 101) { HitTestDesktop(value, action == 101); return; }
+            CloseTransientPopup();
             if (action == 102 || action == 103) { ScrollDesktopDetail(value, action == 102 ? 1 : -1); return; }
             if (action == 104) { AdjustDesktopOpacity(value, false, false); return; }
             if (action == 105) { FlushFixedOpacityPreview(); Store.SaveSettings(settings); SchedulePublish(); return; }
@@ -36,7 +36,6 @@ namespace FamilyPlanner
             else if (action == 16) { ShowForDialog(); OpenSettings(null, null); return; }
             else if (action == 20) { ToggleSidebar(null, null); if (positionLocked) SchedulePublish(); return; }
             else if (action == 25) { MinimizeToTray(); return; }
-            else if (action == 28) { OpenCloseContextMenu(); return; }
             else if (action == 26) { settings.Opacity = Math.Max(.10, Math.Min(1.0, value / 100.0)); Opacity = settings.Opacity; explorerFrame.UpdateOpacity(settings.Opacity); Store.SaveSettings(settings); }
             else return;
             RenderAll();
@@ -52,22 +51,24 @@ namespace FamilyPlanner
             while (current != null)
             {
                 var slider = current as Slider;
-                if (slider != null) { target = slider; break; }
+                if (slider != null) { target = slider; targetElement = slider; break; }
                 var button = current as Button;
-                if (button != null) { target = button; break; }
+                if (button != null) { target = button; targetElement = button; break; }
                 var check = current as CheckBox;
-                if (check != null) { target = check; break; }
+                if (check != null) { target = check; targetElement = check; break; }
                 var element = current as FrameworkElement;
-                if (element != null && (element.Tag as string == "open_pending_sync" || element.Tag as string == "google_sync" || element.Tag as string == "open_anniversary" || element.Tag as string == "logo_menu")) { target = element.Tag; targetElement = element; break; }
-                if (element != null && (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget)) { target = element.Tag; break; }
+                if (element != null && (element.Tag as string == "open_pending_sync" || element.Tag as string == "google_sync" || element.Tag as string == "open_anniversary")) { target = element.Tag; targetElement = element; break; }
+                if (element != null && (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget)) { target = element.Tag; break; }
                 current = VisualTreeHelper.GetParent(current);
             }
+            if (weekCountOverlay != null && !IsInside(targetElement, weekCountOverlay)) CloseWeekCountOverlay();
             if (doubleClick) target = target ?? lastDesktopClickTarget;
             else lastDesktopClickTarget = target;
 
             var targetButton = target as Button;
             if (targetButton != null)
             {
+                if (!targetButton.IsEnabled) return;
                 var navigation = targetButton.Tag as string;
                 if (navigation == "calendar_previous" || navigation == "calendar_next")
                 {
@@ -99,7 +100,6 @@ namespace FamilyPlanner
             var targetSlider = target as Slider;
             if (targetSlider != null && !doubleClick) { AdjustDesktopOpacity(packedPoint, true, true); return; }
             if (target as string == "google_sync" && !doubleClick) { GoogleClick(null, null); return; }
-            if (target as string == "logo_menu" && !doubleClick) { OpenLogoMenu(targetElement); return; }
             if (target as string == "open_pending_sync" && !doubleClick) { OpenPendingSync(null, null); SchedulePublish(); return; }
             if (target as string == "open_anniversary" && !doubleClick) { OpenAnniversary(null); return; }
             var targetCheck = target as CheckBox;
@@ -136,6 +136,17 @@ namespace FamilyPlanner
                 }
                 if (doubleClick) OpenEdit(targetItem);
             }
+            var detailGroup = target as DetailGroupHitTarget;
+            if (detailGroup != null)
+            {
+                if (!doubleClick)
+                {
+                    if (!collapsedDetailGroups.Add(detailGroup.GroupKey)) collapsedDetailGroups.Remove(detailGroup.GroupKey);
+                    RenderDetail();
+                    if (positionLocked) SchedulePublish();
+                }
+                return;
+            }
             var itemHit = target as ItemHitTarget;
             if (itemHit == null) return;
             if (itemHit.DetailCard)
@@ -156,6 +167,13 @@ namespace FamilyPlanner
             else SelectDateFast(clickedDate);
         }
 
+        static bool IsInside(DependencyObject child, DependencyObject parent)
+        {
+            for (var current = child; current != null; current = VisualTreeHelper.GetParent(current))
+                if (current == parent) return true;
+            return false;
+        }
+
         async void ToggleTodoFromDesktop(PlannerItem item)
         {
             await SetTodoCompleted(item, !item.Completed);
@@ -163,12 +181,13 @@ namespace FamilyPlanner
 
         void FlashDesktopButton(Button button)
         {
+            var originalOpacity = button.Opacity;
             button.Opacity = .62;
             if (positionLocked) SchedulePublish();
             var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(130) };
             timer.Tick += delegate
             {
-                timer.Stop(); button.Opacity = 1;
+                timer.Stop(); button.Opacity = originalOpacity;
                 if (positionLocked) SchedulePublish();
             };
             timer.Start();
@@ -275,7 +294,7 @@ namespace FamilyPlanner
                 if (nested != null) return nested;
                 if (child is Button || child is CheckBox || child is Slider) return child;
                 if (element.Tag as string == "open_pending_sync") return child;
-                if (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget) return child;
+                if (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget) return child;
             }
             return null;
         }

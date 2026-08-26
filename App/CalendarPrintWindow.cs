@@ -12,6 +12,7 @@ namespace FamilyPlanner
     {
         readonly Image preview;
         readonly ComboBox marginOption;
+        readonly TextBlock printStatus;
         public CalendarPrintWindow(Visual source)
         {
             Title = "달력 인쇄 미리보기"; Width = 820; Height = 650; WindowStyle = WindowStyle.None;
@@ -28,6 +29,8 @@ namespace FamilyPlanner
             marginOption.Items.Add(new ComboBoxItem { Content = "여백 없음", Tag = 0d }); marginOption.SelectedIndex = 0;
             SettingsWindow.StyleComboBox(marginOption);
             DockPanel.SetDock(marginOption, Dock.Right); header.Children.Add(marginOption);
+            printStatus = new TextBlock { Foreground = Brush("#16A34A"), FontSize = 11, Margin = new Thickness(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            DockPanel.SetDock(printStatus, Dock.Right); header.Children.Add(printStatus);
             header.Children.Add(new TextBlock { Text = "달력 인쇄 미리보기", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Brush("#1E293B"), VerticalAlignment = VerticalAlignment.Center });
             OnharuPopupChrome.EnableDrag(this, header);
             root.Children.Add(header);
@@ -55,8 +58,9 @@ namespace FamilyPlanner
             var page = new Canvas { Width = dialog.PrintableAreaWidth, Height = dialog.PrintableAreaHeight, Background = Brushes.White };
             page.Children.Add(image); Canvas.SetLeft(image, inset); Canvas.SetTop(image, inset);
             page.Measure(new Size(page.Width, page.Height)); page.Arrange(new Rect(new Size(page.Width, page.Height)));
-            dialog.PrintVisual(page, "ONHARU 달력");
-            Topmost = true; Activate();
+            try { dialog.PrintVisual(page, "ONHARU 달력"); printStatus.Text = "인쇄 작업이 종료되었습니다."; }
+            catch (Exception) { printStatus.Text = "인쇄를 완료하지 못했습니다."; }
+            finally { Topmost = true; Activate(); }
         }
         static SolidColorBrush Brush(string hex) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); }
     }

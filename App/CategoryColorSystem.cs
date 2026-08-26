@@ -91,10 +91,48 @@ namespace FamilyPlanner
             return theme == "dark" ? MixWhite(Vivid(color), .22) : EditorBorder(theme, color);
         }
 
+        public static Color ReadableForeground(Color background)
+        {
+            return Readable(background, Color.FromRgb(31, 41, 55), Colors.White);
+        }
+
+        public static Color ReadableForeground(Color background, Color preferred)
+        {
+            if (ContrastRatio(background, preferred) >= MinimumContrast) return preferred;
+            return ReadableForeground(background);
+        }
+
+        public static string ToHex(Color color)
+        {
+            return string.Format("#{0:X2}{1:X2}{2:X2}", color.R, color.G, color.B);
+        }
+
         public static Color Vivid(Color color)
         {
             var gray = (color.R + color.G + color.B) / 3.0;
             return Color.FromRgb(VividChannel(color.R, gray), VividChannel(color.G, gray), VividChannel(color.B, gray));
+        }
+
+        public static Color StrongAccent(Color color)
+        {
+            // Important-day swatches use stable, unmistakable accents instead
+            // of amplifying tiny hue differences in their pastel source.
+            if (color.R == 255 && color.G == 241 && color.B == 242) return Parse("#FF1493");
+            if (color.R == 254 && color.G == 243 && color.B == 199) return Parse("#FFB000");
+            if (color.R == 220 && color.G == 252 && color.B == 231) return Parse("#00C853");
+            if (color.R == 219 && color.G == 234 && color.B == 254) return Parse("#2979FF");
+            if (color.R == 237 && color.G == 233 && color.B == 254) return Parse("#A855F7");
+            if (color.R == 241 && color.G == 245 && color.B == 249) return Parse("#64748B");
+            var r = color.R / 255.0; var g = color.G / 255.0; var b = color.B / 255.0;
+            var max = Math.Max(r, Math.Max(g, b)); var min = Math.Min(r, Math.Min(g, b));
+            var delta = max - min;
+            if (delta < .015) return Color.FromRgb(79, 70, 229);
+            double hue;
+            if (max == r) hue = ((g - b) / delta) % 6.0;
+            else if (max == g) hue = (b - r) / delta + 2.0;
+            else hue = (r - g) / delta + 4.0;
+            hue = (hue * 60.0 + 360.0) % 360.0;
+            return FromHsv(hue, Math.Max(.84, delta / max), 1.0);
         }
 
         public static double ContrastRatio(Color first, Color second)
@@ -146,6 +184,15 @@ namespace FamilyPlanner
         {
             var saturated = gray + (value - gray) * 1.22;
             return (byte)Math.Max(0, Math.Min(255, saturated + (255 - saturated) * .05));
+        }
+        static Color FromHsv(double hue, double saturation, double value)
+        {
+            var c = value * saturation; var x = c * (1 - Math.Abs((hue / 60.0) % 2 - 1)); var m = value - c;
+            double r = 0, g = 0, b = 0;
+            if (hue < 60) { r = c; g = x; } else if (hue < 120) { r = x; g = c; }
+            else if (hue < 180) { g = c; b = x; } else if (hue < 240) { g = x; b = c; }
+            else if (hue < 300) { r = x; b = c; } else { r = c; b = x; }
+            return Color.FromRgb((byte)Math.Round((r + m) * 255), (byte)Math.Round((g + m) * 255), (byte)Math.Round((b + m) * 255));
         }
         static double RelativeLuminance(Color color)
         {

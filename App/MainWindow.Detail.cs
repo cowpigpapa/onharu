@@ -20,7 +20,7 @@ namespace FamilyPlanner
                 selectedTitle.Text = selectedDate.ToString("M월 d일 (ddd)", new CultureInfo("ko-KR"));
                 AddDetailDay(selectedDate, false);
                 var add = Button("+ 이 날짜에 추가", AddItem, 150); add.Height = 27; add.Margin = new Thickness(0, 3, 0, 0); detail.Children.Add(add);
-                AddDdayCards(); AddAnniversaryCards();
+                AddDdayCards(); AddAnniversaryCards(); ApplyDetailCardOrder();
                 return;
             }
             var start = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
@@ -33,7 +33,7 @@ namespace FamilyPlanner
                 AddDetailDay(date, true); added = true;
             }
             if (!added) detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
-            AddDdayCards(); AddAnniversaryCards();
+            AddDdayCards(); AddAnniversaryCards(); ApplyDetailCardOrder();
         }
 
         void AddDetailDay(DateTime date, bool showDateHeader)
@@ -50,16 +50,25 @@ namespace FamilyPlanner
             }
             foreach (var categoryItems in DetailGroups(dayItems))
             {
+                var timeMode = settings.DetailOrderMode == "time";
+                var importantCard = !timeMode && settings.ImportantFirst && categoryItems.All(x => x.Important);
                 var groupColor = ItemColor(categoryItems[0]);
-                var cardForeground = categoryItems[0].Important ? EventTextBrush(categoryItems[0])
+                var cardForeground = importantCard ? EventTextBrush(categoryItems[0]) : timeMode ? Brush("#334155")
                     : new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, groupColor));
                 var cardSecondary = settings.ThemeId == "dark" ? Brushes.White : Brush("#64748B");
                 var group = new StackPanel();
-                group.Children.Add(new TextBlock { Text = "●  " + DisplayGroup(categoryItems[0]), Foreground = cardForeground,
-                    FontWeight = FontWeights.Bold, FontSize = Ui(12), Margin = new Thickness(0, 0, 0, 7) });
+                var groupName = DetailGroupName(categoryItems);
+                var groupKey = importantCard ? "★ " + groupName : groupName;
+                var groupCollapsed = collapsedDetailGroups.Contains(groupKey);
+                var groupHeader = new TextBlock { Text = "●  " + groupName, Foreground = cardForeground,
+                    FontWeight = FontWeights.Bold, FontSize = Ui(12), VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, groupCollapsed ? 0 : 7),
+                    Tag = new DetailGroupHitTarget { GroupKey = groupKey } };
+                group.Children.Add(groupHeader);
                 foreach (var item in categoryItems)
                 {
                     var row = new DockPanel { Margin = new Thickness(0, 2, 0, 5) };
+                    var itemForeground = item.Important ? EventTextBrush(item) : timeMode ? EventTextBrush(item) : cardForeground;
                     if (settings.CompletedDisplayMode == "fade" && item.IsTodo && item.Completed) row.Opacity = .48;
                     if (item.IsTodo)
                     {
@@ -72,22 +81,31 @@ namespace FamilyPlanner
                         check.Click += async delegate { await SetTodoCompleted(item, check.IsChecked == true); };
                         DockPanel.SetDock(check, Dock.Left); row.Children.Add(check);
                     }
+                    else if (item.AllDay && !string.IsNullOrWhiteSpace(item.GoogleCalendarId))
+                    {
+                        var sourceMark = new CheckBox { IsChecked = false, IsHitTestVisible = false, Focusable = false,
+                            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 8, 0) };
+                        StyleThemeCheckBox(sourceMark, ItemColor(item));
+                        DockPanel.SetDock(sourceMark, Dock.Left); row.Children.Add(sourceMark);
+                    }
                     var text = new StackPanel();
                     text.Tag = new ItemHitTarget { Item = item, SegmentStart = date, SegmentEnd = date, Element = text, DetailCard = true };
                     var titleText = new TextBlock {
                         FontWeight = item.Important ? FontWeights.Bold : FontWeights.SemiBold,
-                            Foreground = cardForeground,
+                            Foreground = itemForeground,
                         TextDecorations = item.Completed ? TextDecorations.Strikethrough : null };
-                    titleText.Inlines.Add(new System.Windows.Documents.Run((item.Important ? "★ " : "") + DdayText(item) + (item.AllDay ? "" : TimeText(item.Start) + " ") + item.Title));
+                    titleText.Inlines.Add(new System.Windows.Documents.Run((item.AllDay ? "" : TimeText(item.Start) + " ") +
+                        (item.Important ? "★ " : "") + DdayText(item) + item.Title));
                     if (item.AllDay) titleText.Inlines.Add(new System.Windows.Documents.Run(" · 하루 종일") { Foreground = cardSecondary, FontSize = Ui(10) });
                     text.Children.Add(titleText);
                     if (!item.AllDay && IsMultiDay(item))
                         text.Children.Add(new TextBlock { Text = DetailTimeText(item, date),
-                            FontSize = Ui(11), Foreground = cardForeground });
+                            FontSize = Ui(11), Foreground = itemForeground });
                     if (!string.IsNullOrWhiteSpace(item.Notes))
-                        text.Children.Add(new TextBlock { Text = item.Notes, FontSize = Ui(11), Foreground = cardSecondary,
+                        text.Children.Add(new TextBlock { Text = item.Notes, FontSize = Ui(11), Foreground = item.Important ? itemForeground : cardSecondary,
                             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
-                    text.Cursor = Cursors.Hand; text.ToolTip = "더블클릭하여 수정";
+                    text.Cursor = Cursors.Hand;
+                    EnableItemDrag(text, item);
                     text.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
                     {
                         if (e.ClickCount != 2) return;
@@ -96,13 +114,23 @@ namespace FamilyPlanner
                     row.Children.Add(text);
                     if (itemNoticeId == item.Id) row.Margin = new Thickness(0, 3, 0, 2);
                     group.Children.Add(row);
+                    if (groupCollapsed) row.Visibility = Visibility.Collapsed;
                     if (itemNoticeId == item.Id)
-                        group.Children.Add(new TextBlock { Text = itemNoticeText, Foreground = Brush("#DC2626"), FontSize = Ui(11),
-                            FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(item.IsTodo ? 24 : 0, 0, 0, 8) });
+                    {
+                        var notice = new TextBlock { Text = itemNoticeText, Foreground = Brush("#DC2626"), FontSize = Ui(11),
+                            FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(item.IsTodo ? 24 : 0, 0, 0, 8) };
+                        if (groupCollapsed) notice.Visibility = Visibility.Collapsed;
+                        group.Children.Add(notice);
+                    }
                 }
-                detail.Children.Add(new Border { Background = categoryItems[0].Important ? EventBackgroundBrush(categoryItems[0]) : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor)),
-                    BorderBrush = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, groupColor)), BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(11), Padding = new Thickness(10, 8, 10, 7), Margin = new Thickness(0, 3, 0, 5), Child = group });
+                var detailCard = new Border { Background = importantCard ? EventBackgroundBrush(categoryItems[0]) : timeMode ? Brushes.White : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor)),
+                    BorderBrush = importantCard ? EventTextBrush(categoryItems[0]) : timeMode ? Brush("#CBD5E1")
+                        : new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, groupColor)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, groupCollapsed ? 9 : 7), Margin = new Thickness(0, 3, 0, 5),
+                    Tag = groupKey, Child = group };
+                EnableDetailCardOrder(groupHeader, detailCard, groupKey);
+                detail.Children.Add(detailCard);
             }
         }
 
@@ -125,16 +153,31 @@ namespace FamilyPlanner
         {
             if (settings.DetailOrderMode != "time")
                 return orderedItems.GroupBy(x => Tuple.Create(ImportantRank(x), DisplayGroup(x)))
-                    .OrderBy(x => x.Key.Item1).ThenBy(x => GroupOrder(x.First())).Select(x => x.ToList()).ToList();
+                    .OrderBy(x => x.Key.Item1).ThenBy(x => DetailGroupOrder(x.Key.Item2)).ThenBy(x => GroupOrder(x.First())).Select(x => x.ToList()).ToList();
 
-            var groups = new List<List<PlannerItem>>();
-            foreach (var item in orderedItems)
+            return new[]
             {
-                if (groups.Count == 0 || DisplayGroup(groups[groups.Count - 1][0]) != DisplayGroup(item))
-                    groups.Add(new List<PlannerItem>());
-                groups[groups.Count - 1].Add(item);
-            }
-            return groups;
+                orderedItems.Where(x => x.AllDay).ToList(),
+                orderedItems.Where(x => !x.AllDay).OrderBy(x => x.Start).ToList()
+            }.Where(x => x.Count > 0).OrderBy(x => DetailTimeGroupOrder(DetailGroupName(x))).ToList();
+        }
+
+        string DetailGroupName(List<PlannerItem> group)
+        {
+            return settings.DetailOrderMode == "time" ? (group.All(x => x.AllDay) ? "하루 종일" : "시간 일정") : DisplayGroup(group[0]);
+        }
+
+        int DetailGroupOrder(string name)
+        {
+            var index = settings.DetailCategoryOrder == null ? -1 : settings.DetailCategoryOrder.IndexOf(name);
+            return index < 0 ? int.MaxValue : index;
+        }
+
+        int DetailTimeGroupOrder(string name)
+        {
+            var index = settings.DetailTimeOrder == null ? -1 : settings.DetailTimeOrder.IndexOf(name);
+            if (index >= 0) return index;
+            return name == "하루 종일" ? 0 : 1;
         }
 
         Button DetailTab(string text, string mode)
@@ -146,6 +189,7 @@ namespace FamilyPlanner
 
         void UpdateDetailTabs()
         {
+            if (selectedDayButton != null) selectedDayButton.Content = selectedDate.Date == DateTime.Today ? "오늘" : "선택 날짜";
             foreach (var entry in new[]
             {
                 Tuple.Create(selectedDayButton, detailMode == "selected"),
@@ -158,17 +202,30 @@ namespace FamilyPlanner
                 entry.Item1.Background = new SolidColorBrush(colors.Background);
                 entry.Item1.Foreground = new SolidColorBrush(colors.Foreground);
                 entry.Item1.BorderBrush = new SolidColorBrush(colors.Border);
+                entry.Item1.FontWeight = entry.Item2 ? FontWeights.Bold : FontWeights.Normal;
             }
             if (dateColorButton != null)
             {
                 dateColorButton.Visibility = detailMode == "selected" ? Visibility.Visible : Visibility.Collapsed;
                 string selectedColor = null;
                 var colored = settings.DateBackgroundColors != null && settings.DateBackgroundColors.TryGetValue(DateKey(selectedDate), out selectedColor);
-                var colors = OnharuStateColors.ImportantDay(colored ? selectedColor : null);
                 dateColorButton.Background = Brushes.Transparent;
-                dateColorButton.Foreground = new SolidColorBrush(colors.Foreground);
+                var starOutline = "#1F2937";
+                var starFill = "#FFFFFF";
+                if (colored)
+                {
+                    try
+                    {
+                        var baseColor = (Color)ColorConverter.ConvertFromString(selectedColor);
+                        starFill = CategoryColorSystem.ToHex(CategoryColorSystem.StrongAccent(baseColor));
+                        starOutline = starFill;
+                    }
+                    catch { starOutline = selectedColor; starFill = selectedColor; }
+                }
+                dateColorButton.Foreground = Brush(starOutline);
                 dateColorButton.BorderBrush = Brushes.Transparent;
-                dateColorButton.Content = HeaderGlyph("important_day", new SolidColorBrush(colors.Foreground));
+                dateColorButton.BorderThickness = new Thickness(0);
+                dateColorButton.Content = ImportantDayStar(Brush(starOutline), Brush(starFill), colored ? 2.05 : 1.15);
                 dateColorButton.ToolTip = colored ? "중요한 날 · 색상 변경" : "중요한 날로 표시";
             }
         }

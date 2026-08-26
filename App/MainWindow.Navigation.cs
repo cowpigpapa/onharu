@@ -78,7 +78,7 @@ namespace FamilyPlanner
 
         void OpenWeekCountPopup()
         {
-            if (weekCountPopup != null && weekCountPopup.IsOpen) { weekCountPopup.IsOpen = false; return; }
+            if (weekCountOverlay != null) { CloseWeekCountOverlay(); return; }
             CloseTransientPopup();
             var popupWidth = Math.Max(41, calendarRangeSwitch.SegmentWidth(0));
             var panel = new StackPanel();
@@ -95,18 +95,26 @@ namespace FamilyPlanner
                 {
                     settings.VisibleWeekCount = selectedCount;
                     temporaryMonthView = false; settings.UseMonthView = false;
-                    Store.SaveSettings(settings); weekCountPopup.IsOpen = false; RenderAll();
+                    Store.SaveSettings(settings); CloseWeekCountOverlay(); RenderAll();
                 };
                 panel.Children.Add(button);
             }
-            var popup = new Popup { PlacementTarget = calendarRangeSwitch.SegmentTarget(0), Placement = PlacementMode.Bottom,
-                HorizontalOffset = 0, VerticalOffset = 3, StaysOpen = false, AllowsTransparency = true };
-            popup.Child = new Border { Width = popupWidth, Background = T("Calendar"), BorderBrush = ActionAccentBrush(), BorderThickness = new Thickness(1),
+            var overlay = new Border { Width = popupWidth, Background = T("Calendar"), BorderBrush = ActionAccentBrush(), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10), Padding = new Thickness(2, 3, 2, 3), Child = panel,
                 Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = .18, Color = System.Windows.Media.Colors.Black } };
-            weekCountPopup = popup; transientPopup = popup;
-            popup.Closed += delegate { if (ReferenceEquals(transientPopup, popup)) transientPopup = null; if (ReferenceEquals(weekCountPopup, popup)) weekCountPopup = null; if (positionLocked) PublishAndHide(); };
-            popup.IsOpen = true;
+            weekCountOverlay = overlay; floatingOverlay.Children.Add(overlay);
+            UpdateLayout();
+            var target = calendarRangeSwitch.SegmentTarget(0);
+            var point = target.TransformToAncestor(mainFrame).Transform(new Point(0, target.ActualHeight + 3));
+            Canvas.SetLeft(overlay, point.X); Canvas.SetTop(overlay, point.Y);
+            if (positionLocked) SchedulePublish();
+        }
+
+        void CloseWeekCountOverlay()
+        {
+            if (weekCountOverlay == null) return;
+            floatingOverlay.Children.Remove(weekCountOverlay); weekCountOverlay = null;
+            if (positionLocked) SchedulePublish();
         }
 
         void OpenMonthJump(object sender, RoutedEventArgs e)
@@ -196,6 +204,7 @@ namespace FamilyPlanner
 
         void CloseTransientPopup()
         {
+            CloseWeekCountOverlay();
             var popup = transientPopup; transientPopup = null;
             if (popup != null) popup.IsOpen = false;
         }

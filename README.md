@@ -2,15 +2,15 @@
 
 ## 다운로드
 
-- [ONHARU 2.2.3 설치 프로그램과 ZIP 다운로드](https://github.com/cowpigpapa/onharu/releases/tag/v2.2.3)
+- [ONHARU 2.2.4 설치 프로그램과 ZIP 다운로드](https://github.com/cowpigpapa/onharu/releases/tag/v2.2.4)
 - 지원 환경: Windows 10/11 x64
 - 이번 개인 프리웨어 배포판은 코드 서명되지 않아 Windows SmartScreen에서 `알 수 없는 게시자` 경고가 나타날 수 있습니다. 공식 릴리스의 `SHA256SUMS.txt`로 파일 무결성을 확인할 수 있습니다.
 
-2.2 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.3)`로 표시합니다.
+2.2 화면 하단은 `MADE BY JUAN.HJLEE · ONHARU (ver. 2.2.4)`로 표시합니다.
 
 ## 2.2 디자인 스킨
 
-2.2는 2.1의 기능과 Explorer 레이어를 유지하면서 `기본`, `블랙`, `컬러` 3종 외형을 선택할 수 있게 합니다. 스킨은 화면 코드를 복제하지 않고 공통 의미 팔레트를 교체하므로 기능 수정은 모든 스킨에 동일하게 반영됩니다. 현재 2.2는 로컬 테스트 단계이며 정식 2.1 설치판을 대체하지 않습니다.
+2.2는 2.1의 기능과 Explorer 레이어를 유지하면서 `파스텔`, `블랙` 두 가지 외형을 선택할 수 있게 합니다. 스킨은 화면 코드를 복제하지 않고 공통 의미 팔레트를 교체하므로 기능 수정은 두 스킨에 동일하게 반영됩니다.
 
 Google Calendar 연결은 Desktop OAuth와 PKCE를 사용합니다. OAuth 자격 증명은 공개 저장소에 올리지 않고 로컬 빌드 전용 파일에서 주입합니다.
 

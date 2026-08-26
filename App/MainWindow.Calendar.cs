@@ -234,7 +234,8 @@ namespace FamilyPlanner
                 var bar = new Border { Child = text, Height = Ui(19), CornerRadius = new CornerRadius(4),
                     Background = EventBackgroundBrush(item),
                     Margin = new Thickness(2, Ui(29 + lane * 20), 2, 0), VerticalAlignment = VerticalAlignment.Top,
-                    Cursor = Cursors.Hand, ToolTip = "클릭하여 날짜 선택 · 더블클릭하여 수정" };
+                    Cursor = Cursors.Hand };
+                EnableItemDrag(bar, item);
                 bar.Tag = new ItemHitTarget { Item = item, SegmentStart = segmentStart, SegmentEnd = segmentEnd, Element = bar };
                 if (settings.CompletedDisplayMode == "fade" && item.IsTodo && item.Completed) bar.Opacity = .48;
                 bar.MouseLeftButtonDown += async delegate(object sender, MouseButtonEventArgs e)
