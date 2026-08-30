@@ -6,6 +6,7 @@ namespace FamilyPlanner
     [DataContract]
     public class PlannerItem
     {
+        internal PlannerItem Clone() { return (PlannerItem)MemberwiseClone(); }
         [DataMember] public string Id;
         [DataMember] public string Title;
         [DataMember] public DateTime Start;

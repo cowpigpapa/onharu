@@ -16,6 +16,12 @@ namespace FamilyPlanner
             calendar.LayoutTransform = Transform.Identity;
         }
 
+        internal static Border PopupHost(UIElement content, double padding)
+        {
+            return new Border { Background = Brush("#FFF8F2"), BorderBrush = Brush("#D5D8DE"), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12), Padding = new Thickness(padding), Margin = new Thickness(0, 4, 0, 0), Child = content };
+        }
+
         internal static Style Create()
         {
             var style = new Style(typeof(Calendar));

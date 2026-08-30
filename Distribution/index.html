@@ -6,7 +6,7 @@
     <title>온하루 ONHARU — 바탕화면에서 시작하는 나의 하루</title>
     <meta
       name="description"
-      content="바탕화면 달력, Google Calendar 동기화, Todo, 반복 일정, D-Day, 기념일, 시간표와 일기장을 한 화면에서 관리하는 ONHARU 2.2.1"
+      content="바탕화면 달력, Google Calendar와 Tasks 동기화, Todo, 반복 일정, D-Day, 기념일, 시간표와 일기장을 한 화면에서 관리하는 ONHARU 2.2.6"
     />
     <style>
       :root {
@@ -392,17 +392,15 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background: #dfeafe;
+        background: transparent;
         border-radius: 25px;
-        transform: rotate(0.35deg);
       }
       .app-preview img {
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        object-position: center 52%;
-        transform: scale(1.14);
+        object-fit: contain;
+        object-position: center;
       }
       .journey {
         display: grid;
@@ -493,9 +491,6 @@
         }
         .calendar.app-preview {
           border-radius: 20px;
-        }
-        .app-preview img {
-          transform: scale(1.1);
         }
         .journey {
           grid-template-columns: 1fr;
@@ -647,7 +642,7 @@
                 <h3>원하는 프로야구 경기만 일정으로</h3>
                 <p>
                   선택 기능을 켜고 월별 KBO 일정을 불러온 뒤, 보고 싶은 경기만
-                  골라 로컬 ‘야구’ 달력에 추가합니다.
+                  골라 로컬 일정 또는 수정 가능한 Google 캘린더에 추가합니다. 같은 경기는 중복 등록하지 않습니다.
                 </p>
               </article>
               <article class="card">
@@ -713,7 +708,7 @@
         </section>
         <section class="wrap cta">
           <h2>오늘을 여는 가장 빠른 방법.</h2>
-          <p>Windows 바탕화면에서 ONHARU 2.2.1을 만나보세요.</p>
+          <p>Windows 바탕화면에서 곧 만날 ONHARU 2.2.6를 확인해 보세요.</p>
           <div class="cta-links">
             <a class="primary" href="ONHARU-DOWNLOAD.html">다운로드</a
             ><a href="ONHARU-GUIDE.html">사용설명서</a

@@ -1,17 +1,46 @@
-*.exe
-*.pdb
-*.user
-*.suo
-.vs/
-bin/
-obj/
-
-# Local Google OAuth credentials and runtime data
+# Local credentials and secrets
+**/OAuthCredentials.local.cs
+**/.env
+**/.env.*
+*.pfx
+*.p12
+*.pem
+*.key
 oauth.local.json
 *.token
+
+# Runtime user data
 *.dat
 items-*.json
 settings.json
+*.log
 
-__pycache__/
+# Build and IDE outputs
+*.exe
+*.dll
+*.pdb
+*.obj
+*.tmp
 *.pyc
+__pycache__/
+*.zip
+*.7z
+.vs/
+bin/
+obj/
+Installer/Output/
+
+# Generated test copies (canonical source lives under App/ and ExplorerLayer/)
+Tests/DpiValidation/**/Source/
+Tests/DpiValidation/**/Runtime/
+Tests/LocalTest/*.config
+
+# Generated release and public-upload staging
+Release/
+Publish/
+
+# OS/editor noise
+Thumbs.db
+Desktop.ini
+*.user
+*.suo

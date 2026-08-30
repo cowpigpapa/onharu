@@ -80,6 +80,8 @@ namespace FamilyPlanner
             inactiveForeground = inactiveText; BorderBrush = border; SetSelected(selectedIndex, false);
         }
         internal int SelectedIndex { get { return selectedIndex; } }
+        internal Brush SelectedBackground { get { return thumb.Background; } }
+        internal Brush SelectedForeground { get { return selectedForeground; } }
         internal double SegmentWidth(int index) { return index >= 0 && index < widths.Length ? widths[index] : 0; }
         internal FrameworkElement SegmentTarget(int index) { if (index >= 0 && index < buttons.Count) return buttons[index]; return this; }
         static double LabelWidth(string text)

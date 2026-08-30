@@ -15,17 +15,36 @@ namespace FamilyPlanner
         void RenderDetail()
         {
             detail.Children.Clear(); UpdateDetailTabs();
+            if (detailIncompleteMode)
+            {
+                var cutoff = IncompleteTodoCutoff();
+                var periodStart = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
+                selectedTitle.FontSize = 15;
+                selectedTitle.Text = detailMode == "selected" ? cutoff.ToString("M월 d일") + "–" + selectedDate.ToString("M월 d일")
+                    : periodStart.ToString("M월 d일") + "–" + periodStart.AddDays(6).ToString("M월 d일");
+                if (!AddIncompleteTodoCard())
+                    detail.Children.Add(new TextBlock { Text = "미완료 일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
+                return;
+            }
             if (detailMode == "selected")
             {
+                selectedTitle.FontSize = 15;
                 selectedTitle.Text = selectedDate.ToString("M월 d일 (ddd)", new CultureInfo("ko-KR"));
-                AddDetailDay(selectedDate, false);
-                var add = Button("+ 이 날짜에 추가", AddItem, 150); add.Height = 27; add.Margin = new Thickness(0, 3, 0, 0); detail.Children.Add(add);
-                AddDdayCards(); AddAnniversaryCards(); ApplyDetailCardOrder();
+                var hasDayItems = AddDetailDay(selectedDate, false);
+                if (!hasDayItems)
+                    detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
+                var specialStart = detail.Children.Count;
+                AddDdayCards(); AddAnniversaryCards();
+                if (detail.Children.Count > specialStart)
+                    detail.Children.Insert(specialStart, new Border { Height = 1, Background = T("Grid"),
+                        Margin = new Thickness(3), IsHitTestVisible = false });
+                ApplyDetailCardOrder();
                 return;
             }
             var start = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
             var end = start.AddDays(6);
-            selectedTitle.Text = (detailMode == "next_week" ? "다음 주" : "이번 주") + " · " + start.ToString("M/d") + "–" + end.ToString("M/d");
+            selectedTitle.FontSize = 15;
+            selectedTitle.Text = start.ToString("M월 d일") + "–" + end.ToString("M월 d일");
             var added = false;
             for (var date = start; date <= end; date = date.AddDays(1))
             {
@@ -33,10 +52,15 @@ namespace FamilyPlanner
                 AddDetailDay(date, true); added = true;
             }
             if (!added) detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
-            AddDdayCards(); AddAnniversaryCards(); ApplyDetailCardOrder();
+            var specialWeekStart = detail.Children.Count;
+            AddDdayCards(); AddAnniversaryCards();
+            if (detail.Children.Count > specialWeekStart)
+                detail.Children.Insert(specialWeekStart, new Border { Height = 1, Background = T("Grid"),
+                    Margin = new Thickness(3), IsHitTestVisible = false });
+            ApplyDetailCardOrder();
         }
 
-        void AddDetailDay(DateTime date, bool showDateHeader)
+        bool AddDetailDay(DateTime date, bool showDateHeader)
         {
             var dayItems = VisibleItems(date).Where(x => string.IsNullOrWhiteSpace(x.AnniversaryType)).ToList();
             if (showDateHeader)
@@ -44,16 +68,13 @@ namespace FamilyPlanner
                     Foreground = date.Date == DateTime.Today ? T("Accent") : T("Heading"), FontWeight = FontWeights.Bold,
                     FontSize = Ui(12), Margin = new Thickness(1, 8, 0, 3) });
             if (dayItems.Count == 0)
-            {
-                detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
-                return;
-            }
+                return false;
             foreach (var categoryItems in DetailGroups(dayItems))
             {
                 var timeMode = settings.DetailOrderMode == "time";
                 var importantCard = !timeMode && settings.ImportantFirst && categoryItems.All(x => x.Important);
                 var groupColor = ItemColor(categoryItems[0]);
-                var cardForeground = importantCard ? EventTextBrush(categoryItems[0]) : timeMode ? Brush("#334155")
+                var cardForeground = importantCard ? EventTextBrush(categoryItems[0]) : timeMode ? (settings.ThemeId == "dark" ? Brushes.White : Brush("#334155"))
                     : new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, groupColor));
                 var cardSecondary = settings.ThemeId == "dark" ? Brushes.White : Brush("#64748B");
                 var group = new StackPanel();
@@ -62,31 +83,37 @@ namespace FamilyPlanner
                 var groupCollapsed = collapsedDetailGroups.Contains(groupKey);
                 var groupHeader = new TextBlock { Text = "●  " + groupName, Foreground = cardForeground,
                     FontWeight = FontWeights.Bold, FontSize = Ui(12), VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, groupCollapsed ? 0 : 7),
+                    Cursor = Cursors.Hand,
                     Tag = new DetailGroupHitTarget { GroupKey = groupKey } };
-                group.Children.Add(groupHeader);
+                var groupHeaderSurface = new DockPanel { Background = Brushes.Transparent, Cursor = Cursors.Arrow,
+                    Margin = new Thickness(0, 0, 0, groupCollapsed ? 0 : 5), LastChildFill = false };
+                groupHeaderSurface.Children.Add(groupHeader); group.Children.Add(groupHeaderSurface);
                 foreach (var item in categoryItems)
                 {
-                    var row = new DockPanel { Margin = new Thickness(0, 2, 0, 5) };
+                    var row = new DockPanel { Margin = new Thickness(0, 2, 0, 5), Background = Brushes.Transparent, Cursor = Cursors.Arrow };
                     var itemForeground = item.Important ? EventTextBrush(item) : timeMode ? EventTextBrush(item) : cardForeground;
-                    if (settings.CompletedDisplayMode == "fade" && item.IsTodo && item.Completed) row.Opacity = .48;
-                    if (item.IsTodo)
+                    if (settings.CompletedDisplayMode == "fade" && item.IsTodo && item.Completed) row.Opacity = .66;
+                    if (item.Category == "야구" || (item.AllDay && !string.IsNullOrWhiteSpace(item.GoogleCalendarId) && !item.IsTodo))
+                    {
+                        var sourceMark = new CheckBox { IsChecked = false, Focusable = false, Tag = "Unavailable", Cursor = Cursors.Hand,
+                            ToolTip = "완료 체크를 지원하지 않는 일정입니다.",
+                            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 0, 0) };
+                        StyleVividCheckBox(sourceMark, ItemColor(item));
+                        sourceMark.Click += delegate { sourceMark.IsChecked = false; };
+                        var markSurface = new Border { Child = sourceMark, Padding = new Thickness(0, 0, 8, 0),
+                            Background = Brushes.Transparent, Cursor = Cursors.Hand, Tag = "UnavailableTextSurface" };
+                        DockPanel.SetDock(markSurface, Dock.Left); row.Children.Add(markSurface);
+                    }
+                    else if (item.IsTodo)
                     {
                         var check = new CheckBox { IsChecked = item.Completed,
                             ToolTip = GoogleTasks.IsTask(item) ? "완료 상태를 Google Tasks와 동기화합니다." :
                                 !string.IsNullOrWhiteSpace(item.GoogleCalendarId) ? "완료 상태는 이 PC에 저장됩니다." : null,
                             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 8, 0) };
-                        StyleThemeCheckBox(check, ItemColor(item));
+                        StyleVividCheckBox(check, ItemColor(item));
                         if (settings.ThemeId == "dark") check.BorderBrush = Brushes.White;
                         check.Click += async delegate { await SetTodoCompleted(item, check.IsChecked == true); };
                         DockPanel.SetDock(check, Dock.Left); row.Children.Add(check);
-                    }
-                    else if (item.AllDay && !string.IsNullOrWhiteSpace(item.GoogleCalendarId))
-                    {
-                        var sourceMark = new CheckBox { IsChecked = false, IsHitTestVisible = false, Focusable = false,
-                            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 8, 0) };
-                        StyleThemeCheckBox(sourceMark, ItemColor(item));
-                        DockPanel.SetDock(sourceMark, Dock.Left); row.Children.Add(sourceMark);
                     }
                     var text = new StackPanel();
                     text.Tag = new ItemHitTarget { Item = item, SegmentStart = date, SegmentEnd = date, Element = text, DetailCard = true };
@@ -104,8 +131,8 @@ namespace FamilyPlanner
                     if (!string.IsNullOrWhiteSpace(item.Notes))
                         text.Children.Add(new TextBlock { Text = item.Notes, FontSize = Ui(11), Foreground = item.Important ? itemForeground : cardSecondary,
                             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
-                    text.Cursor = Cursors.Hand;
-                    EnableItemDrag(text, item);
+                    text.Cursor = Cursors.Hand; text.HorizontalAlignment = HorizontalAlignment.Left;
+                    EnableItemDrag(row, item);
                     text.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
                     {
                         if (e.ClickCount != 2) return;
@@ -123,14 +150,73 @@ namespace FamilyPlanner
                         group.Children.Add(notice);
                     }
                 }
-                var detailCard = new Border { Background = importantCard ? EventBackgroundBrush(categoryItems[0]) : timeMode ? Brushes.White : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor)),
-                    BorderBrush = importantCard ? EventTextBrush(categoryItems[0]) : timeMode ? Brush("#CBD5E1")
+                var cardBackground = importantCard ? EventBackgroundBrush(categoryItems[0]) : timeMode ? (settings.ThemeId == "dark" ? T("Card") : Brushes.White) : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor));
+                var liftSurface = new Border { Background = cardBackground, CornerRadius = new CornerRadius(11),
+                    Padding = new Thickness(10, 8, 10, groupCollapsed ? 9 : 7), Child = group };
+                var detailCard = new Border { Background = Brushes.Transparent,
+                    BorderBrush = importantCard ? EventTextBrush(categoryItems[0]) : timeMode ? (settings.ThemeId == "dark" ? T("Grid") : Brush("#CBD5E1"))
                         : new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, groupColor)),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, groupCollapsed ? 9 : 7), Margin = new Thickness(0, 3, 0, 5),
-                    Tag = groupKey, Child = group };
-                EnableDetailCardOrder(groupHeader, detailCard, groupKey);
+                    CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 4, 0, 7),
+                    Tag = groupKey, Child = liftSurface };
+                EnableDetailCardOrder(groupHeaderSurface, detailCard, groupKey);
+                if (timeMode) TemporarySegmentPaletteTool.PromoteStableId(detailCard, "OnharuDetailCard:mode:time");
+                else TemporarySegmentPaletteTool.AttachDetailCard(detailCard, groupHeader, groupKey);
                 detail.Children.Add(detailCard);
+            }
+            return true;
+        }
+
+        bool AddIncompleteTodoCard()
+        {
+            var cutoff = IncompleteTodoCutoff();
+            var periodStart = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
+            var taskItems = items.Where(x => x.IsTodo && !x.Completed && x.Start.Date >= cutoff
+                    && (detailMode == "selected" ? x.Start.Date <= selectedDate.Date
+                        : x.Start.Date >= periodStart && x.Start.Date <= periodStart.AddDays(6))
+                    && IsItemVisible(x) && string.IsNullOrWhiteSpace(x.AnniversaryType))
+                .OrderBy(x => x.Start).ThenBy(x => x.Title).ToList();
+            if (taskItems.Count == 0) return false;
+            var foreground = T("Text");
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock { Text = "●  미완료 To-Do", Foreground = foreground, FontWeight = FontWeights.Bold,
+                FontSize = Ui(12), Margin = new Thickness(0, 0, 0, 6) });
+            AddGoogleTaskSection(panel, "기한 지남", taskItems.Where(x => x.Start.Date < DateTime.Today), foreground, true);
+            AddGoogleTaskSection(panel, "오늘", taskItems.Where(x => x.Start.Date == DateTime.Today), foreground, true);
+            AddGoogleTaskSection(panel, "다가오는 할 일", taskItems.Where(x => x.Start.Date > DateTime.Today), foreground, true);
+            var surface = new Border { Background = settings.ThemeId == "dark" ? T("Card") : Brushes.White,
+                CornerRadius = new CornerRadius(11), Padding = new Thickness(10, 8, 10, 7), Child = panel };
+            var card = new Border { Background = Brushes.Transparent, BorderBrush = settings.ThemeId == "dark" ? T("Grid") : Brush("#CBD5E1"),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 4, 0, 7), Child = surface,
+                Tag = "미완료 To-Do" };
+            TemporarySegmentPaletteTool.PromoteStableId(card, "OnharuDetailCard:mode:incomplete");
+            detail.Children.Add(card); return true;
+        }
+
+        DateTime IncompleteTodoCutoff() { return DateTime.Today.AddMonths(-Math.Max(1, settings.IncompleteTodoLookbackMonths)).Date; }
+
+        void AddGoogleTaskSection(Panel panel, string title, IEnumerable<PlannerItem> source, Brush foreground, bool includeDate)
+        {
+            var rows = source.ToList(); if (rows.Count == 0) return;
+            panel.Children.Add(new TextBlock { Text = title + " (" + rows.Count + ")", Foreground = T("Muted"), FontSize = Ui(10.5),
+                FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 1) });
+            AddGoogleTaskRows(panel, rows, foreground);
+        }
+
+        void AddGoogleTaskRows(Panel panel, IEnumerable<PlannerItem> rows, Brush foreground)
+        {
+            foreach (var item in rows)
+            {
+                var row = new DockPanel { Margin = new Thickness(0, 2, 0, 3) };
+                var check = new CheckBox { IsChecked = item.Completed, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) };
+                StyleVividCheckBox(check, ItemColor(item));
+                check.Click += async delegate { await SetTodoCompleted(item, check.IsChecked == true); };
+                DockPanel.SetDock(check, Dock.Left); row.Children.Add(check);
+                var label = new TextBlock { Text = item.Start.ToString("M월 d일") + "  " + item.Title, Foreground = EventTextBrush(item),
+                    TextDecorations = item.Completed ? TextDecorations.Strikethrough : null, TextTrimming = TextTrimming.CharacterEllipsis,
+                    Cursor = Cursors.Hand, ToolTip = item.Title };
+                label.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) { if (e.ClickCount == 2) OpenEdit(item); };
+                row.Children.Add(label); panel.Children.Add(row);
             }
         }
 
@@ -180,33 +266,36 @@ namespace FamilyPlanner
             return name == "하루 종일" ? 0 : 1;
         }
 
-        Button DetailTab(string text, string mode)
-        {
-            var button = Button(text, null, 88); button.Height = 27; button.Margin = new Thickness(0); button.FontSize = Ui(11);
-            button.Click += delegate { detailMode = mode; RenderDetail(); };
-            return button;
-        }
-
         void UpdateDetailTabs()
         {
-            if (selectedDayButton != null) selectedDayButton.Content = selectedDate.Date == DateTime.Today ? "오늘" : "선택 날짜";
-            foreach (var entry in new[]
+            if (detailPeriodSwitch != null)
             {
-                Tuple.Create(selectedDayButton, detailMode == "selected"),
-                Tuple.Create(thisWeekButton, detailMode == "this_week"),
-                Tuple.Create(nextWeekButton, detailMode == "next_week")
-            })
+                detailPeriodSwitch.SetLabel(0, selectedDate.Date == DateTime.Today ? "오늘" : "선택 날짜");
+                ApplyDetailSwitchPalette(detailPeriodSwitch);
+                detailPeriodSwitch.SetSelected(detailMode == "this_week" ? 1 : detailMode == "next_week" ? 2 : 0, false);
+            }
+            if (detailOrderSwitch != null)
             {
-                if (entry.Item1 == null) continue;
-                var colors = OnharuStateColors.DetailTab(settings.ThemeId, entry.Item2, ActionAccentColor());
-                entry.Item1.Background = new SolidColorBrush(colors.Background);
-                entry.Item1.Foreground = new SolidColorBrush(colors.Foreground);
-                entry.Item1.BorderBrush = new SolidColorBrush(colors.Border);
-                entry.Item1.FontWeight = entry.Item2 ? FontWeights.Bold : FontWeights.Normal;
+                ApplyDetailSwitchPalette(detailOrderSwitch);
+                detailOrderSwitch.SetSelected(detailIncompleteMode && settings.ShowIncompleteTodoButton ? 2
+                    : settings.DetailOrderMode == "time" ? 1 : 0, false);
+            }
+            if (detailScroll != null)
+            {
+                detailScroll.Resources["OnharuScrollThumb"] = Brush(OnharuStateColors.DetailScrollThumb(settings.ThemeId, detailMode));
             }
             if (dateColorButton != null)
             {
-                dateColorButton.Visibility = detailMode == "selected" ? Visibility.Visible : Visibility.Collapsed;
+                var rangeTitle = detailMode != "selected" || detailIncompleteMode;
+                dateColorButton.Visibility = rangeTitle || !detailIncompleteMode ? Visibility.Visible : Visibility.Collapsed;
+                dateColorButton.IsHitTestVisible = !rangeTitle;
+                if (rangeTitle)
+                {
+                    dateColorButton.Content = HeaderGlyph("range", T("Text"));
+                    dateColorButton.Foreground = T("Text"); dateColorButton.Background = Brushes.Transparent;
+                    dateColorButton.BorderBrush = Brushes.Transparent; dateColorButton.BorderThickness = new Thickness(0);
+                    return;
+                }
                 string selectedColor = null;
                 var colored = settings.DateBackgroundColors != null && settings.DateBackgroundColors.TryGetValue(DateKey(selectedDate), out selectedColor);
                 dateColorButton.Background = Brushes.Transparent;

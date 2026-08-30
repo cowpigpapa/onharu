@@ -97,7 +97,7 @@ namespace FamilyPlanner
             item.Start = due.Date; item.End = due.Date.AddDays(1); item.AllDay = true;
             item.IsTodo = true; item.Completed = task.Status == "completed"; item.Category = "개인일정"; item.Notes = task.Notes;
             item.GoogleEventId = task.Id; item.GoogleEventType = "task"; item.GoogleCalendarId = source.Id;
-            item.GoogleCalendarName = source.Name; item.GoogleCalendarColor = source.Color; item.GoogleReadOnly = !managed || !source.Editable;
+            item.GoogleCalendarName = source.Name; item.GoogleCalendarColor = source.Color; item.GoogleReadOnly = true;
             item.GoogleTaskEvent = true; item.OnharuManaged = managed; item.CreatedInOnharu = managed;
             item.PendingGoogleSync = false;
         }

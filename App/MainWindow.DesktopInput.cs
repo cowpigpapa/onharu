@@ -7,7 +7,7 @@ namespace FamilyPlanner
 {
     public partial class MainWindow
     {
-        void HandleDesktopAction(int action, int value)
+        async void HandleDesktopAction(int action, int value)
         {
             if (ActivateBlockingDialog()) return;
             if (action == 109 && PlacementTrace.IsEnabled)
@@ -17,7 +17,7 @@ namespace FamilyPlanner
                 return;
             }
             if (!positionLocked) return;
-            if (action == 29) { CloseTransientPopup(); return; }
+            if (action == 29) { if (weekCountOverlay == null) CloseTransientPopup(); return; }
             if (action == 100 || action == 101) { HitTestDesktop(value, action == 101); return; }
             CloseTransientPopup();
             if (action == 102 || action == 103) { ScrollDesktopDetail(value, action == 102 ? 1 : -1); return; }
@@ -25,6 +25,7 @@ namespace FamilyPlanner
             if (action == 105) { FlushFixedOpacityPreview(); Store.SaveSettings(settings); SchedulePublish(); return; }
             if (action == 107) { AdjustDesktopDetailScroll(value); return; }
             if (action == 108) { GoogleClick(null, null); return; }
+            if (action == 110) { await UndoCalendarAction(); return; }
             if (action == 1) { MoveCalendar(-1); return; }
             else if (action == 2) { GoToday(); return; }
             else if (action == 3) { MoveCalendar(1); return; }
@@ -45,6 +46,7 @@ namespace FamilyPlanner
         {
             var point = explorerFrame.FrameToLogicalPoint((short)(packedPoint & 0xFFFF), (short)((packedPoint >> 16) & 0xFFFF));
             var root = Content as Visual;
+            if (!doubleClick && TryApplyWeekCountAt(root, point)) return;
             var current = root == null ? null : FindDesktopElement(root, root, point);
             object target = null;
             FrameworkElement targetElement = null;
@@ -70,6 +72,12 @@ namespace FamilyPlanner
             {
                 if (!targetButton.IsEnabled) return;
                 var navigation = targetButton.Tag as string;
+                if (!doubleClick && navigation != null && navigation.StartsWith("week_count:", StringComparison.Ordinal))
+                {
+                    int weekCount;
+                    if (int.TryParse(navigation.Substring("week_count:".Length), out weekCount)) ApplyWeekCount(weekCount);
+                    return;
+                }
                 if (navigation == "calendar_previous" || navigation == "calendar_next")
                 {
                     HandleCalendarNavigationClick(navigation == "calendar_previous" ? -1 : 1, doubleClick); return;
@@ -304,6 +312,26 @@ namespace FamilyPlanner
             if (index < 0 || index >= 42) return;
             var offset = (7 + (int)shownMonth.DayOfWeek - (int)ConfiguredFirstDay()) % 7;
             selectedDate = shownMonth.AddDays(-offset + index); detailMode = "selected";
+        }
+
+        bool TryApplyWeekCountAt(Visual root, Point point)
+        {
+            if (root == null || weekCountOverlay == null) return false;
+            foreach (var child in ((Panel)((Border)weekCountOverlay).Child).Children)
+            {
+                var button = child as Button;
+                if (button == null || !button.IsEnabled) continue;
+                try
+                {
+                    var origin = button.TransformToAncestor(root).Transform(new Point());
+                    if (!new Rect(origin, new Size(button.ActualWidth, button.ActualHeight)).Contains(point)) continue;
+                    int count;
+                    if (int.TryParse((button.Tag as string ?? "").Replace("week_count:", ""), out count)) ApplyWeekCount(count);
+                    return true;
+                }
+                catch { }
+            }
+            return false;
         }
     }
 }

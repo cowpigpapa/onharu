@@ -41,8 +41,7 @@ namespace FamilyPlanner
             AddChoice(panel, "과거 포함 전체", "이 반복 일정의 모든 기록을 삭제합니다.", "all", "#FFF1F2", "#E11D48");
             var cancel = new Button { Content = "취소", Height = 38, Margin = new Thickness(0, 8, 0, 0), Background = B("#F1F5F9"), Foreground = B("#475569"), BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             cancel.Click += delegate { DialogResult = false; }; panel.Children.Add(cancel);
-            var shell = new Border { Background = B("#FFFDFD"), BorderBrush = B("#CBD5E1"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(17), Child = panel };
-            Content = UiRound.EmphasizePopup(shell); panel.MouseLeftButtonDown += delegate(object s, MouseButtonEventArgs e) { if (e.GetPosition(panel).Y < 58) DragMove(); };
+            Content = OnharuPopupChrome.Shell(panel);
         }
         void AddChoice(Panel panel, string title, string description, string scope, string background, string foreground)
         {

@@ -1,5 +1,7 @@
 # ONHARU 빌드 및 배포 과정
 
+> 현재 개발판은 `2.2.6-test`, 기존 배포 시험판은 `2.2.5-test`, 공개 정식판은 `2.2.4`다. 현재 상태는 `CURRENT_STATUS.md`, 작업 시작과 문서 갱신 규칙은 `START_HERE.md`를 우선한다. 아래 과거 버전 예시는 절차 설명용이며 새 배포에서는 실제 확정 버전으로 한 번에 치환한다.
+
 ## 버전 정책
 
 - 정식 공개 버전은 `MAJOR.MINOR.PATCH` 세 자리로 통일한다.
@@ -74,8 +76,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-local-test.ps1
 
 생성물:
 
-- `Tests/LocalTest/ONHARU-2.1-local-test.exe`
-- `Tests/LocalTest/ONHARU-2.1-local-test.exe.config`
+- `Tests/LocalTest/ONHARU-2.2-local-test.exe`
+- `Tests/LocalTest/ONHARU-2.2-local-test.exe.config`
 - `Tests/LocalTest/Onharu.DesktopHook.dll`
 - `Tests/LocalTest/Onharu.LayerHost.exe`
 
@@ -85,10 +87,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-local-test.ps1
 
 ## 4. 핵심 회귀 검사
 
-프로젝트 루트에서 빌드와 자동 검사 13종을 한 번에 실행한다.
+프로젝트 루트에서 빌드와 자동 검사 17종을 한 번에 실행한다.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\check-v21.ps1 -Build
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\check-v22.ps1 -Build
 ```
 
 고정 레이어는 수동으로 다음을 확인한다.
@@ -116,7 +118,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 1. 실행 중인 개발 App과 LayerHost 종료
 2. 공개 이름 `ONHARU.exe`로 WPF App 최적화 빌드
 3. 네이티브 DLL/LayerHost를 x64 `/MT`로 빌드
-4. `Release/ONHARU-2.1.0` staging 생성
+4. 확정 버전의 `Release/ONHARU-X.Y.Z` staging 생성
 5. staging 파일 SHA-256 생성
 6. Inno Setup으로 설치 프로그램 생성
 7. 설치 파일 SHA-256 생성
@@ -126,11 +128,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 
 최종 파일:
 
-- `Release/ONHARU-2.1.0/ONHARU.exe`
-- `Release/ONHARU-2.1.0/ONHARU.exe.config`
-- `Release/ONHARU-2.1.0/Onharu.LayerHost.exe`
-- `Release/ONHARU-2.1.0/Onharu.DesktopHook.dll`
-- `Release/Installer/ONHARU-2.2.2-Setup.exe`
+- `Release/ONHARU-X.Y.Z/ONHARU.exe`
+- `Release/ONHARU-X.Y.Z/ONHARU.exe.config`
+- `Release/ONHARU-X.Y.Z/Onharu.LayerHost.exe`
+- `Release/ONHARU-X.Y.Z/Onharu.DesktopHook.dll`
+- `Release/Installer/ONHARU-X.Y.Z-Setup.exe`
 
 ## 6. 설치와 업그레이드
 
@@ -147,7 +149,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 - 100%, 125%, 150% DPI 및 다중 모니터
 - Windows 10과 Windows 11
 - Google OAuth 프로덕션 전환 및 검증 승인
-- Authenticode 코드 서명은 비용 정책상 2.1.0에서 보류했다. 미서명 설치판은 SmartScreen의 `알 수 없는 게시자` 안내가 나타날 수 있으므로 SHA-256을 함께 제공한다.
+- Authenticode 코드 서명은 현재 보류 상태다. 미서명 설치판은 SmartScreen의 `알 수 없는 게시자` 안내가 나타날 수 있으므로 SHA-256을 함께 제공한다.
 
 2.1 설치 파일은 현재 코드 서명 없이 배포한다. Explorer 훅 DLL 특성상 SmartScreen 또는 백신 경고 가능성이 있으므로 공식 다운로드 위치와 `Release/Installer/SHA256SUMS.txt`의 해시를 함께 안내한다.
 

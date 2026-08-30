@@ -70,9 +70,10 @@ namespace FamilyPlanner
 
         public static Border EmphasizePopup(Border shell)
         {
-            shell.BorderBrush = Application.Current != null && Application.Current.Resources.Contains("OnharuPopupAccent")
-                ? Application.Current.Resources["OnharuPopupAccent"] as Brush ?? new SolidColorBrush(Color.FromRgb(99, 102, 241))
-                : new SolidColorBrush(Color.FromRgb(99, 102, 241));
+            if (shell.BorderBrush == null)
+                shell.BorderBrush = Application.Current != null && Application.Current.Resources.Contains("OnharuPopupAccent")
+                    ? Application.Current.Resources["OnharuPopupAccent"] as Brush ?? new SolidColorBrush(Color.FromRgb(174, 180, 192))
+                    : new SolidColorBrush(Color.FromRgb(174, 180, 192));
             shell.BorderThickness = new Thickness(2);
             shell.Effect = new System.Windows.Media.Effects.DropShadowEffect
             { Color = Color.FromRgb(30, 41, 59), BlurRadius = 18, ShadowDepth = 5, Opacity = .38 };
@@ -125,6 +126,8 @@ namespace FamilyPlanner
         {
             if (Application.Current != null && !Application.Current.Resources.Contains("OnharuScrollThumb"))
                 Application.Current.Resources["OnharuScrollThumb"] = new SolidColorBrush(Color.FromRgb(165, 180, 252));
+            if (Application.Current != null && !Application.Current.Resources.Contains("OnharuScrollTrack"))
+                Application.Current.Resources["OnharuScrollTrack"] = Brushes.Transparent;
             for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
             {
                 var child = VisualTreeHelper.GetChild(root, i);
@@ -133,13 +136,13 @@ namespace FamilyPlanner
                 {
                     var horizontal = bar.Orientation == Orientation.Horizontal;
                     if (horizontal) { bar.Height = 10; bar.Margin = new Thickness(3, 2, 3, 2); }
-                    else { bar.Width = 10; bar.Margin = new Thickness(2, 3, 2, 3); }
+                    else { bar.Width = 9; bar.Margin = new Thickness(2, 3, 2, 3); }
                     bar.Background = Brushes.Transparent; bar.BorderThickness = new Thickness(0);
                     var orientation = horizontal ? "Horizontal" : "Vertical";
                     var reversed = horizontal ? "False" : "True";
                     var decrease = horizontal ? "PageLeftCommand" : "PageUpCommand";
                     var increase = horizontal ? "PageRightCommand" : "PageDownCommand";
-                    bar.Template = (ControlTemplate)XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='{x:Type ScrollBar}'><Grid Background='Transparent'><Track x:Name='PART_Track' Orientation='" + orientation + "' IsDirectionReversed='" + reversed + "'><Track.DecreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + decrease + "}' Opacity='0' Focusable='False'/></Track.DecreaseRepeatButton><Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Border Background='{DynamicResource OnharuScrollThumb}' CornerRadius='4' Margin='1'/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + increase + "}' Opacity='0' Focusable='False'/></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate>");
+                    bar.Template = (ControlTemplate)XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='{x:Type ScrollBar}'><Grid Background='{DynamicResource OnharuScrollTrack}'><Track x:Name='PART_Track' Orientation='" + orientation + "' IsDirectionReversed='" + reversed + "'><Track.DecreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + decrease + "}' Opacity='0' Focusable='False'/></Track.DecreaseRepeatButton><Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Border Background='{DynamicResource OnharuScrollThumb}' CornerRadius='4' Margin='1'/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar." + increase + "}' Opacity='0' Focusable='False'/></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate>");
                 }
                 var thumb = child as Thumb;
                 if (thumb != null) thumb.BorderThickness = new Thickness(0);

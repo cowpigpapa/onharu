@@ -62,11 +62,9 @@ namespace FamilyPlanner
             scroll.Loaded += delegate { UiRound.SoftenScrollBars(scroll); }; panel.Children.Add(scroll);
             panel.Children.Add(new Border { Background = B("#EEF2FF"), CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 9, 12, 9), Margin = new Thickness(0, 4, 0, 0),
                 Child = new TextBlock { Text = "재시도하려면 이 창을 닫고 상단의 G 동기화를 눌러 주세요.", Foreground = B("#4338CA"), FontSize = 11, TextAlignment = TextAlignment.Center } });
-            var shell = new Border { Background = B("#FFFCFD"), BorderBrush = B("#CBD5E1"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), Child = panel };
-            var frame = new Grid(); frame.Children.Add(UiRound.EmphasizePopup(shell));
+            var frame = new Grid(); frame.Children.Add(OnharuPopupChrome.Shell(panel));
             var close = new Button { Content = "×", Width = 32, Height = 32, Background = B("#FEE2E2"), Foreground = B("#DC2626"), BorderThickness = new Thickness(0), FontSize = 17, Cursor = Cursors.Hand };
             UiRound.Apply(close, 10); close.Click += delegate { DialogResult = false; }; close.HorizontalAlignment = HorizontalAlignment.Right; close.VerticalAlignment = VerticalAlignment.Top; close.Margin = new Thickness(0, 8, 8, 0); frame.Children.Add(close); Content = frame;
-            header.MouseLeftButtonDown += delegate(object s, MouseButtonEventArgs e) { if (Mouse.LeftButton == MouseButtonState.Pressed) DragMove(); };
         }
         static Brush B(string value) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value)); }
     }

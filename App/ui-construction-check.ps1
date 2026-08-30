@@ -12,19 +12,19 @@ $stringList = New-List ([string])
 $settingsType = $assembly.GetType('FamilyPlanner.SettingsWindow', $true)
 $settingsArgs = [object[]]@(
     '#2563EB', '#DB2777', '#16A085', '#38A7D8', '#A78BFA', '#EF4444', [double]12, 'category', $true, $false, $true, $true, $false,
-    'iso', 'monday', (New-List ([int])).PSObject.BaseObject, $false, [int]15, $calendarList.PSObject.BaseObject, $false, $false, [int]0, $true, $true, '', [int]0,
+    'iso', 'monday', (New-List ([int])).PSObject.BaseObject, $false, [int]15, $calendarList.PSObject.BaseObject, $false, $true, $true, $false, $true, $true, [int]0, $true, $true, '', [int]0,
     $stringList.PSObject.BaseObject, (New-List ([string])).PSObject.BaseObject, $true, (New-List ([string])).PSObject.BaseObject, (New-List ([string])).PSObject.BaseObject, [int]8, $false,
     'border', '#CCDBEAFE', '#3B82F6', '#CCFCE7F3', 'fill', '#F59E0B',
-    'local:business', $true, [int]9, [int]0, [int]30, [int]-1,
-    'fade', 'last', $true, $true, [int]22, [int]7, 'screen', 'remember', $true, $true, $true, $false, $false, $true, 'classic',
-    $true, $true, $true, $true, $true, $true, $true, $true
+    'local:business', $true, [int]9, [int]0, [int]30,
+    'fade', 'last', $true, $true, [int]22, [int]7, 'screen', 'remember', $true, $true, $true, $true, $true, [int]1, $false, $false, $true, 'classic',
+    $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $false
 )
 $settings = $settingsType.GetConstructors()[0].Invoke($settingsArgs)
 if ($settings.Width -ne 620) { throw 'Settings window width changed unexpectedly.' }
 $settings.Close()
 
 $diaryEditor = $assembly.GetType('FamilyPlanner.DiaryEditorWindow', $true).GetConstructors()[0].Invoke([object[]]@([datetime]'2026-08-22', $null))
-if ($diaryEditor.Width -ne 650 -or $diaryEditor.Height -ne 540) { throw 'Diary editor size changed unexpectedly.' }
+if ($diaryEditor.Width -ne 720 -or $diaryEditor.Height -ne 700) { throw 'Diary editor size changed unexpectedly.' }
 $diaryType = $assembly.GetType('FamilyPlanner.DiaryEditorWindow', $true)
 $diaryDate = $diaryType.GetField('dateText', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($diaryEditor)
 $parseDiaryDate = $diaryType.GetMethod('ParseDate', [Reflection.BindingFlags]'NonPublic,Instance')
@@ -34,7 +34,7 @@ $diaryDate.Text = '20260822'
 if (-not $parseDiaryDate.Invoke($diaryEditor, [object[]]@($false))) { throw 'Diary date rejected valid YYYYMMDD input.' }
 $diaryEditor.Close()
 $diaryReader = $assembly.GetType('FamilyPlanner.DiaryReaderWindow', $true).GetConstructors()[0].Invoke([object[]]@([datetime]'2026-08-22'))
-if ($diaryReader.Width -ne 920 -or $diaryReader.Height -ne 640) { throw 'Diary reader size changed unexpectedly.' }
+if ($diaryReader.Width -ne 1120 -or $diaryReader.Height -ne 720) { throw 'Diary reader size changed unexpectedly.' }
 $diaryReader.Close()
 
 $defaults = [Activator]::CreateInstance($assembly.GetType('FamilyPlanner.PlannerSettings', $true))

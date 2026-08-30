@@ -12,7 +12,7 @@ namespace FamilyPlanner
     {
         void AddDdayCards()
         {
-            if (!settings.DdayPanelVisible) return;
+            if (!settings.DdayEnabled || !settings.DdayPanelVisible) return;
             // D-Day is an independent summary view. Calendar filters may hide
             // event bars without hiding explicitly pinned D-Days.
             var ddayItems = items.Where(x => x.ShowDday && string.IsNullOrWhiteSpace(x.AnniversaryType)
@@ -29,17 +29,19 @@ namespace FamilyPlanner
             var ddayBorder = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, ddayColor));
 
             var stack = new StackPanel();
-            var heading = new DockPanel { Height = ddaySectionCollapsed ? 17 : 24, Margin = new Thickness(1, 0, 3, ddaySectionCollapsed ? 0 : 7), LastChildFill = true };
+            var heading = new DockPanel { Height = ddaySectionCollapsed ? 18 : 24, Margin = new Thickness(1, 0, 3, ddaySectionCollapsed ? 0 : 1), LastChildFill = true };
             var titleButton = SectionTitleButton("◈  D-Day (" + ddayItems.Count + "개)", ddayForeground,
-                ddaySectionCollapsed ? "D-Day 펼치기" : "D-Day 접기", delegate { ddaySectionCollapsed = !ddaySectionCollapsed; RenderDetail(); }, heading.Height);
+                ddaySectionCollapsed ? "D-Day 펼치기" : "D-Day 접기", delegate { ddaySectionCollapsed = !ddaySectionCollapsed; RenderDetail(); }, 18);
             heading.Children.Add(titleButton);
             stack.Children.Add(heading);
 
             if (!ddaySectionCollapsed)
             {
                 var visibleCount = ddayCardsExpanded ? ddayItems.Count : Math.Min(5, ddayItems.Count);
-                foreach (var item in ddayItems.Take(visibleCount))
+                var visibleItems = ddayItems.Take(visibleCount).ToList();
+                for (var index = 0; index < visibleItems.Count; index++)
                 {
+                    var item = visibleItems[index];
                     var days = (item.Start.Date - DateTime.Today).Days;
                     var isToday = days == 0;
                     var label = isToday ? "D-Day" : days > 0 ? "D-" + days.ToString("N0") : "D+" + (-days).ToString("N0");
@@ -49,7 +51,7 @@ namespace FamilyPlanner
                     content.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
                     { if (e.ClickCount == 2) { OpenEdit(item); e.Handled = true; } else e.Handled = true; };
                     stack.Children.Add(new Border { Background = isToday ? ddayBackground : Brushes.Transparent,
-                        BorderBrush = ddayBorder, BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, 1),
+                        BorderBrush = ddayBorder, BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, index < visibleItems.Count - 1 || ddayItems.Count > 5 ? 1 : 0),
                         CornerRadius = isToday ? new CornerRadius(8) : new CornerRadius(0), Margin = isToday ? new Thickness(0, 1, 0, 2) : new Thickness(0),
                         Padding = isToday ? new Thickness(7, 5, 7, 5) : new Thickness(2, 5, 2, 5), Child = content });
                 }
@@ -61,9 +63,10 @@ namespace FamilyPlanner
                     toggle.Click += delegate { ddayCardsExpanded = !ddayCardsExpanded; RenderDetail(); }; stack.Children.Add(toggle);
                 }
             }
-            var ddayCard = new Border { Background = ddayBackground, BorderBrush = ddayBorder, BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, ddaySectionCollapsed ? 9 : 7), Margin = new Thickness(0, 8, 0, 0), Tag = "special:D-Day", Child = stack };
-            EnableDetailCardOrder(titleButton, ddayCard, "special:D-Day", false); detail.Children.Add(ddayCard);
+            var ddayCard = SpecialDetailCard(ddayBackground, ddayBorder,
+                new Thickness(10, 8, 10, ddaySectionCollapsed ? 8 : 7), "special:D-Day", stack);
+            TemporarySegmentPaletteTool.AttachDetailCard(ddayCard, (TextBlock)titleButton.Content, "special:D-Day");
+            EnableDetailCardOrder(heading, ddayCard, "special:D-Day", false); detail.Children.Add(ddayCard);
         }
 
         Button SmallSectionButton(string text, string background, string border, string foreground)
@@ -80,10 +83,11 @@ namespace FamilyPlanner
 
         Button SectionTitleButton(string text, Brush foreground, string tooltip, RoutedEventHandler click, double height = 24)
         {
-            var title = new TextBlock { Text = text, FontSize = Ui(13), FontWeight = FontWeights.Bold,
+            var title = new TextBlock { Text = text, FontSize = Ui(12), FontWeight = FontWeights.Bold,
                 Foreground = foreground, VerticalAlignment = VerticalAlignment.Center };
             var button = new Button { Content = title, Height = height, Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0), Padding = new Thickness(0), Margin = new Thickness(0) };
+                BorderThickness = new Thickness(0), Padding = new Thickness(0), Margin = new Thickness(0), VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left };
             button.HorizontalContentAlignment = HorizontalAlignment.Left; button.VerticalContentAlignment = VerticalAlignment.Center;
             button.Cursor = Cursors.Hand; button.ToolTip = tooltip;
             var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -97,7 +101,7 @@ namespace FamilyPlanner
 
         void AddAnniversaryCards()
         {
-            if (!settings.AnniversaryVisible) return;
+            if (!settings.AnniversaryEnabled || !settings.AnniversaryVisible) return;
             var anniversaries = items.Where(x => !string.IsNullOrWhiteSpace(x.AnniversaryType) && IsItemVisible(x) && x.AnniversaryDate.Year >= 1900)
                 .GroupBy(x => !string.IsNullOrWhiteSpace(x.GoogleRecurringEventId) ? "g:" + x.GoogleRecurringEventId :
                     !string.IsNullOrWhiteSpace(x.SeriesId) ? "s:" + x.SeriesId : "t:" + x.Title + "|" + x.AnniversaryDate.ToString("MMdd"))
@@ -108,32 +112,29 @@ namespace FamilyPlanner
             var anniversaryForeground = new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, anniversaryColor));
             var anniversaryBackground = new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, anniversaryColor));
             var anniversaryBorder = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, anniversaryColor));
-            var heading = new DockPanel { Height = anniversarySectionCollapsed ? 17 : 24, Margin = new Thickness(1, 0, 3, anniversarySectionCollapsed ? 0 : 7), LastChildFill = true };
-            var makeLabel = new TextBlock { Text = "만들기", Foreground = anniversaryForeground, FontSize = Ui(10), FontWeight = FontWeights.SemiBold,
-                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            var makeFace = new Border { Width = 43, Height = 22, Background = anniversaryBackground, BorderBrush = anniversaryBorder,
-                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Child = makeLabel,
-                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            var make = Button("", delegate { OpenAnniversary(null); }, 45); make.Content = makeFace; make.Height = 24;
-            make.Background = Brushes.Transparent; make.BorderThickness = new Thickness(0); make.Padding = new Thickness(0);
-            make.HorizontalContentAlignment = HorizontalAlignment.Center; make.VerticalContentAlignment = VerticalAlignment.Center;
-            make.Cursor = Cursors.Hand; make.ToolTip = "기념일 만들기";
-            make.Template = ContentOnlyButtonTemplate();
-            if (!anniversarySectionCollapsed) { DockPanel.SetDock(make, Dock.Right); heading.Children.Add(make); }
+            var heading = new DockPanel { Height = 24, Margin = new Thickness(1, 0, 3, 1), LastChildFill = true };
             var titleButton = SectionTitleButton("✦  기념일 (" + anniversaries.Count + "개)", anniversaryForeground,
-                anniversarySectionCollapsed ? "기념일 펼치기" : "기념일 접기", delegate { anniversarySectionCollapsed = !anniversarySectionCollapsed; RenderDetail(); }, heading.Height);
+                anniversarySectionCollapsed ? "기념일 펼치기" : "기념일 접기", delegate { anniversarySectionCollapsed = !anniversarySectionCollapsed; RenderDetail(); }, 18);
+            var make = IconButton("", delegate { OpenAnniversary(null); }, 23); make.Width = 23; make.Height = 23;
+            make.Content = HeaderGlyph("add", anniversaryForeground); make.ToolTip = "기념일 만들기";
+            make.Padding = new Thickness(0); make.Background = Brushes.Transparent; make.Foreground = anniversaryForeground;
+            make.BorderBrush = anniversaryBorder; make.BorderThickness = new Thickness(1); make.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(make, Dock.Right); heading.Children.Add(make);
             heading.Children.Add(titleButton);
             stack.Children.Add(heading);
             if (anniversarySectionCollapsed)
             {
-                var collapsedCard = new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, 9), Margin = new Thickness(0, 8, 0, 0), Tag = "special:기념일", Child = stack };
-                EnableDetailCardOrder(titleButton, collapsedCard, "special:기념일", false); detail.Children.Add(collapsedCard);
+                var collapsedCard = SpecialDetailCard(anniversaryBackground, anniversaryBorder,
+                    new Thickness(10, 8, 10, 8), "special:기념일", stack);
+                TemporarySegmentPaletteTool.AttachDetailCard(collapsedCard, (TextBlock)titleButton.Content, "special:기념일");
+                EnableDetailCardOrder(heading, collapsedCard, "special:기념일", false); detail.Children.Add(collapsedCard);
                 return;
             }
             var visibleCount = AnniversaryVisibleCount(anniversaries.Count, anniversaryCardsExpanded);
-            foreach (var item in anniversaries.Take(visibleCount))
+            var visibleItems = anniversaries.Take(visibleCount).ToList();
+            for (var index = 0; index < visibleItems.Count; index++)
             {
+                var item = visibleItems[index];
                 var isToday = AnniversaryRemainingDays(item.AnniversaryDate, DateTime.Today) == 0;
                 var content = new TextBlock { Tag = item, Cursor = Cursors.Hand, Text = "✦ " + item.Title + " · " + AnniversarySummary(item, DateTime.Today),
                     FontSize = Ui(11), Foreground = anniversaryForeground, FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
@@ -145,7 +146,7 @@ namespace FamilyPlanner
                     else e.Handled = true;
                 };
                 stack.Children.Add(new Border { Background = isToday ? anniversaryBackground : Brushes.Transparent,
-                    BorderBrush = anniversaryBorder, BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, 1),
+                    BorderBrush = anniversaryBorder, BorderThickness = isToday ? new Thickness(1) : new Thickness(0, 0, 0, index < visibleItems.Count - 1 || anniversaries.Count > 5 ? 1 : 0),
                     CornerRadius = isToday ? new CornerRadius(8) : new CornerRadius(0), Margin = isToday ? new Thickness(0, 1, 0, 2) : new Thickness(0),
                     Padding = isToday ? new Thickness(7, 5, 7, 5) : new Thickness(2, 5, 2, 5), Child = content });
             }
@@ -158,8 +159,18 @@ namespace FamilyPlanner
                 toggle.Click += delegate { anniversaryCardsExpanded = !anniversaryCardsExpanded; RenderDetail(); };
                 stack.Children.Add(toggle);
             }
-            var anniversaryCard = new Border { Background = anniversaryBackground, BorderBrush = anniversaryBorder, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8, 10, 7), Margin = new Thickness(0, 8, 0, 0), Tag = "special:기념일", Child = stack };
-            EnableDetailCardOrder(titleButton, anniversaryCard, "special:기념일", false); detail.Children.Add(anniversaryCard);
+            var anniversaryCard = SpecialDetailCard(anniversaryBackground, anniversaryBorder,
+                new Thickness(10, 8, 10, 7), "special:기념일", stack);
+            TemporarySegmentPaletteTool.AttachDetailCard(anniversaryCard, (TextBlock)titleButton.Content, "special:기념일");
+            EnableDetailCardOrder(heading, anniversaryCard, "special:기념일", false); detail.Children.Add(anniversaryCard);
+        }
+
+        static Border SpecialDetailCard(Brush background, Brush borderBrush, Thickness padding, string tag, UIElement content)
+        {
+            var liftSurface = new Border { Background = background, CornerRadius = new CornerRadius(11),
+                Padding = padding, Child = content };
+            return new Border { Background = Brushes.Transparent, BorderBrush = borderBrush, BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 4, 0, 7), Tag = tag, Child = liftSurface };
         }
 
         static ControlTemplate ContentOnlyButtonTemplate()

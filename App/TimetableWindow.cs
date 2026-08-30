@@ -34,11 +34,12 @@ namespace FamilyPlanner
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition());
             var header = new DockPanel { Margin = new Thickness(0, 0, 0, 8), Background = Brushes.Transparent };
-            var close = OnharuPopupChrome.CloseButton(this); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
-            var save = OnharuPopupChrome.PrimaryButton("✓  시간표 저장", 118);
+            OnharuPopupChrome.StyleHeader(header);
+            var close = OnharuPopupChrome.ToolCloseButton(this); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
+            var save = OnharuPopupChrome.ActionButton("✓  시간표 저장", 118);
             save.Height = 32; save.Margin = new Thickness(0, 0, 8, 0);
             DockPanel.SetDock(save, Dock.Right); header.Children.Add(save);
-            var toggle = OnharuPopupChrome.Button("⚙  시간표 설정", 104, "#EEF2FF", "#4338CA"); toggle.Margin = new Thickness(0, 0, 8, 0);
+            var toggle = OnharuPopupChrome.DisclosureButton("시간표 설정", 112, false); toggle.Margin = new Thickness(0, 0, 8, 0);
             DockPanel.SetDock(toggle, Dock.Right); header.Children.Add(toggle);
             header.Children.Add(OnharuPopupChrome.FeatureTitle("▦", "나의 시간표"));
             OnharuPopupChrome.EnableDrag(this, header);
@@ -49,21 +50,23 @@ namespace FamilyPlanner
             };
             root.Children.Add(header);
             BuildSettings(); settingsPanel.Visibility = Visibility.Collapsed; Grid.SetRow(settingsPanel, 1); root.Children.Add(settingsPanel);
-            toggle.Click += delegate { var open = settingsPanel.Visibility != Visibility.Visible; settingsPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed; toggle.Content = open ? "⌃  설정 접기" : "⚙  시간표 설정"; };
+            toggle.Click += delegate { var open = settingsPanel.Visibility != Visibility.Visible; settingsPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed; OnharuPopupChrome.SetDisclosure(toggle, "시간표 설정", open); };
             save.Click += delegate
             {
                 if (settingsPanel.Visibility == Visibility.Visible) Apply(); else Capture();
                 Capture(); TimetableStorage.Save(data);
-                settingsPanel.Visibility = Visibility.Collapsed; toggle.Content = "⚙  시간표 설정";
+                settingsPanel.Visibility = Visibility.Collapsed; OnharuPopupChrome.SetDisclosure(toggle, "시간표 설정", false);
                 save.Content = "✓  저장 완료";
                 var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
                 timer.Tick += delegate { timer.Stop(); save.Content = "✓  시간표 저장"; };
                 timer.Start();
             };
             var scroll = new ScrollViewer { Content = table, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, PanningMode = PanningMode.Both };
+            scroll.Resources["OnharuScrollThumb"] = Brush("#B7ACE8");
+            scroll.Resources["OnharuScrollTrack"] = Brush("#F1F5F9");
             scroll.ScrollChanged += delegate { FreezeTableHeaders(scroll); };
             scroll.Loaded += delegate { UiRound.SoftenScrollBars(scroll); };
-            var tableShell = new Border { Background = Brush("#FAFAFF"), BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(0), Child = scroll };
+            var tableShell = new Border { Background = Brush("#FAFAFF"), BorderBrush = Brush("#D5D8DE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(0), Child = scroll };
             tableShell.SizeChanged += delegate
             {
                 scroll.Clip = new RectangleGeometry(new Rect(0, 0, Math.Max(0, scroll.ActualWidth), Math.Max(0, scroll.ActualHeight)), 10, 10);
@@ -84,7 +87,7 @@ namespace FamilyPlanner
             row.Children.Add(Gap()); row.Children.Add(Label("시작", 34)); startTime.Text = data.StartHour.ToString("00") + ":" + data.StartMinute.ToString("00"); row.Children.Add(startTime);
             row.Children.Add(Gap()); row.Children.Add(Label("수업", 34)); foreach (var v in new[] { 30, 40, 45, 50, 60, 75, 90, 120 }) lessonMinutes.Items.Add(Item(v + "분", v)); Select(lessonMinutes, data.LessonMinutes); SettingsWindow.StyleComboBox(lessonMinutes); row.Children.Add(lessonMinutes);
             row.Children.Add(Gap()); row.Children.Add(Label("쉬는 시간", 58)); foreach (var v in new[] { 0, 5, 10, 15, 20, 30 }) breakMinutes.Items.Add(Item(v + "분", v)); Select(breakMinutes, data.BreakMinutes); SettingsWindow.StyleComboBox(breakMinutes); row.Children.Add(breakMinutes);
-            var apply = OnharuPopupChrome.Button("적용", 58, "#E0E7FF", "#4338CA"); apply.Height = 28; apply.Margin = new Thickness(10, 0, 0, 0); apply.FontWeight = FontWeights.SemiBold; apply.Click += delegate { Apply(); }; row.Children.Add(apply); panel.Children.Add(row);
+            var apply = OnharuPopupChrome.Button("적용", 58, OnharuPopupChrome.SupportSurfaceColor, "#334155"); apply.Height = 28; apply.Margin = new Thickness(10, 0, 0, 0); apply.FontWeight = FontWeights.SemiBold; apply.Click += delegate { Apply(); }; row.Children.Add(apply); panel.Children.Add(row);
             var fontRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 30 };
             fontRow.Children.Add(Label("글자 크기", 84));
             foreach (var option in new[] { Item("작게", 115), Item("보통", 130), Item("크게", 150) })
@@ -94,7 +97,7 @@ namespace FamilyPlanner
                     IsChecked = Math.Abs(data.FontSize - size) < .2, Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center });
             }
             fontRow.Children.Add(fontOptions); panel.Children.Add(fontRow);
-            settingsPanel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 9, 12, 8), Child = panel });
+            settingsPanel.Children.Add(new Border { Background = Brush(OnharuPopupChrome.SupportSurfaceColor), BorderBrush = Brush("#D5D8DE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 9, 12, 8), Child = panel });
         }
 
         void Apply()
@@ -124,7 +127,7 @@ namespace FamilyPlanner
         void FreezeTableHeaders(ScrollViewer scroll) { foreach (UIElement child in table.Children) { var row = Grid.GetRow(child); var column = Grid.GetColumn(child); if (row == 0 || column == 0) { child.RenderTransform = new TranslateTransform(column == 0 ? scroll.HorizontalOffset : 0, row == 0 ? scroll.VerticalOffset : 0); Panel.SetZIndex(child, row == 0 && column == 0 ? 3 : 2); } } }
         void Cell(UIElement child, int column, int row, string background) { var border = new Border { Background = Brush(background), BorderBrush = Brush("#E2E8F0"), BorderThickness = new Thickness(0, 0, column == table.ColumnDefinitions.Count - 1 ? 0 : 1, row == table.RowDefinitions.Count - 1 ? 0 : 1), Child = child }; Grid.SetColumn(border, column); Grid.SetRow(border, row); table.Children.Add(border); }
         static TextBox Editor(string text, TextAlignment alignment, double fontSize) { return new TextBox { Text = text ?? "", BorderThickness = new Thickness(0), Background = Brushes.Transparent, Padding = new Thickness(7, 4, 7, 4), TextAlignment = alignment, VerticalContentAlignment = VerticalAlignment.Center, Foreground = Brush("#334155"), FontSize = fontSize, Cursor = Cursors.IBeam, SelectionBrush = Brush("#C7D2FE") }; }
-        static TextBox Box(double width) { var box = new TextBox { Width = width, Height = 28, Padding = new Thickness(7, 4, 7, 3), Background = Brushes.White, BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), VerticalContentAlignment = VerticalAlignment.Center, SelectionBrush = Brush("#C7D2FE") }; UiRound.StyleTextBox(box, 8); return box; }
+        static TextBox Box(double width) { var box = new TextBox { Width = width, Height = 28, Padding = new Thickness(7, 4, 7, 3), Background = Brushes.White, BorderBrush = Brush("#D5D8DE"), BorderThickness = new Thickness(1), VerticalContentAlignment = VerticalAlignment.Center, SelectionBrush = Brush("#C7D2FE") }; UiRound.StyleTextBox(box, 8); return box; }
         static TextBlock Label(string text, double width) { return new TextBlock { Text = text, Width = width, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center }; }
         static TextBlock Center(string text, string color) { return new TextBlock { Text = text, FontWeight = FontWeights.Bold, Foreground = Brush(color), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }; }
         static Border Gap() { return new Border { Width = 10 }; }

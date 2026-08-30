@@ -236,7 +236,7 @@ namespace FamilyPlanner
                     {
                         settings.DefaultCalendarKey = "local:business"; settings.DefaultAllDay = true;
                         settings.DefaultStartHour = 9; settings.DefaultStartMinute = 0;
-                        settings.DefaultDurationMinutes = 30; settings.DefaultReminderMinutes = -1; settings.Version = 8;
+                        settings.DefaultReminderMinutes = -1; settings.Version = 8;
                     }
                     if (settings.Version < 9) { settings.CompletedDisplayMode = "normal"; settings.Version = 9; }
                     if (settings.Version < 10) { settings.StartViewMode = "today"; settings.LastShownDate = DateTime.Today; settings.Version = 10; }
@@ -329,7 +329,6 @@ namespace FamilyPlanner
                     }
                     if (settings.Version < 41)
                     {
-                        settings.LockPalettePlacement = false;
                         settings.Version = 41;
                     }
                     if (settings.Version < 42)
@@ -340,6 +339,21 @@ namespace FamilyPlanner
                     if (settings.Version < 43) { settings.ReminderPosition = "screen"; settings.Version = 43; }
                     if (settings.Version < 44) { settings.RemindersEnabled = true; settings.Version = 44; }
                     if (settings.Version < 45) { settings.ShowSearchIcon = true; settings.ShowRangeSwitch = true; settings.ShowThemeSwitch = true; settings.ShowPositionSwitch = true; settings.Version = 45; }
+                    if (settings.Version < 46)
+                    {
+                        settings.LocalBusinessEnabled = true; settings.LocalPersonalEnabled = true; settings.LocalBaseballEnabled = true;
+                        settings.DdayEnabled = true; settings.AnniversaryEnabled = true; settings.Version = 46;
+                    }
+                    if (settings.Version < 47) { settings.IncompleteTodoLookbackMonths = 1; settings.Version = 47; }
+                    if (settings.Version < 48)
+                    {
+                        if (settings.ButtonColorOverrides != null)
+                        {
+                            settings.ButtonColorOverrides.Remove("classic|automation:OnharuDetailScroll");
+                            settings.ButtonColorOverrides.Remove("dark|automation:OnharuDetailScroll");
+                        }
+                        settings.Version = 48;
+                    }
                     if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();
                     if (settings.DetailOrderMode != "time" && settings.DetailOrderMode != "category") settings.DetailOrderMode = "category";
                     if (settings.ReminderPosition != "onharu") settings.ReminderPosition = "screen";
@@ -375,14 +389,47 @@ namespace FamilyPlanner
                     settings.VisibleWeekCount = Math.Max(1, Math.Min(6, settings.VisibleWeekCount));
                     settings.DefaultStartHour = Math.Max(0, Math.Min(23, settings.DefaultStartHour));
                     settings.DefaultStartMinute = Math.Max(0, Math.Min(59, settings.DefaultStartMinute));
-                    if (!new[] { 30, 60, 90, 120 }.Contains(settings.DefaultDurationMinutes)) settings.DefaultDurationMinutes = 30;
                     settings.QuietStartHour = Math.Max(0, Math.Min(23, settings.QuietStartHour));
                     settings.QuietEndHour = Math.Max(0, Math.Min(23, settings.QuietEndHour));
                     if (settings.GoogleCalendars == null) settings.GoogleCalendars = new List<GoogleCalendarSetting>();
-                    if (settings.CustomPalette == null) settings.CustomPalette = new List<string>();
+                    if (settings.CustomPalette == null || settings.CustomPalette.Count < 6)
+                        settings.CustomPalette = OnharuColorPresets.SoftWorkspacePalette();
                     if (settings.PaletteNames == null) settings.PaletteNames = new List<string>();
                     if (settings.SavedPalettes == null) settings.SavedPalettes = new List<string>();
-                    settings.SelectedPaletteIndex = Math.Max(0, Math.Min(8, settings.SelectedPaletteIndex));
+                    if (settings.PaletteDefinitionVersion < 2)
+                    {
+                        for (var i = 0; i < Math.Min(5, settings.SavedPalettes.Count); i++) settings.SavedPalettes[i] = "";
+                        settings.PaletteDefinitionVersion = 2;
+                    }
+                    if (settings.PaletteDefinitionVersion < 3)
+                    {
+                        while (settings.SavedPalettes.Count < 3) settings.SavedPalettes.Add("");
+                        var clear = settings.SavedPalettes[0];
+                        settings.SavedPalettes[0] = settings.SavedPalettes[1];
+                        settings.SavedPalettes[1] = settings.SavedPalettes[2];
+                        settings.SavedPalettes[2] = clear;
+                        if (settings.SelectedPaletteIndex == 0) settings.SelectedPaletteIndex = 2;
+                        else if (settings.SelectedPaletteIndex == 1) settings.SelectedPaletteIndex = 0;
+                        else if (settings.SelectedPaletteIndex == 2) settings.SelectedPaletteIndex = 1;
+                        settings.PaletteDefinitionVersion = 3;
+                    }
+                    if (settings.PaletteDefinitionVersion < 4)
+                    {
+                        var presetIndex = settings.SelectedPaletteIndex;
+                        if (presetIndex >= 0 && presetIndex < 3)
+                        {
+                            var palette = OnharuColorPresets.Palettes()[presetIndex];
+                            var oldPositions = new[] { 5, 8, 3, 10, 2, 6 };
+                            var values = new[] { settings.BusinessColor, settings.PersonalColor, settings.BaseballColor,
+                                settings.DdayColor, settings.AnniversaryColor, settings.HolidayColor };
+                            for (var i = 0; i < values.Length; i++)
+                                if (string.Equals(values[i], palette[oldPositions[i]], StringComparison.OrdinalIgnoreCase)) values[i] = palette[i];
+                            settings.BusinessColor = values[0]; settings.PersonalColor = values[1]; settings.BaseballColor = values[2];
+                            settings.DdayColor = values[3]; settings.AnniversaryColor = values[4]; settings.HolidayColor = values[5];
+                        }
+                        settings.PaletteDefinitionVersion = 4;
+                    }
+                    settings.SelectedPaletteIndex = Math.Max(0, Math.Min(4, settings.SelectedPaletteIndex));
                     if (settings.DateBackgroundColors == null) settings.DateBackgroundColors = new Dictionary<string, string>();
                     if (settings.GoogleOptionsVersion == 0)
                     {

@@ -46,6 +46,12 @@ explorerFrame.Disable();
 
 후보 17도 Opacity 속성 지정과 DWM 실제 표시 사이의 비동기성을 제거하지는 못한다. 따라서 고정→이동에서 매우 간헐적인 한 프레임 깜빡임이 남을 수 있다. 이는 2.1의 알려진 제한으로 기록하되, 빈도가 낮고 다른 입력·합성 기능을 훼손하지 않는 현재 방식을 공식 채택한다.
 
+## 2026-08-29 회귀 방지
+
+고정 상태 `Ctrl+Z` 지원을 위해 Explorer 루트에 `SetForegroundWindow()`를 호출하면 모드 전환 클릭 순간 바탕화면 전체 재도색이 발생한다. 고정 레이어 입력은 필요한 경우 `SysListView32`에 `SetFocus()`만 부여하며 Explorer 루트를 전경 창으로 올리지 않는다. 품질 게이트는 이 호출의 재도입을 실패로 처리한다.
+
+ONHARU 2.2에서는 후보 17의 최종 교체 순서를 유지하되, WPF HWND를 cloak한 상태에서 정상 Opacity 표면을 두 Render turn 준비한 후 `uncloak → Explorer frame disable`을 실행한다. 과거 후보 18처럼 opacity-zero WPF를 화면에 노출한 상태로 기다리지 않으므로 wallpaper-only 프레임의 노출 빈도를 줄이면서 위치·크기를 보존한다.
+
 ## 향후 해결 방향
 
 앞으로 이 문제를 계속 연구하되 2.1 공식 경로를 직접 덮어쓰지 않고 항상 별도 `TransitionCandidates` 후보로 시험한다.
@@ -64,4 +70,3 @@ explorerFrame.Disable();
 - 달력 위에 바탕화면 아이콘이 있는 경우와 없는 경우를 모두 검사한다.
 - 빠른 왕복 토글 후 첫 클릭, 마우스 커서, 선택 날짜가 정상인지 확인한다.
 - `RDW_ERASE`, `DwmFlush`, `CompositionTarget.Rendering` 전환 게이트가 공식 소스에 다시 들어오지 않았는지 품질 게이트로 확인한다.
-

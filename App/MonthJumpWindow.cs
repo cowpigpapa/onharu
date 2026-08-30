@@ -79,7 +79,7 @@ namespace FamilyPlanner
                 SelectedMonth = new DateTime(selectedYear, selectedMonth, 1); DialogResult = true;
             };
             Grid.SetColumn(move, 1); actions.Children.Add(move); panel.Children.Add(actions);
-            Content = UiRound.EmphasizePopup(new Border { Background = B("#FFFAFCFF"), CornerRadius = new CornerRadius(18), Child = panel });
+            Content = OnharuPopupChrome.Shell(panel);
             PreviewKeyDown += delegate(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) { move.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); e.Handled = true; } else if (e.Key == Key.Escape) { DialogResult = false; e.Handled = true; } };
         }
 

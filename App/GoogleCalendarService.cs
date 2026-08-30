@@ -109,8 +109,12 @@ namespace FamilyPlanner
         public static async Task<List<GoogleCalendarSetting>> SyncAsync(List<PlannerItem> local, List<GoogleCalendarSetting> saved)
         {
             await EnsureToken();
-            foreach (var item in local.Where(x => !x.GoogleTaskEvent && x.Category == "개인일정" && !string.IsNullOrWhiteSpace(x.GoogleCalendarId) && (string.IsNullOrWhiteSpace(x.GoogleEventId) || x.PendingGoogleSync)).ToList())
-            { await UpsertAsync(item); item.PendingGoogleSync = false; }
+            var uploadedEventIds = new HashSet<string>();
+            foreach (var item in local.Where(x => !x.GoogleTaskEvent && !string.IsNullOrWhiteSpace(x.GoogleCalendarId) && (string.IsNullOrWhiteSpace(x.GoogleEventId) || x.PendingGoogleSync)).ToList())
+            {
+                await UpsertAsync(item); item.PendingGoogleSync = false;
+                if (!string.IsNullOrWhiteSpace(item.GoogleEventId)) uploadedEventIds.Add(item.GoogleEventId);
+            }
 
             var from = DateTime.Today.AddYears(-1).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
             var to = DateTime.Today.AddYears(2).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -146,8 +150,9 @@ namespace FamilyPlanner
                     if (item == null) { item = new PlannerItem { Id = Guid.NewGuid().ToString(), GoogleEventId = remote.Id }; local.Add(item); }
                     ApplyRemote(item, remote, calendar);
                 }
-                local.RemoveAll(x => !string.IsNullOrWhiteSpace(x.GoogleEventId) && !x.CreatedInOnharu && x.GoogleCalendarId == entry.Id &&
-                    InSyncRange(x.Start) && !remoteIds.Contains(x.GoogleEventId));
+                local.RemoveAll(x => !string.IsNullOrWhiteSpace(x.GoogleEventId) && x.GoogleCalendarId == entry.Id &&
+                    InSyncRange(x.Start) && !x.PendingGoogleSync && !uploadedEventIds.Contains(x.GoogleEventId) &&
+                    !remoteIds.Contains(x.GoogleEventId));
             }
             return calendars;
         }
@@ -194,7 +199,25 @@ namespace FamilyPlanner
             await EnsureToken();
             var calendarId = string.IsNullOrWhiteSpace(item.GoogleCalendarId) ? "primary" : item.GoogleCalendarId;
             var eventId = wholeSeries && !string.IsNullOrWhiteSpace(item.GoogleRecurringEventId) ? item.GoogleRecurringEventId : item.GoogleEventId;
-            await Send<object>(HttpMethod.Delete, "https://www.googleapis.com/calendar/v3/calendars/" + E(calendarId) + "/events/" + E(eventId), null);
+            try
+            {
+                await Send<object>(HttpMethod.Delete, "https://www.googleapis.com/calendar/v3/calendars/" + E(calendarId) + "/events/" + E(eventId), null);
+            }
+            catch (InvalidOperationException error)
+            {
+                // 동기화 전에 Google 쪽에서 먼저 삭제된 일정은 원하는 최종 상태가
+                // 이미 달성된 것이므로 로컬 캐시 삭제를 계속 진행한다.
+                if (!IsAlreadyDeleted(error)) throw;
+            }
+        }
+
+        internal static bool IsAlreadyDeleted(Exception error)
+        {
+            var message = error == null ? null : error.Message;
+            return !string.IsNullOrWhiteSpace(message) &&
+                (message.IndexOf("Resource has been deleted", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 message.IndexOf("\"code\": 410", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 message.IndexOf("\"code\": 404", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         public static async Task TrimSeriesBeforeAsync(PlannerItem item)
@@ -256,10 +279,12 @@ namespace FamilyPlanner
         {
             var e = new GoogleEvent { Summary = item.Title, Description = item.Notes, ExtendedProperties = new GoogleExtended { Private = new Dictionary<string, string> {
                 { "onharu", "1" }, { "onharuTodo", item.IsTodo ? "1" : "0" },
+                { "onharuCategory", item.Category ?? "개인일정" },
                 { "onharuRollover", string.IsNullOrWhiteSpace(item.RolloverMode) ? "0" : "1" },
                 { "onharuRolloverMode", item.RolloverMode ?? "none" }, { "onharuReminder", item.ReminderMinutes.ToString() },
                 { "onharuImportant", item.Important ? "1" : "0" }, { "onharuDday", item.ShowDday ? "1" : "0" },
                 { "onharuImportantBackground", item.ImportantBackgroundColor ?? "" }, { "onharuImportantText", item.ImportantTextColor ?? "" },
+                { "onharuSportsGameId", item.SportsGameId ?? "" },
                 { "onharuAnniversaryDate", item.AnniversaryDate.Year >= 1900 ? item.AnniversaryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "" },
                 { "onharuRecurrence", item.RecurrenceFrequency ?? "" },
                 { "onharuRecurrenceMode", item.RecurrenceMode ?? "" }, { "onharuRecurrenceDays", item.RecurrenceDays ?? "" },
@@ -288,14 +313,15 @@ namespace FamilyPlanner
             item.GoogleReadOnly = !calendar.Editable || special;
             item.GoogleRecurringEventId = e.RecurringEventId;
             var holiday = (calendar.Name ?? "").Contains("공휴일") || (calendar.Id ?? "").IndexOf("holiday", StringComparison.OrdinalIgnoreCase) >= 0;
-            item.Category = holiday ? "국경일" : "개인일정";
+            string value; var p = e.ExtendedProperties == null ? null : e.ExtendedProperties.Private;
+            item.Category = holiday ? "국경일" : p != null && p.TryGetValue("onharuCategory", out value) && value == "야구" ? "야구" : "개인일정";
             item.GoogleTaskEvent = false;
             item.Notes = e.Description;
             item.AllDay = !string.IsNullOrWhiteSpace(e.Start.Date);
             item.Start = item.AllDay ? System.DateTime.ParseExact(e.Start.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture) : DateTimeOffset.Parse(e.Start.DateTime, CultureInfo.InvariantCulture).LocalDateTime;
             item.End = item.AllDay ? System.DateTime.ParseExact(e.End.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture) : DateTimeOffset.Parse(e.End.DateTime, CultureInfo.InvariantCulture).LocalDateTime;
-            string value; var p = e.ExtendedProperties == null ? null : e.ExtendedProperties.Private;
             item.OnharuManaged = p != null && p.TryGetValue("onharu", out value) && value == "1";
+            if (p != null && p.TryGetValue("onharuSportsGameId", out value) && !string.IsNullOrWhiteSpace(value)) item.SportsGameId = value;
             item.IsTodo = !special && (p != null && p.TryGetValue("onharuTodo", out value) ? value == "1" : !item.AllDay);
             int reminder;
             if (p != null && p.TryGetValue("onharuReminder", out value) && int.TryParse(value, out reminder))

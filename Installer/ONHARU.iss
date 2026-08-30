@@ -1,15 +1,26 @@
 #define AppName "ONHARU"
+#ifdef CandidateBuild
+#define AppVersion "2.2.6"
+#define SetupAppId "{{C43E8BF2-2B16-4CC7-A85B-D18C2AA7D706}"
+#define SetupDir "{localappdata}\Programs\ONHARU"
+#define SetupOutputDir "..\Release\Test"
+#define SetupOutputName "ONHARU-2.2.6-Test-Setup"
+#define StageDir "..\Release\Test\ONHARU-2.2.6-Test"
+#else
 #define AppVersion "2.2.4"
 #ifdef TestBuild
 #define SetupAppId "{{D61EF3C4-0B0D-44A9-B6CD-79F785C74E54}"
 #define SetupDir "{localappdata}\Programs\ONHARU-InstallTest"
 #define SetupOutputDir "..\Release\InstallTestInstaller"
 #define SetupOutputName "ONHARU-2.2.4-InstallTest"
+#define StageDir "..\Release\ONHARU-2.2.4"
 #else
 #define SetupAppId "{{C43E8BF2-2B16-4CC7-A85B-D18C2AA7D706}"
 #define SetupDir "{localappdata}\Programs\ONHARU"
 #define SetupOutputDir "..\Release\Installer"
 #define SetupOutputName "ONHARU-2.2.4-Setup"
+#define StageDir "..\Release\ONHARU-2.2.4"
+#endif
 #endif
 
 [Setup]
@@ -66,11 +77,11 @@ Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:Sho
 Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:AutomaticStart}"; Flags: checkedonce
 
 [Files]
-Source: "..\Release\ONHARU-2.2.4\ONHARU.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.4\ONHARU.exe.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.4\Onharu.LayerHost.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.4\Onharu.DesktopHook.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Release\ONHARU-2.2.4\README.md"; DestDir: "{app}"; DestName: "ONHARU-사용설명서.md"; Flags: ignoreversion
+Source: "{#StageDir}\ONHARU.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#StageDir}\ONHARU.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#StageDir}\Onharu.LayerHost.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#StageDir}\Onharu.DesktopHook.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#StageDir}\README.md"; DestDir: "{app}"; DestName: "ONHARU-사용설명서.md"; Flags: ignoreversion
 
 [InstallDelete]
 Type: files; Name: "{app}\layer-host.log"
@@ -94,6 +105,23 @@ Type: files; Name: "{localappdata}\Onharu\sports-kbo-parse-*.json"
 [Code]
 var
   DeleteOnharuUserData: Boolean;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+  LayerHostPath: String;
+begin
+  Result := '';
+  LayerHostPath := ExpandConstant('{app}\Onharu.LayerHost.exe');
+  if FileExists(LayerHostPath) then
+  begin
+    Exec(LayerHostPath, '--stop', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(1500);
+  end;
+  { A previous host can outlive the UI briefly while Explorer releases the hook DLL. }
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /T /IM Onharu.LayerHost.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(750);
+end;
 
 function InitializeUninstall(): Boolean;
 var

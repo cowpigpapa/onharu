@@ -43,7 +43,7 @@ namespace FamilyPlanner
             {
                 if (blockingDialog == window) blockingDialog = null;
                 blockingDialogDepth = Math.Max(0, blockingDialogDepth - 1);
-                if (!applicationExitRequested) IsHitTestVisible = wasHitTestVisible;
+                if (!applicationExitRequested) IsHitTestVisible = blockingDialogDepth == 0 || wasHitTestVisible;
             }
         }
 

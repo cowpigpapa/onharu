@@ -58,12 +58,16 @@ namespace FamilyPlanner
         [STAThread]
         public static void Main()
         {
+            var localTest = Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetExecutingAssembly().Location)
+                .IndexOf("local-test", StringComparison.OrdinalIgnoreCase) >= 0;
+            var instanceName = localTest ? "Local\\Onharu.LocalTest.SingleInstance" : "Local\\Onharu.SingleInstance";
+            var showEventName = localTest ? "Local\\Onharu.LocalTest.ShowOnLaunch" : ShowEventName;
             bool first;
-            using (var singleInstance = new Mutex(true, "Local\\Onharu.SingleInstance", out first))
+            using (var singleInstance = new Mutex(true, instanceName, out first))
             {
                 if (!first)
                 {
-                    try { using (var show = EventWaitHandle.OpenExisting(ShowEventName)) show.Set(); }
+                    try { using (var show = EventWaitHandle.OpenExisting(showEventName)) show.Set(); }
                     catch { }
                     return;
                 }
@@ -72,10 +76,13 @@ namespace FamilyPlanner
                     LegacyMigration.CopyV1UserStateOnce();
                     V21Migration.BackupPreUpgradeOnce();
                     AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
-                    { ErrorLog.Write("Unhandled application error", e.ExceptionObject as Exception); };
+                    {
+                        var error = e.ExceptionObject as Exception;
+                        ErrorLog.Write("Unhandled application error", error, error == null ? null : error.StackTrace);
+                    };
                     TaskScheduler.UnobservedTaskException += delegate(object sender, UnobservedTaskExceptionEventArgs e)
                     { ErrorLog.Write("Unobserved task error", e.Exception); };
-                    using (var show = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName))
+                    using (var show = new EventWaitHandle(false, EventResetMode.AutoReset, showEventName))
                     {
                         var app = new Application();
                         var window = new MainWindow();

@@ -56,13 +56,16 @@ namespace FamilyPlanner
         readonly TextBox customReminderValue = new TextBox { Text = "15", Width = 48, Height = 27, Padding = new Thickness(4, 0, 4, 0), TextAlignment = TextAlignment.Center,
             IsEnabled = false, MaxLength = 3, VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly ComboBox customReminderUnit = new ComboBox { Width = 80, Height = 27, IsEnabled = false, Margin = new Thickness(6, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        readonly CheckBox important = new CheckBox { Content = "★ 중요 일정", Foreground = new SolidColorBrush(Color.FromRgb(242, 13, 122)),
-            Background = new SolidColorBrush(Color.FromRgb(255, 241, 247)), Padding = new Thickness(3, 1, 3, 1), VerticalAlignment = VerticalAlignment.Center };
+        readonly CheckBox important = new CheckBox { Content = new TextBlock { Text = "★ 중요 일정", LineHeight = 16, Margin = new Thickness(4, -1, 0, 1), VerticalAlignment = VerticalAlignment.Center },
+            Foreground = new SolidColorBrush(Color.FromRgb(242, 13, 122)), Background = new SolidColorBrush(Color.FromRgb(255, 241, 247)),
+            Padding = new Thickness(0), FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
         readonly StackPanel importantColors = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 0), Opacity = 0, IsHitTestVisible = false };
         Button importantBackgroundButton, importantTextButton;
         string importantBackgroundColor = "#FFF1F7";
         string importantTextColor = "#F20D7A";
-        readonly CheckBox showDday = new CheckBox { Content = "D-Day 표시", Foreground = new SolidColorBrush(Color.FromRgb(3, 105, 161)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+        readonly CheckBox showDday = new CheckBox { Content = new TextBlock { Text = "D-Day 표시", LineHeight = 16, Margin = new Thickness(4, -1, 0, 1), VerticalAlignment = VerticalAlignment.Center },
+            Foreground = new SolidColorBrush(Color.FromRgb(3, 105, 161)), Padding = new Thickness(0), FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
         readonly WrapPanel recurrenceOptions = new WrapPanel { Margin = new Thickness(0, 6, 0, 6) };
         readonly Border recurrenceAdvancedCard = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)), BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(10, 8, 10, 4), Margin = new Thickness(0, 0, 0, 6), Visibility = Visibility.Collapsed };
         readonly StackPanel recurrenceAdvanced = new StackPanel();
@@ -131,16 +134,18 @@ namespace FamilyPlanner
             afternoon.Unchecked += delegate { EnsureTimeModeSelected(); };
             categories.Children.Add(new TextBlock { Text = "온하루 · 로컬 전용", Foreground = Brush("#64748B"), FontSize = 11, Margin = new Thickness(0, 0, 0, 5) });
             var localChoices = new WrapPanel();
-            AddCategoryChoice(localChoices, "업무일정", "local:business", true, true);
-            AddCategoryChoice(localChoices, "개인일정", "local:personal", false, true);
-            AddCategoryChoice(localChoices, "야구", "local:baseball", false, true);
-            categoryOptions[categoryOptions.Count - 1].Visibility = defaults != null && defaults.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
+            var localOrder = defaults == null ? null : defaults.CategoryOrder;
+            var localOptions = new[] { Tuple.Create("업무일정", "local:business", defaults == null || defaults.LocalBusinessEnabled || existing != null && existing.Category == "업무일정"),
+                Tuple.Create("개인일정", "local:personal", defaults == null || defaults.LocalPersonalEnabled || existing != null && existing.Category == "개인일정"),
+                Tuple.Create("야구", "local:baseball", defaults == null || defaults.LocalBaseballEnabled || existing != null && existing.Category == "야구") };
+            foreach (var option in localOptions.Where(x => x.Item3).OrderBy(x => CategoryOrderPolicy.Rank(localOrder, x.Item2)))
+                AddCategoryChoice(localChoices, option.Item1, option.Item2, categoryOptions.Count == 0, true);
             categories.Children.Add(localChoices);
             if (googleSources.Count > 0)
             {
                 categories.Children.Add(new TextBlock { Text = "Google · 동기화", Foreground = Brush("#64748B"), FontSize = 11, Margin = new Thickness(0, 9, 0, 5) });
                 var googleChoices = new WrapPanel();
-                foreach (var source in OrderedSources(googleSources.Where(x => !GoogleTasks.IsSource(x.Id) || defaults != null && defaults.ShowGoogleTasks).ToList()))
+                foreach (var source in CategoryOrderPolicy.GoogleSources(googleSources.Where(x => !GoogleTasks.IsSource(x.Id) || defaults != null && defaults.ShowGoogleTasks), localOrder))
                     AddCategoryChoice(googleChoices, GoogleTasks.IsSource(source.Id) ? "Google Task · " + source.Name.Replace("Tasks · ", "") : (source.Primary ? "내 캘린더 · " : "") + source.Name,
                         "google:" + source.Id, false, source.Editable);
                 categories.Children.Add(googleTaskHint);
@@ -152,19 +157,10 @@ namespace FamilyPlanner
             recurrenceCountValue.Padding = new Thickness(4, 0, 4, 0);
             var panel = new StackPanel { Margin = new Thickness(22, 8, 14, 12) };
             var header = new DockPanel { Margin = new Thickness(22, 10, 10, 8) };
-            var saveGradient = new LinearGradientBrush(); saveGradient.StartPoint = new Point(0, .5); saveGradient.EndPoint = new Point(1, .5);
-            saveGradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#3977E8"), 0));
-            saveGradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#7C5CE5"), 1));
-            var close = new Button { Content = "×", Width = 32, Height = 32, Background = Brush("#FEE2E2"),
-                Foreground = Brush("#DC2626"), BorderThickness = new Thickness(0), FontSize = 17 };
-            Round(close, 10);
-            close.Click += delegate { DialogResult = false; };
+            OnharuPopupChrome.StyleHeader(header);
+            var close = OnharuPopupChrome.CloseButton(this); close.Margin = new Thickness(0, 4, 6, 4); close.Padding = new Thickness(0);
             DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
-            var topSave = new Button { Content = "✓  일정 저장", Width = 88, Height = 32, Background = saveGradient,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0), FontWeight = FontWeights.Bold,
-                Margin = new Thickness(0, 0, 8, 0), Cursor = Cursors.Hand };
-            Round(topSave, 10); topSave.Click += Save; DockPanel.SetDock(topSave, Dock.Right); header.Children.Add(topSave);
-            var headerTitle = new StackPanel { Orientation = Orientation.Horizontal };
+            var headerTitle = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             headerTitle.Children.Add(new TextBlock { Text = existing == null ? "✦  새 일정" : "✎  일정 수정", FontSize = 22, FontWeight = FontWeights.Bold,
                 VerticalAlignment = VerticalAlignment.Center });
             if (existing != null)
@@ -199,7 +195,7 @@ namespace FamilyPlanner
                 datePopup = new Popup { PlacementTarget = changeDateButton, Placement = PlacementMode.Bottom,
                     AllowsTransparency = true, StaysOpen = false, PopupAnimation = PopupAnimation.Fade,
                     VerticalOffset = 6 };
-                datePopup.Child = inlineCalendar;
+                datePopup.Child = OnharuCalendarStyle.PopupHost(inlineCalendar, 0);
                 inlineCalendar.SelectedDatesChanged += delegate
                 { if (inlineCalendar.SelectedDate.HasValue) pendingDate = inlineCalendar.SelectedDate.Value.Date; };
                 inlineCalendar.PreviewMouseDoubleClick += delegate(object sender, MouseButtonEventArgs e)
@@ -222,7 +218,7 @@ namespace FamilyPlanner
             }
             panel.Children.Add(dateCard);
             var titleLabelRow = new Grid { Height = 24 }; titleLabelRow.ColumnDefinitions.Add(new ColumnDefinition()); titleLabelRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var titleCaption = Label("제목"); titleCaption.VerticalAlignment = VerticalAlignment.Bottom; titleLabelRow.Children.Add(titleCaption);
+            var titleCaption = Label("제목"); titleCaption.VerticalAlignment = VerticalAlignment.Center; titleLabelRow.Children.Add(titleCaption);
             importantBackgroundButton = ImportantColorButton(true); importantTextButton = ImportantColorButton(false);
             importantColors.Children.Add(new TextBlock { Text = "배경", FontSize = 10.5, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
             importantColors.Children.Add(importantBackgroundButton);
@@ -230,11 +226,13 @@ namespace FamilyPlanner
             importantColors.Children.Add(importantTextButton);
             important.Checked += delegate { importantColors.Opacity = 1; importantColors.IsHitTestVisible = true; };
             important.Unchecked += delegate { importantColors.Opacity = 0; importantColors.IsHitTestVisible = false; };
-            var titleOptions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Right };
+            showDday.Height = important.Height = 20; showDday.VerticalContentAlignment = important.VerticalContentAlignment = VerticalAlignment.Center;
+            importantColors.Height = 20; importantColors.VerticalAlignment = VerticalAlignment.Center;
+            var titleOptions = new StackPanel { Orientation = Orientation.Horizontal, Height = 24, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
             titleOptions.Children.Add(showDday); titleOptions.Children.Add(important); titleOptions.Children.Add(importantColors);
             Grid.SetColumn(titleOptions, 1); titleLabelRow.Children.Add(titleOptions);
             panel.Children.Add(titleLabelRow); panel.Children.Add(title); panel.Children.Add(validationMessage);
-            panel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#CBD5E1"),
+            panel.Children.Add(new Border { Background = Brush(OnharuPopupChrome.ContentSurfaceColor), BorderBrush = Brush("#CBD5E1"),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 7, 14, 2),
                 Margin = new Thickness(0, 6, 0, 8), Child = categories });
             var timeCardContent = new StackPanel();
@@ -283,7 +281,7 @@ namespace FamilyPlanner
                 SelectionMode = CalendarSelectionMode.SingleDate };
             StyleCalendar(endCalendar);
             var endPopup = new Popup { PlacementTarget = endDateButton, Placement = PlacementMode.Bottom,
-                AllowsTransparency = true, StaysOpen = false, PopupAnimation = PopupAnimation.Fade, VerticalOffset = 6, Child = endCalendar };
+                AllowsTransparency = true, StaysOpen = false, PopupAnimation = PopupAnimation.Fade, VerticalOffset = 6, Child = OnharuCalendarStyle.PopupHost(endCalendar, 0) };
             endCalendar.SelectedDatesChanged += delegate
             {
                 if (!endCalendar.SelectedDate.HasValue) return;
@@ -346,7 +344,7 @@ namespace FamilyPlanner
                 SelectionMode = CalendarSelectionMode.SingleDate };
             StyleCalendar(recurrenceCalendar);
             var recurrencePopup = new Popup { PlacementTarget = recurrenceUntilButton, Placement = PlacementMode.Bottom,
-                AllowsTransparency = true, StaysOpen = false, PopupAnimation = PopupAnimation.Fade, VerticalOffset = 6, Child = recurrenceCalendar };
+                AllowsTransparency = true, StaysOpen = false, PopupAnimation = PopupAnimation.Fade, VerticalOffset = 6, Child = OnharuCalendarStyle.PopupHost(recurrenceCalendar, 0) };
             recurrenceCalendar.SelectedDatesChanged += delegate
             {
                 if (!recurrenceCalendar.SelectedDate.HasValue) return;
@@ -370,8 +368,7 @@ namespace FamilyPlanner
                 panel.Children.Add(new TextBlock { Text = "Google 로그아웃 상태입니다. 이 일정은 이 PC에만 저장됩니다.",
                     Foreground = Brush("#DC2626"), FontSize = 12, FontWeight = FontWeights.SemiBold,
                     TextAlignment = TextAlignment.Center, Margin = new Thickness(0, -5, 0, 9) });
-            var save = new Button { Content = "✓  일정 저장", Height = 40, Background = saveGradient,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0), FontWeight = FontWeights.Bold, FontSize = 14 };
+            var save = OnharuPopupChrome.ActionButton("✓  일정 저장", double.NaN); save.Height = 40; save.FontSize = 14;
             Round(save, 13);
             save.Click += Save;
             if (existing == null) panel.Children.Add(save);
@@ -393,9 +390,7 @@ namespace FamilyPlanner
                 contentScroll.ApplyTemplate();
                 UiRound.SoftenScrollBars(contentScroll);
             };
-            var shell = new Border { Background = Brush("#FFF8FAFC"), CornerRadius = new CornerRadius(18),
-                BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Child = popupLayout };
-            Content = UiRound.EmphasizePopup(shell);
+            Content = OnharuPopupChrome.Shell(popupLayout);
             PreviewKeyDown += delegate(object sender, KeyEventArgs e)
             {
                 if (e.Key == Key.Enter && !notes.IsKeyboardFocusWithin)
@@ -688,7 +683,7 @@ namespace FamilyPlanner
         void ApplyDefaults(PlannerSettings defaults)
         {
             if (defaults == null) return;
-            durationMinutes = Math.Max(1, defaults.DefaultDurationMinutes);
+            durationMinutes = 30;
             var category = categoryOptions.FirstOrDefault(x => (x.Tag ?? "").ToString() == defaults.DefaultCalendarKey && x.IsEnabled);
             if (category != null) category.IsChecked = true;
             if (!defaults.DefaultAllDay)
@@ -737,16 +732,6 @@ namespace FamilyPlanner
             return !isAllDay || isLocal;
         }
 
-        static IEnumerable<GoogleCalendarSetting> OrderedSources(IEnumerable<GoogleCalendarSetting> sources)
-        {
-            return sources.OrderBy(x => IsHolidaySource(x) ? 2 : x.Primary ? 0 : 1).ThenBy(x => x.Name);
-        }
-
-        static bool IsHolidaySource(GoogleCalendarSetting source)
-        {
-            return (source.Name ?? "").Contains("휴일") || (source.Id ?? "").IndexOf("holiday", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
         async void ShowValidation()
         {
             validationMessage.Visibility = Visibility.Visible; title.Focus();
@@ -769,7 +754,7 @@ namespace FamilyPlanner
         Button ImportantColorButton(bool background)
         {
             var value = background ? importantBackgroundColor : importantTextColor;
-            var button = new Button { Width = 22, Height = 22, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(0),
+            var button = new Button { Width = 20, Height = 20, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(0),
                 Background = Brush(value), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand,
                 ToolTip = background ? "중요 일정 배경색" : "중요 일정 글자색" };
             Round(button, 7);

@@ -46,7 +46,7 @@ namespace FamilyPlanner
             }
             calendar.SelectedDate = baseDate; calendar.DisplayDate = baseDate; OnharuCalendarStyle.Apply(calendar);
             var datePopup = new Popup { PlacementTarget = dateButton, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true, VerticalOffset = 5,
-                Child = new Border { Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(129,140,248)), BorderThickness = new Thickness(1.5), CornerRadius = new CornerRadius(12), Padding = new Thickness(7), Child = calendar } };
+                Child = OnharuCalendarStyle.PopupHost(calendar, 7) };
             dateButton.Click += delegate { datePopup.IsOpen = !datePopup.IsOpen; };
             calendar.SelectedDatesChanged += delegate { if (!calendar.SelectedDate.HasValue) return; baseDate = calendar.SelectedDate.Value.Date; compactDate.Text = baseDate.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture); validation.Text = ""; datePopup.IsOpen = false; };
             compactDate.Text = baseDate.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
@@ -84,7 +84,7 @@ namespace FamilyPlanner
                 var delete = Btn("삭제", 72, "#FFF1F2", "#E11D48"); delete.Margin = new Thickness(0,0,8,0); delete.Click += delegate { DeleteRequested = true; DialogResult = true; }; buttons.Children.Add(delete);
             }
             var save = Btn("✓  저장", 96, "#4F46E5", "#FFFFFF"); save.Margin = new Thickness(8, 0, 0, 0); save.Click += Save; buttons.Children.Add(cancel); buttons.Children.Add(save); panel.Children.Add(buttons);
-            Content = UiRound.EmphasizePopup(new Border { Background = new SolidColorBrush(Color.FromRgb(250,250,255)), CornerRadius = new CornerRadius(18), Child = panel });
+            Content = OnharuPopupChrome.Shell(panel);
         }
 
         void Save(object sender, RoutedEventArgs e)

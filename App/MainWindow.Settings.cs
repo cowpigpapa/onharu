@@ -13,6 +13,8 @@ namespace FamilyPlanner
         async void OpenSettings(object sender, RoutedEventArgs e)
         {
             if (ActivateBlockingDialog()) return;
+            var enabledCategories = string.Join("|", settings.LocalBusinessEnabled, settings.LocalPersonalEnabled,
+                settings.LocalBaseballEnabled, settings.DdayEnabled, settings.AnniversaryEnabled);
             var settingsWatch = Stopwatch.StartNew();
             var allLocalItems = Store.LoadLocal();
             var activeIds = new HashSet<string>(items.Select(x => x.Id));
@@ -22,19 +24,25 @@ namespace FamilyPlanner
             var window = new SettingsWindow(Colors["업무일정"], Colors["개인일정"], Colors["야구"], Colors["D-Day"], Colors["기념일"], Colors["국경일"], settings.FontSize,
                 settings.CalendarOrderMode, settings.ImportantFirst, settings.MultiDayFirst, settings.CompletedLast, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule, settings.WeekStartDay, settings.RestDays,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
-                GoogleCalendar.IsConnected, settings.AllowGoogleDragMove, localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
-                settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex, settings.LockPalettePlacement,
+                GoogleCalendar.IsConnected, settings.AllowDragMove, settings.AllowLocalDragMove, settings.AllowGoogleDragMove, settings.AllowDetailCardDrag, settings.AllowSpecialCardDrag,
+                localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
+                settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex, settings.RandomizePaletteOnStartup,
                 settings.SelectedDateStyle,
                 settings.SelectedDateFillColor, settings.SelectedDateBorderColor, settings.TodayColor, settings.TodayStyle, settings.TodayBorderColor, settings.DefaultCalendarKey, settings.DefaultAllDay,
-                settings.DefaultStartHour, settings.DefaultStartMinute, settings.DefaultDurationMinutes, settings.DefaultReminderMinutes,
+                settings.DefaultStartHour, settings.DefaultStartMinute, settings.DefaultReminderMinutes,
                 settings.CompletedDisplayMode, settings.StartViewMode, settings.RemindersEnabled, settings.ReminderSound, settings.QuietStartHour, settings.QuietEndHour, settings.ReminderPosition,
-                settings.StartupPositionMode, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ThemeId,
+                settings.StartupPositionMode, settings.UseTimetable, settings.UseDiary, settings.UseRollover, settings.ShowIncompleteTodoButton, settings.ShowOverflowPopupWithSidebar, settings.IncompleteTodoLookbackMonths, settings.ShowGoogleTasks, settings.UseProBaseball, settings.AutomaticUpdateChecks, settings.ThemeId,
                 settings.ShowSearchIcon, settings.ShowRangeSwitch, settings.ShowThemeSwitch, settings.ShowPositionSwitch,
-                settings.HolidayVisible, settings.BaseballVisible && settings.UseProBaseball, settings.DdayPanelVisible, settings.AnniversaryVisible);
+                settings.HolidayVisible, settings.LocalBaseballEnabled, settings.DdayEnabled, settings.AnniversaryEnabled,
+                settings.LocalBusinessEnabled, settings.LocalPersonalEnabled, settings.LocalBaseballEnabled, settings.DdayEnabled, settings.AnniversaryEnabled,
+                settings.EnableButtonColorTool);
             PlacementTrace.Write("SETTINGS ui-created ms=" + settingsWatch.ElapsedMilliseconds);
             window.PrintRequested += delegate
             {
                 UpdateLayout();
+                // Settings is already displayed through the WPF surface, including
+                // when the calendar started fixed. Do not switch surfaces while the
+                // Windows print spooler owns the UI thread.
                 var printWindow = new CalendarPrintWindow(Content as System.Windows.Media.Visual) { Owner = window };
                 printWindow.ShowDialog();
             };
@@ -45,12 +53,18 @@ namespace FamilyPlanner
             if (!settingsAccepted) return;
             var googleTasksChanged = settings.ShowGoogleTasks != window.ShowGoogleTasks;
             var baseballFeatureEnabled = !settings.UseProBaseball && window.UseProBaseball;
+            var ddayColorChanged = !string.Equals(Colors["D-Day"], window.DdayColor, StringComparison.OrdinalIgnoreCase);
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             Colors["야구"] = window.BaseballColor; Colors["D-Day"] = window.DdayColor;
             Colors["기념일"] = window.AnniversaryColor; Colors["국경일"] = window.HolidayColor;
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
             settings.BaseballColor = window.BaseballColor; settings.DdayColor = window.DdayColor;
             settings.AnniversaryColor = window.AnniversaryColor; settings.HolidayColor = window.HolidayColor;
+            if (ddayColorChanged && settings.ButtonColorOverrides != null)
+            {
+                settings.ButtonColorOverrides.Remove("classic|automation:OnharuDetailCard:special:D-Day");
+                settings.ButtonColorOverrides.Remove("dark|automation:OnharuDetailCard:special:D-Day");
+            }
             settings.FontSize = window.SelectedFontSize; settings.CalendarOrderMode = window.OrderMode;
             settings.ImportantFirst = window.ImportantFirst;
             settings.MultiDayFirst = window.MultiDayFirst;
@@ -70,7 +84,7 @@ namespace FamilyPlanner
             settings.PaletteNames = window.PaletteNames;
             settings.SavedPalettes = window.SavedPalettes;
             settings.SelectedPaletteIndex = window.PaletteSelectionIndex;
-            settings.LockPalettePlacement = window.LockPalettePlacement;
+            settings.RandomizePaletteOnStartup = window.RandomizePaletteOnStartup;
             settings.ShowWeekNumbers = window.ShowWeekNumbers; settings.WeekNumberRule = window.WeekRule; settings.WeekStartDay = window.WeekStartDay;
             settings.RestDays = window.RestDays == null ? new List<int> { 0, 6 } : window.RestDays;
             if (!temporaryMonthView && shownMonth == default(DateTime)) shownMonth = DateTime.Today;
@@ -79,15 +93,35 @@ namespace FamilyPlanner
             settings.UseTimetable = window.UseTimetable;
             settings.UseDiary = window.UseDiary;
             settings.UseRollover = window.UseRollover;
+            settings.ShowIncompleteTodoButton = window.ShowIncompleteTodoButton;
+            settings.ShowOverflowPopupWithSidebar = window.ShowOverflowPopupWithSidebar;
+            settings.IncompleteTodoLookbackMonths = window.IncompleteTodoLookbackMonths;
+            if (!settings.ShowIncompleteTodoButton) detailIncompleteMode = false;
+            BuildDetailOrderSwitch();
             settings.ShowGoogleTasks = window.ShowGoogleTasks;
+            settings.AllowDragMove = window.AllowDragMove;
+            settings.AllowLocalDragMove = window.AllowLocalDragMove;
             settings.AllowGoogleDragMove = window.AllowGoogleDragMove;
+            settings.AllowDetailCardDrag = window.AllowDetailCardDrag;
+            settings.AllowSpecialCardDrag = window.AllowSpecialCardDrag;
             settings.UseProBaseball = window.UseProBaseball;
-            if (!settings.UseProBaseball) settings.BaseballVisible = false;
-            else if (baseballFeatureEnabled) settings.BaseballVisible = true;
+            settings.LocalBusinessEnabled = window.BusinessCategoryVisible;
+            settings.LocalPersonalEnabled = window.PersonalCategoryVisible;
+            settings.LocalBaseballEnabled = window.BaseballCategoryVisible;
+            settings.DdayEnabled = window.DdayCategoryVisible;
+            settings.AnniversaryEnabled = window.AnniversaryCategoryVisible;
+            // These settings define both whether the category is offered and whether
+            // it is shown in the detail calendar. Keep the two persisted states in sync.
+            settings.BusinessVisible = window.BusinessCategoryVisible;
+            settings.PersonalVisible = window.PersonalCategoryVisible;
+            settings.BaseballVisible = window.BaseballCategoryVisible;
+            settings.DdayPanelVisible = window.DdayCategoryVisible;
+            settings.AnniversaryVisible = window.AnniversaryCategoryVisible;
             settings.AutomaticUpdateChecks = window.AutomaticUpdateChecks;
+            settings.EnableButtonColorTool = window.EnableButtonColorTool;
+            TemporarySegmentPaletteTool.Enabled = settings.EnableButtonColorTool;
             settings.ThemeId = OnharuThemePalette.Normalize(window.ThemeId);
-            if (googleTasksChanged && settings.ShowGoogleTasks)
-                foreach (var source in settings.GoogleCalendars.Where(x => GoogleTasks.IsSource(x.Id))) source.Editable = true;
+            foreach (var source in settings.GoogleCalendars.Where(x => GoogleTasks.IsSource(x.Id))) source.Editable = false;
             if (timetableButton != null) timetableButton.Visibility = settings.UseTimetable ? Visibility.Visible : Visibility.Collapsed;
             if (diaryButton != null) diaryButton.Visibility = settings.UseDiary ? Visibility.Visible : Visibility.Collapsed;
             if (sportsButton != null) sportsButton.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
@@ -95,13 +129,6 @@ namespace FamilyPlanner
             if (calendarRangeSwitch != null) calendarRangeSwitch.Visibility = settings.ShowRangeSwitch ? Visibility.Visible : Visibility.Collapsed;
             if (themeQuickSwitch != null) themeQuickSwitch.Visibility = settings.ShowThemeSwitch ? Visibility.Visible : Visibility.Collapsed;
             if (positionModeSwitch != null) positionModeSwitch.Visibility = settings.ShowPositionSwitch ? Visibility.Visible : Visibility.Collapsed;
-            System.Windows.Controls.CheckBox baseballFilter;
-            if (filters.TryGetValue("야구", out baseballFilter))
-            {
-                if (!settings.UseProBaseball) baseballFilter.IsChecked = false;
-                else if (baseballFeatureEnabled) baseballFilter.IsChecked = true;
-                baseballFilter.Visibility = settings.UseProBaseball ? Visibility.Visible : Visibility.Collapsed;
-            }
             if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close();
             diaryDates.Clear(); diaryDatesLoaded = false;
             settings.SelectedDateStyle = window.SelectedDateStyle;
@@ -116,7 +143,7 @@ namespace FamilyPlanner
             settings.AutoSyncMinutes = window.AutoSyncMinutes;
             settings.DefaultCalendarKey = window.DefaultCalendarKey; settings.DefaultAllDay = window.DefaultAllDay;
             settings.DefaultStartHour = window.DefaultStartHour; settings.DefaultStartMinute = window.DefaultStartMinute;
-            settings.DefaultDurationMinutes = window.DefaultDurationMinutes; settings.DefaultReminderMinutes = window.DefaultReminderMinutes;
+            settings.DefaultReminderMinutes = window.DefaultReminderMinutes;
             FontSize = settings.FontSize;
             UpdateCompactHeaderTypography(); selectedTitle.FontSize = Ui(16);
             Store.SaveSettings(settings);
@@ -126,12 +153,21 @@ namespace FamilyPlanner
                 if (source != null)
                 {
                     item.GoogleCalendarColor = source.Color;
-                    item.GoogleReadOnly = GoogleTasks.IsTask(item) ? !item.OnharuManaged || !source.Editable : !source.Editable;
+                    item.GoogleReadOnly = GoogleTasks.IsTask(item) || !source.Editable;
                 }
             }
             Store.Save(items); BuildGoogleFilters(); StartAutoSync();
+            ApplySidebarCategoryOrder();
             foreach (var category in filters.Keys.Where(Colors.ContainsKey)) filters[category].Foreground = Brush(Colors[category]);
             ApplyTheme(settings.ThemeId);
+            SyncCategoryFilter("업무일정", settings.LocalBusinessEnabled, settings.BusinessVisible);
+            SyncCategoryFilter("개인일정", settings.LocalPersonalEnabled, settings.PersonalVisible);
+            SyncCategoryFilter("야구", settings.LocalBaseballEnabled, settings.BaseballVisible);
+            SyncCategoryFilter("D-Day", settings.DdayEnabled, settings.DdayPanelVisible);
+            SyncCategoryFilter("기념일", settings.AnniversaryEnabled, settings.AnniversaryVisible);
+            UpdateGroupFilterChecks();
+            RenderAll();
+            if (positionLocked) PublishAndHide();
             if (googleTasksChanged && settings.ShowGoogleTasks && GoogleCalendar.IsConnected) await SyncGoogle(false);
             if (window.RequestedDataAction == SettingsDataAction.ImportDormantLocal)
             {
@@ -247,6 +283,7 @@ namespace FamilyPlanner
                 if (ShowBlockingDialog(deleteWindow) == true)
                 {
                     var selected = deleteWindow.SelectedEntries;
+                    var deletedSnapshots = items.Where(x => selected.Any(y => y.Matches(x))).Select(x => x.Clone()).ToList();
                     Store.BackupBeforeDestructiveChange(items);
                     foreach (var entry in selected)
                     {
@@ -258,6 +295,16 @@ namespace FamilyPlanner
                         else items.RemoveAll(x => entry.Matches(x));
                     }
                     Store.Save(items); RenderAll();
+                    RegisterUndo("일정 삭제", async delegate
+                    {
+                        foreach (var snapshot in deletedSnapshots)
+                        {
+                            var existing = items.FirstOrDefault(x => x.Id == snapshot.Id);
+                            if (existing != null) items[items.IndexOf(existing)] = snapshot.Clone();
+                            else items.Add(snapshot.Clone());
+                        }
+                        Store.Save(items); RenderAll(); await System.Threading.Tasks.Task.CompletedTask;
+                    });
                     ShowNotice(selected.Count + "개 항목을 정리했습니다. Google 원본 일정은 삭제하지 않았습니다.", false);
                 }
             }
@@ -276,11 +323,23 @@ namespace FamilyPlanner
             }
         }
 
+        void SyncCategoryFilter(string category, bool enabled, bool visible)
+        {
+            System.Windows.Controls.CheckBox box;
+            if (!filters.TryGetValue(category, out box)) return;
+            box.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+            box.IsChecked = enabled && visible;
+        }
+
         void OpenSearch(object sender, RoutedEventArgs e)
         {
             var window = new SearchWindow(items.Where(IsItemVisible).ToList()); PlaceCalendarDialog(window);
             if (ShowBlockingDialog(window) == true && window.SelectedItem != null)
-            { selectedDate = window.SelectedItem.Start.Date; detailMode = "selected"; shownMonth = new DateTime(selectedDate.Year, selectedDate.Month, 1); RenderAll(); OpenEdit(window.SelectedItem); }
+            {
+                var selected = window.SelectedItem; selectedDate = selected.Start.Date; detailMode = "selected";
+                shownMonth = new DateTime(selectedDate.Year, selectedDate.Month, 1); RenderAll();
+                Dispatcher.BeginInvoke(new Action(delegate { OpenEdit(selected); }));
+            }
         }
 
         void SaveWindowSettings()

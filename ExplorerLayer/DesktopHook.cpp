@@ -16,6 +16,8 @@ static bool g_resizing;
 static bool g_resizeFromTopLeft;
 static bool g_moving;
 static int g_pointerDragKind;
+static bool g_onharuOwnsUndo;
+static HHOOK g_keyboardHook;
 static POINT g_resizeStart;
 static int g_resizeWidth;
 static int g_resizeHeight;
@@ -54,6 +56,19 @@ static constexpr UINT_PTR kDefViewSubclassId = 0x4F4E4842;
 static constexpr DWORD kHitMapMagic = 0x32544948; // HIT2
 static constexpr UINT kDesktopActionMessage = WM_APP + 0x4F;
 static bool OpenFrame();
+static void PostDesktopAction(WPARAM action, LPARAM value);
+
+static LRESULT CALLBACK KeyboardHook(int code, WPARAM wParam, LPARAM lParam)
+{
+    if (code == HC_ACTION && wParam == 'Z' && g_onharuOwnsUndo &&
+        (GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+        const bool keyUp = (lParam & (1LL << 31)) != 0;
+        const bool repeated = (lParam & (1LL << 30)) != 0;
+        if (!keyUp && !repeated) PostDesktopAction(110, 0);
+        return 1;
+    }
+    return CallNextHookEx(g_keyboardHook, code, wParam, lParam);
+}
 
 struct OpacityProfileStats
 {
@@ -338,6 +353,12 @@ static bool IsHandCursorPoint(const OnharuFrameHeader* header, int x, int y)
 static LRESULT CALLBACK ListViewSubclass(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
     UINT_PTR, DWORD_PTR)
 {
+    if (message == WM_KILLFOCUS) g_onharuOwnsUndo = false;
+    if (message == WM_KEYDOWN && wParam == 'Z' && g_onharuOwnsUndo &&
+        (GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+        if ((lParam & (1LL << 30)) == 0) PostDesktopAction(110, 0);
+        return 0;
+    }
     if (message == WM_PAINT) {
         g_hasListPaintUpdate = GetUpdateRect(hwnd, &g_listPaintUpdate, FALSE) != FALSE;
         g_insideListPaint = true;
@@ -364,7 +385,8 @@ static LRESULT CALLBACK ListViewSubclass(HWND hwnd, UINT message, WPARAM wParam,
         const int icon = static_cast<int>(SendMessageW(hwnd, LVM_HITTEST, 0, reinterpret_cast<LPARAM>(&hit)));
         const int x = point.x - header->panelLeft;
         const int y = point.y - header->panelTop;
-        if (icon < 0 && x >= 0 && y >= 0 && x < header->width && y < header->height) {
+        const bool insideOnharu = icon < 0 && x >= 0 && y >= 0 && x < header->width && y < header->height;
+        if (insideOnharu) {
             PostDesktopAction(GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? 102 : 103,
                 static_cast<LPARAM>((x & 0xFFFF) | ((y & 0xFFFF) << 16)));
             return 0;
@@ -428,14 +450,22 @@ static LRESULT CALLBACK ListViewSubclass(HWND hwnd, UINT message, WPARAM wParam,
         const int y = point.y - header->panelTop;
         // Desktop icons are always the top interaction layer. ONHARU receives
         // the click only when Explorer did not hit an icon at this point.
-        if (icon < 0 && x >= 0 && y >= 0 && x < header->width && y < header->height) {
+        const bool insideOnharu = icon < 0 && x >= 0 && y >= 0 && x < header->width && y < header->height;
+        if (message == WM_LBUTTONDOWN) g_onharuOwnsUndo = insideOnharu;
+        if (insideOnharu) {
+            const int hitKind = HitKindAt(header, x, y);
+            // Keep keyboard focus for fixed-mode Ctrl+Z, but do not foreground the
+            // Explorer root. Foregrounding Explorer repaints the whole desktop and
+            // visibly flashes while the fixed surface is exchanged for the WPF one.
+            if (message == WM_LBUTTONDOWN && hitKind != 7) {
+                SetFocus(hwnd);
+            }
             // Match Explorer's normal blank-desktop click: ONHARU consumes this
             // message, so clear any selected icon explicitly before dispatching it.
             if (message == WM_LBUTTONDOWN && ListView_GetSelectedCount(hwnd) > 0) {
                 ListView_SetItemState(hwnd, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
                 SendMessageW(hwnd, LVM_SETSELECTIONMARK, 0, -1);
             }
-            const int hitKind = HitKindAt(header, x, y);
             if (message == WM_LBUTTONDOWN && hitKind == 5) {
                 PostDesktopAction(108, 0); return 0;
             }
@@ -495,6 +525,8 @@ static LRESULT CALLBACK DefViewSubclass(HWND hwnd, UINT message, WPARAM wParam, 
 
 static void Detach()
 {
+    if (g_keyboardHook) { UnhookWindowsHookEx(g_keyboardHook); g_keyboardHook = nullptr; }
+    g_onharuOwnsUndo = false;
     if (g_iconList && IsWindow(g_iconList)) {
         if (g_changedDoubleBuffer) {
             SendMessageW(g_iconList, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_DOUBLEBUFFER,
@@ -536,6 +568,7 @@ static void Attach()
     }
     g_defView = defView;
     g_iconList = iconList;
+    g_keyboardHook = SetWindowsHookExW(WH_KEYBOARD, KeyboardHook, g_instance, GetCurrentThreadId());
     g_originalListViewStyle = static_cast<DWORD>(SendMessageW(g_iconList, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0));
     g_changedDoubleBuffer = (g_originalListViewStyle & LVS_EX_DOUBLEBUFFER) == 0;
     if (g_changedDoubleBuffer) {

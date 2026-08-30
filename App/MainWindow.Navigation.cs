@@ -87,19 +87,19 @@ namespace FamilyPlanner
                 var selectedCount = count;
                 var selected = settings.VisibleWeekCount == count;
                 var button = Button(count + "주", null, popupWidth - 6); button.Height = 25; button.Margin = new Thickness(0, 1, 0, 1);
+                button.Tag = "week_count:" + selectedCount;
                 button.HorizontalContentAlignment = HorizontalAlignment.Center;
                 button.Padding = new Thickness(0); button.BorderThickness = new Thickness(0);
-                button.Background = selected ? ActionAccentBrush() : Brushes.Transparent;
-                button.Foreground = selected ? Brushes.White : T("Text");
+                var neutralSelected = OnharuStateColors.NeutralSwitch(settings.ThemeId, true);
+                button.Background = selected ? new SolidColorBrush(neutralSelected.Background) : Brushes.Transparent;
+                button.Foreground = selected ? new SolidColorBrush(neutralSelected.Foreground) : T("Text");
                 button.Click += delegate
                 {
-                    settings.VisibleWeekCount = selectedCount;
-                    temporaryMonthView = false; settings.UseMonthView = false;
-                    Store.SaveSettings(settings); CloseWeekCountOverlay(); RenderAll();
+                    ApplyWeekCount(selectedCount);
                 };
                 panel.Children.Add(button);
             }
-            var overlay = new Border { Width = popupWidth, Background = T("Calendar"), BorderBrush = ActionAccentBrush(), BorderThickness = new Thickness(1),
+            var overlay = new Border { Width = popupWidth, Background = T("Calendar"), BorderBrush = T("Grid"), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10), Padding = new Thickness(2, 3, 2, 3), Child = panel,
                 Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = .18, Color = System.Windows.Media.Colors.Black } };
             weekCountOverlay = overlay; floatingOverlay.Children.Add(overlay);
@@ -108,6 +108,13 @@ namespace FamilyPlanner
             var point = target.TransformToAncestor(mainFrame).Transform(new Point(0, target.ActualHeight + 3));
             Canvas.SetLeft(overlay, point.X); Canvas.SetTop(overlay, point.Y);
             if (positionLocked) SchedulePublish();
+        }
+
+        void ApplyWeekCount(int count)
+        {
+            settings.VisibleWeekCount = Math.Max(1, Math.Min(6, count));
+            temporaryMonthView = false; settings.UseMonthView = false;
+            Store.SaveSettings(settings); CloseWeekCountOverlay(); RenderAll();
         }
 
         void CloseWeekCountOverlay()
@@ -119,14 +126,45 @@ namespace FamilyPlanner
 
         void OpenMonthJump(object sender, RoutedEventArgs e)
         {
-            var window = new MonthJumpWindow(shownMonth); PlaceCalendarDialog(window);
-            if (ShowBlockingDialog(window) == true)
+            CloseTransientPopup();
+            var range = VisibleCalendarRange();
+            var picker = new System.Windows.Controls.Calendar { SelectedDate = selectedDate, DisplayDate = shownMonth,
+                SelectionMode = CalendarSelectionMode.SingleDate, Margin = new Thickness(4) };
+            OnharuCalendarStyle.Apply(picker);
+            var rangeText = new TextBlock { Text = "현재 표시  " + range.Item1.ToString("M월 d일") + " – " + range.Item2.ToString("M월 d일"),
+                Foreground = T("Muted"), FontSize = Ui(10.5), Margin = new Thickness(8, 2, 8, 7), HorizontalAlignment = HorizontalAlignment.Center };
+            var content = new StackPanel(); content.Children.Add(picker); content.Children.Add(rangeText);
+            var popup = new Popup { PlacementTarget = monthTitle, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true,
+                Child = new Border { Background = T("Calendar"), BorderBrush = T("Grid"), BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(12), Padding = new Thickness(5), Margin = new Thickness(0, 4, 0, 0), Child = content,
+                    Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 12, ShadowDepth = 2, Opacity = .2 } } };
+            picker.SelectedDatesChanged += delegate
             {
-                shownMonth = window.SelectedMonth;
-                selectedDate = window.SelectedMonth;
-                detailMode = "selected"; RenderAll();
+                if (!picker.SelectedDate.HasValue) return;
+                selectedDate = picker.SelectedDate.Value.Date;
+                shownMonth = ActiveCalendarRangeMode == "weeks" ? selectedDate : new DateTime(selectedDate.Year, selectedDate.Month, 1);
+                detailMode = "selected"; popup.IsOpen = false; RenderAll();
+            };
+            transientPopup = popup; popup.Closed += delegate { if (ReferenceEquals(transientPopup, popup)) transientPopup = null; };
+            popup.IsOpen = true;
+        }
+
+        Tuple<DateTime, DateTime> VisibleCalendarRange()
+        {
+            var firstDay = ConfiguredFirstDay();
+            if (ActiveCalendarRangeMode == "weeks")
+            {
+                var rows = Math.Max(1, Math.Min(6, settings.VisibleWeekCount));
+                var offset = (7 + (int)shownMonth.DayOfWeek - (int)firstDay) % 7;
+                var todayRow = rows <= 2 ? 1 : 2;
+                var first = shownMonth.Date.AddDays(-offset - (todayRow - 1) * 7);
+                return Tuple.Create(first, first.AddDays(rows * 7 - 1));
             }
-            if (positionLocked) SchedulePublish();
+            var month = new DateTime(shownMonth.Year, shownMonth.Month, 1);
+            var monthOffset = (7 + (int)month.DayOfWeek - (int)firstDay) % 7;
+            var rowsInMonth = Math.Max(4, Math.Min(6, (int)Math.Ceiling((monthOffset + DateTime.DaysInMonth(month.Year, month.Month)) / 7.0)));
+            var monthFirst = month.AddDays(-monthOffset);
+            return Tuple.Create(monthFirst, monthFirst.AddDays(rowsInMonth * 7 - 1));
         }
 
         static int ResizeEdgeAt(Point point, FrameworkElement surface)

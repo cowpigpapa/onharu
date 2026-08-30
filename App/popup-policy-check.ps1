@@ -20,13 +20,25 @@ if (-not $dialogs.Contains('IsHitTestVisible = false')) { throw 'Main popup inpu
 if (-not $dialogs.Contains('IsBlockingDialogOrChild(window)')) { throw 'Independent tool windows must not steal focus from the active blocking dialog chain.' }
 if (-not $dialogs.Contains('OnharuPopupChrome.EnableTopDrag(window)')) { throw 'Main popup windows must share the top drag rule.' }
 $chrome = Get-Content -Raw (Join-Path $root 'OnharuPopupChrome.cs')
-foreach ($token in @('const double TopDragHeight = 60', 'EnableTopDrag(Window window)', 'IsInteractive(DependencyObject current)', 'shell.Loaded', 'FeatureTitle(string glyph, string title)', 'PrimaryButton(string text, double width)')) {
+foreach ($token in @('const double TopDragHeight = 60', 'EnableTopDrag(Window window)', 'IsInteractive(DependencyObject current)', 'shell.Loaded', 'FeatureTitle(string glyph, string title)', 'PrimaryButton(string text, double width)', 'ActionButton(string text, double width)', 'SurfaceColor = "#FFF7F7FA"', 'HeaderSurfaceColor = "#E8E9ED"', 'ContentSurfaceColor = "#FFFFFF"', 'SupportSurfaceColor = "#F3F1EF"', 'BorderColor = "#A9AFBA"', 'PrimarySurfaceColor = "#DDF3F1"', 'SelectionSurfaceColor = "#FBE8DE"', 'StyleSegment(OnharuSegmentedSwitch control)', 'StyleHeader(Panel header)', 'new TemplateBindingExtension(Control.BorderBrushProperty)')) {
     if (-not $chrome.Contains($token)) { throw "Shared popup drag token missing: $token" }
+}
+$sharedShellWindows = @(
+    'AnniversaryWindow.cs','BackupWindow.cs','CalendarPrintWindow.cs','DataManagementChoiceWindow.cs',
+    'DiaryWindows.cs','EmailBackupWindow.cs','ExitConfirmWindow.cs','GoogleAccountActionWindow.cs',
+    'GoogleTasksWarningWindow.cs','LocalDataDeleteWindow.cs','LocalImportWindow.cs','LocalItemsOfferWindow.cs',
+    'MonthJumpWindow.cs','NoticeWindow.cs','PendingSyncWindow.cs','ProductInfoWindow.cs','ReminderWindow.cs',
+    'RepeatDeleteWindow.cs','SearchWindow.cs','SportsApiWindows.cs','SportsCalendarWindow.cs','TimetableWindow.cs',
+    'UpdateAvailableWindow.cs'
+)
+foreach ($name in $sharedShellWindows) {
+    $source = Get-Content -Raw (Join-Path $root $name)
+    if (-not $source.Contains('OnharuPopupChrome.Shell(')) { throw "Popup does not use the shared ONHARU shell: $name" }
 }
 $diary = Get-Content -Raw (Join-Path $root 'DiaryWindows.cs')
 $timetable = Get-Content -Raw (Join-Path $root 'TimetableWindow.cs')
 $sportsWindow = Get-Content -Raw (Join-Path $root 'SportsCalendarWindow.cs')
-foreach ($token in @('OnharuSegmentedSwitch(new[] { "목록 보기", "한 장 보기" }', 'OnharuSegmentedSwitch(new[] { "최신순", "오래된순" }', 'FeatureTitle("✎", "나의 일기장")')) { if (-not $diary.Contains($token)) { throw "Diary tool chrome is inconsistent: $token" } }
+foreach ($token in @('SetListToggleIcon()', 'SetSortIcon()', 'DiaryTitle()')) { if (-not $diary.Contains($token)) { throw "Diary tool chrome is inconsistent: $token" } }
 if (-not $timetable.Contains('FeatureTitle("▦", "나의 시간표")')) { throw 'Timetable tool title must use shared feature chrome.' }
 foreach ($token in @('FeatureTitle("⚾", "KBO 경기 일정")', 'Button("«", 23', 'Button("»", 23')) { if (-not $sportsWindow.Contains($token)) { throw "KBO tool chrome is inconsistent: $token" } }
 $mainLayout = Get-Content -Raw (Join-Path $root 'MainWindow.Layout.cs')

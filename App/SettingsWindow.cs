@@ -34,7 +34,7 @@ namespace FamilyPlanner
         readonly Dictionary<string, Slider[]> sliders = new Dictionary<string, Slider[]>();
         readonly Dictionary<string, Border> previews = new Dictionary<string, Border>();
         readonly Dictionary<string, Border> editorCards = new Dictionary<string, Border>();
-        readonly Dictionary<string, CheckBox> editorTitles = new Dictionary<string, CheckBox>();
+        readonly Dictionary<string, TextBlock> editorTitles = new Dictionary<string, TextBlock>();
         readonly Dictionary<string, TextBlock[]> editorChannels = new Dictionary<string, TextBlock[]>();
         readonly Dictionary<string, TextBlock[]> values = new Dictionary<string, TextBlock[]>();
         readonly List<CheckBox> colorSelections = new List<CheckBox>();
@@ -83,7 +83,6 @@ namespace FamilyPlanner
         public bool DefaultAllDay;
         public int DefaultStartHour;
         public int DefaultStartMinute;
-        public int DefaultDurationMinutes;
         public int DefaultReminderMinutes;
         public bool ChangeGoogleAccount;
         public bool LogoutGoogleAccount;
@@ -93,34 +92,49 @@ namespace FamilyPlanner
         public bool UseTimetable;
         public bool UseDiary;
         public bool UseRollover;
+        public bool ShowIncompleteTodoButton;
+        public bool ShowOverflowPopupWithSidebar;
+        public int IncompleteTodoLookbackMonths;
         public bool ShowGoogleTasks;
+        public bool AllowDragMove;
+        public bool AllowLocalDragMove;
         public bool AllowGoogleDragMove;
+        public bool AllowDetailCardDrag;
+        public bool AllowSpecialCardDrag;
         public bool UseProBaseball;
         public bool AutomaticUpdateChecks;
         public bool ShowSearchIcon;
         public bool ShowRangeSwitch;
         public bool ShowThemeSwitch;
         public bool ShowPositionSwitch;
+        public bool EnableButtonColorTool;
+        public bool BusinessCategoryVisible;
+        public bool PersonalCategoryVisible;
+        public bool BaseballCategoryVisible;
+        public bool DdayCategoryVisible;
+        public bool AnniversaryCategoryVisible;
         public string ThemeId;
         public List<string> CustomPalette;
         public bool CustomPalettePastelStyle;
         public List<string> PaletteNames;
         public List<string> SavedPalettes;
         public int PaletteSelectionIndex;
-        public bool LockPalettePlacement;
+        public bool RandomizePaletteOnStartup;
         bool selectedPastelStyle;
         readonly StackPanel fontOptions = new StackPanel { Orientation = Orientation.Horizontal };
         readonly List<Tuple<string, GoogleCalendarSetting>> sourceEditors = new List<Tuple<string, GoogleCalendarSetting>>();
         readonly Dictionary<string, CheckBox> editBoxes = new Dictionary<string, CheckBox>();
 
         public SettingsWindow(string business, string personal, string baseball, string dday, string anniversary, string holidayColor, double fontSize, string orderMode, bool importantFirst, bool multiDayFirst, bool completedLast, bool use24HourTime, bool showWeeks,
-            string weekRule, string weekStartDay, List<int> restDays, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, bool allowGoogleDragMove, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
-            List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes, int selectedPaletteIndexValue, bool lockPalettePlacement,
+            string weekRule, string weekStartDay, List<int> restDays, bool pastelEventStyle, int autoSyncMinutes, List<GoogleCalendarSetting> sources, bool googleConnected, bool allowDragMove, bool allowLocalDragMove, bool allowGoogleDragMove, bool allowDetailCardDrag, bool allowSpecialCardDrag, int localItemCount, bool showLunar, bool showSolarTerms, string backupFolder, int backupCount, List<string> categoryOrder,
+            List<string> customPalette, bool customPalettePastelStyle, List<string> paletteNames, List<string> savedPalettes, int selectedPaletteIndexValue, bool randomizePaletteOnStartup,
             string selectedDateStyle, string selectedDateFillColor, string selectedDateBorderColor, string todayColor, string todayStyle, string todayBorderColor,
-            string defaultCalendarKey, bool defaultAllDay, int defaultStartHour, int defaultStartMinute, int defaultDurationMinutes, int defaultReminderMinutes,
-            string completedDisplayMode, string startViewMode, bool remindersEnabled, bool reminderSound, int quietStartHour, int quietEndHour, string reminderPosition, string startupPositionMode, bool useTimetable, bool useDiary, bool useRollover, bool showGoogleTasks, bool useProBaseball, bool automaticUpdateChecks, string themeId,
+            string defaultCalendarKey, bool defaultAllDay, int defaultStartHour, int defaultStartMinute, int defaultReminderMinutes,
+            string completedDisplayMode, string startViewMode, bool remindersEnabled, bool reminderSound, int quietStartHour, int quietEndHour, string reminderPosition, string startupPositionMode, bool useTimetable, bool useDiary, bool useRollover, bool showIncompleteTodoButton, bool showOverflowPopupWithSidebar, int incompleteTodoLookbackMonths, bool showGoogleTasks, bool useProBaseball, bool automaticUpdateChecks, string themeId,
             bool showSearchIcon, bool showRangeSwitch, bool showThemeSwitch, bool showPositionSwitch,
-            bool holidayColorVisible, bool baseballColorVisible, bool ddayColorVisible, bool anniversaryColorVisible)
+            bool holidayColorVisible, bool baseballColorVisible, bool ddayColorVisible, bool anniversaryColorVisible,
+            bool businessCategoryVisible, bool personalCategoryVisible, bool baseballCategoryVisible, bool ddayCategoryVisible, bool anniversaryCategoryVisible,
+            bool enableButtonColorTool)
         {
             ThemeId = OnharuThemePalette.Normalize(themeId);
             ImportantFirst = importantFirst;
@@ -133,16 +147,10 @@ namespace FamilyPlanner
             Title = "온하루 설정"; Width = 620; SizeToContent = SizeToContent.Height; ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
             AllowsTransparency = true; Background = Brushes.Transparent;
-            var saveGradient = new LinearGradientBrush();
-            saveGradient.StartPoint = new Point(0, .5); saveGradient.EndPoint = new Point(1, .5);
-            saveGradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#3977E8"), 0));
-            saveGradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#7C5CE5"), 1));
             var panel = new StackPanel { Margin = new Thickness(26, 12, 18, 20) };
             var header = new DockPanel { Margin = new Thickness(26, 14, 12, 12) };
-            var close = new Button { Content = "×", Width = 32, Height = 32, Background = Brush("#FEE2E2"),
-                Foreground = Brush("#DC2626"), BorderThickness = new Thickness(0), FontSize = 17 };
-            Round(close, 10);
-            close.Click += delegate { DialogResult = false; };
+            OnharuPopupChrome.StyleHeader(header);
+            var close = OnharuPopupChrome.CloseButton(this); close.Margin = new Thickness(0, 4, 6, 4); close.Padding = new Thickness(0);
             DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
             var googleActions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 14, 0) };
@@ -157,44 +165,38 @@ namespace FamilyPlanner
             aboutButton.Click += delegate { new ProductInfoWindow { Owner = this }.ShowDialog(); };
             googleActions.Children.Add(printButton); googleActions.Children.Add(aboutButton);
             DockPanel.SetDock(googleActions, Dock.Right); header.Children.Add(googleActions);
-            var topSave = new Button { Content = "✓  설정 저장", Width = 96, Height = 30, Background = saveGradient,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0), FontWeight = FontWeights.Bold,
-                Margin = new Thickness(0, 0, 8, 0), Cursor = Cursors.Hand, Visibility = Visibility.Collapsed };
-            Round(topSave, 9); DockPanel.SetDock(topSave, Dock.Right); header.Children.Add(topSave);
             header.Children.Add(new TextBlock { Text = "⚙  온하루 설정", FontSize = 21, FontWeight = FontWeights.Bold,
-                VerticalAlignment = VerticalAlignment.Center });
+                Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
             header.MouseLeftButtonDown += delegate { if (Mouse.LeftButton == MouseButtonState.Pressed) DragMove(); };
-            var rgbToggle = new Button { Content = "RGB ▼", Width = 58, Height = 29,
+            var rgbToggle = new Button { Content = "RGB ▼", Width = 58, Height = 29, Visibility = Visibility.Collapsed,
                 HorizontalAlignment = HorizontalAlignment.Left, Background = Brush("#F8FAFC"),
                 Foreground = Brush("#475569"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
                 FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0), Cursor = Cursors.Hand,
                 HorizontalContentAlignment = HorizontalAlignment.Center, Padding = new Thickness(1, 0, 1, 0) };
             Round(rgbToggle, 9);
             var paletteGroup = new StackPanel();
-            var paletteHeader = new Grid();
-            paletteHeader.Children.Add(new TextBlock { Text = "추천 색상 조합 · 스킨에 맞는 5가지 기본 팔레트", Foreground = Brush("#475569"), FontSize = 12,
+            var paletteHeader = new DockPanel();
+            var randomizePalette = new CheckBox { Content = "시작할 때 색상 무작위 배치", IsChecked = false, Visibility = Visibility.Collapsed,
+                FontSize = 11.5, Foreground = Brush("#475569"), VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.Hand };
+            DockPanel.SetDock(randomizePalette, Dock.Right); paletteHeader.Children.Add(randomizePalette);
+            paletteHeader.Children.Add(new TextBlock { Text = "추천 색상 조합 · 12색 톤 팔레트", Foreground = Brush("#475569"), FontSize = 12,
                 VerticalAlignment = VerticalAlignment.Center });
-            var lockPaletteOption = new CheckBox { Content = "현재 색상 배치 고정", IsChecked = lockPalettePlacement,
-                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
-                Foreground = Brush("#475569"), FontSize = 11.5, Cursor = Cursors.Hand,
-                ToolTip = "켜면 다음 실행부터 현재 일정 색상 배치를 유지합니다." };
-            paletteHeader.Children.Add(lockPaletteOption);
             paletteGroup.Children.Add(paletteHeader);
-            var saveMyPalette = new Button { Content = "내 설정으로 저장", Height = 36,
+            var saveMyPalette = new Button { Content = "내 설정으로 저장", Height = 32,
                 Background = Brush("#EEF2FF"), Foreground = Brush("#4F46E5"), BorderBrush = Brush("#C7D2FE"),
                 BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(5, 0, 0, 0), Padding = new Thickness(1, 0, 1, 0), Cursor = Cursors.Hand };
             Round(saveMyPalette, 11); colorSaveMyButton = saveMyPalette; saveMyPalette.IsEnabled = false; saveMyPalette.Opacity = .45;
-            var updateSelectedPalette = new Button { Content = "프리셋 변경", Height = 36,
+            var updateSelectedPalette = new Button { Content = "프리셋 변경", Height = 32,
                 Background = Brush("#EDE9FE"), Foreground = Brush("#5B21B6"), BorderBrush = Brush("#A78BFA"),
                 BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(5, 0, 0, 0), Padding = new Thickness(1, 0, 1, 0), Cursor = Cursors.Hand };
             Round(updateSelectedPalette, 11);
-            var resetPalettes = new Button { Content = "추천색 초기화", Height = 36, Background = Brush("#FFF7ED"),
+            var resetPalettes = new Button { Content = "추천색 초기화", Height = 32, Background = Brush("#FFF7ED"),
                 Foreground = Brush("#C2410C"), BorderBrush = Brush("#FDBA74"), BorderThickness = new Thickness(1),
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(5, 0, 0, 0), Padding = new Thickness(1, 0, 1, 0), Cursor = Cursors.Hand };
             Round(resetPalettes, 11);
-            var swap = new Button { Content = "색상 2개 선택", ToolTip = "체크한 두 색상 교환", Height = 36, Background = Brush("#FCE7F3"),
+            var swap = new Button { Content = "색상 2개 선택", ToolTip = "체크한 두 색상 교환", Height = 32, Background = Brush("#FCE7F3"),
                 Foreground = Brush("#BE185D"), BorderBrush = Brush("#FBCFE8"), BorderThickness = new Thickness(1),
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(5, 0, 0, 0), Padding = new Thickness(1, 0, 1, 0), Cursor = Cursors.Hand };
             Round(swap, 11); colorSwapButton = swap; swap.IsEnabled = false; swap.Opacity = .45;
@@ -208,13 +210,11 @@ namespace FamilyPlanner
             Grid.SetColumn(saveMyPalette, 2); paletteSaveRow.Children.Add(saveMyPalette);
             Grid.SetColumn(resetPalettes, 3); paletteSaveRow.Children.Add(resetPalettes);
             Grid.SetColumn(swap, 4); paletteSaveRow.Children.Add(swap);
-            var presets = new Grid { Margin = new Thickness(0, 3, 0, 8) };
-            for (var i = 0; i < 13; i++) presets.ColumnDefinitions.Add(new ColumnDefinition {
-                Width = i % 2 == 0 ? GridLength.Auto : new GridLength(1, GridUnitType.Star) });
+            var presets = new WrapPanel { Margin = new Thickness(0, 3, 0, 8), Orientation = Orientation.Horizontal };
             var names = OnharuColorPresets.Names.Concat(new[] { "내설정", "Google" }).ToArray();
             var palettes = OnharuColorPresets.Palettes().Concat(new[] {
                 new[] { business, personal, baseball, dday, anniversary, holidayColor }, new string[0] }).ToArray();
-            const int presetCount = 5, customPaletteIndex = 5, googlePaletteIndex = 6;
+            const int presetCount = 3, customPaletteIndex = 3, googlePaletteIndex = 4;
             for (var i = 0; i < presetCount && i < SavedPalettes.Count; i++)
             {
                 var saved = (SavedPalettes[i] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -232,26 +232,25 @@ namespace FamilyPlanner
             }
             if (CustomPalette.Count >= 6) palettes[customPaletteIndex] = CustomPalette.ToArray();
             var allSources = sources ?? new List<GoogleCalendarSetting>();
-            var activeSources = allSources.Where(x => showGoogleTasks || !GoogleTasks.IsSource(x.Id))
-                .OrderBy(x => IsHoliday(x) ? 2 : x.Primary ? 0 : 1).ThenBy(x => x.Name).ToList();
-            var hiddenTaskSources = allSources.Where(x => GoogleTasks.IsSource(x.Id) && !activeSources.Contains(x)).ToList();
-            var hiddenTaskEditBoxes = new Dictionary<GoogleCalendarSetting, CheckBox>();
-            for (var i = 0; i < activeSources.Count; i++) sourceEditors.Add(Tuple.Create("google_" + i, activeSources[i]));
-            if (CustomPalette.Count < 6)
-            {
-                var currentColors = new List<string> { business, personal, baseball, dday, anniversary, holidayColor };
-                currentColors.AddRange(activeSources.Where(x => !IsHoliday(x)).Select(x => string.IsNullOrWhiteSpace(x.Color) ? "#E9799A" : x.Color));
-                palettes[customPaletteIndex] = currentColors.ToArray();
-            }
-            var orderEntries = new List<Tuple<string, string>> { Tuple.Create("local:business", "업무일정"), Tuple.Create("local:personal", "개인일정") };
-            orderEntries.AddRange(activeSources.Select(x => Tuple.Create("google:" + x.Id, "Google · " + x.Name)));
             var savedOrder = categoryOrder ?? new List<string>();
+            var activeSources = CategoryOrderPolicy.GoogleSources(
+                allSources.Where(x => showGoogleTasks || !GoogleTasks.IsSource(x.Id)), savedOrder).ToList();
+            var hiddenTaskSources = allSources.Where(x => GoogleTasks.IsSource(x.Id) && !activeSources.Contains(x)).ToList();
+            for (var i = 0; i < activeSources.Count; i++) sourceEditors.Add(Tuple.Create("google_" + i, activeSources[i]));
+            // "내설정" is the color arrangement that was active when this
+            // window opened. It is a return point after previewing presets,
+            // not another palette that the user has to save explicitly.
+            var currentSettingColors = new List<string> { business, personal, baseball, dday, anniversary, holidayColor };
+            currentSettingColors.AddRange(activeSources.Where(x => !IsHoliday(x)).Select(x => string.IsNullOrWhiteSpace(x.Color) ? "#E9799A" : x.Color));
+            palettes[customPaletteIndex] = currentSettingColors.ToArray();
+            var orderEntries = new List<Tuple<string, string>> { Tuple.Create("local:business", "업무일정"), Tuple.Create("local:personal", "개인일정"), Tuple.Create("local:baseball", "야구") };
+            orderEntries.AddRange(activeSources.Select(x => Tuple.Create("google:" + x.Id, "Google · " + x.Name)));
+            orderEntries.Add(Tuple.Create("special:dday", "D-Day")); orderEntries.Add(Tuple.Create("special:anniversary", "기념일"));
             orderEntries = orderEntries.OrderBy(x => { var p = savedOrder.IndexOf(x.Item1); return p < 0 ? 999 : p; }).ThenBy(x => x.Item2).ToList();
             CategoryOrder = orderEntries.Select(x => x.Item1).ToList();
             var paletteOptions = new List<RadioButton>();
-            var selectedPaletteIndex = selectedPaletteIndexValue == 8 ? customPaletteIndex
-                : selectedPaletteIndexValue == 9 ? googlePaletteIndex
-                : selectedPaletteIndexValue >= presetCount ? 0 : Math.Max(0, selectedPaletteIndexValue);
+            var selectedPaletteIndex = selectedPaletteIndexValue >= 0 && selectedPaletteIndexValue <= customPaletteIndex
+                ? selectedPaletteIndexValue : customPaletteIndex;
             Border pastelThemeCard = null;
             Action refreshPastelThemeCard = delegate { };
             Action refreshPaletteChangeButton = delegate { };
@@ -261,6 +260,7 @@ namespace FamilyPlanner
                 return new TextBlock { Text = label, FontSize = 12, FontWeight = FontWeights.SemiBold,
                     Foreground = Brush("#334155"), VerticalAlignment = VerticalAlignment.Center };
             };
+            var allowPresetApply = false;
             for (var i = 0; i < names.Length; i++)
             {
                 var index = i; var option = new RadioButton { Content = presetContent(names[i], index == googlePaletteIndex ? new string[0] : palettes[index]),
@@ -275,14 +275,16 @@ namespace FamilyPlanner
                     updateSelectedPalette.Content = names[index] + " 변경";
                     updateSelectedPalette.IsEnabled = index != googlePaletteIndex;
                     updateSelectedPalette.Opacity = updateSelectedPalette.IsEnabled ? 1 : .45;
-                    if (applyPalette != null) applyPalette(index);
+                    if (allowPresetApply && applyPalette != null) applyPalette(index);
                     refreshPastelThemeCard();
                     refreshPaletteChangeButton();
                 };
-                Grid.SetColumn(option, index * 2); presets.Children.Add(option);
+                option.Margin = new Thickness(0, 5, 12, 5);
+                if (index <= customPaletteIndex) presets.Children.Add(option);
             }
             paletteGroup.Children.Add(presets);
-            paletteGroup.Children.Add(paletteSaveRow);
+            // Current category colors are saved directly. The former RGB,
+            // preset-overwrite, custom-palette and swap controls are retired.
             updateSelectedPalette.Content = names[selectedPaletteIndex] + " 변경";
             updateSelectedPalette.IsEnabled = selectedPaletteIndex != googlePaletteIndex;
             updateSelectedPalette.Opacity = updateSelectedPalette.IsEnabled ? 1 : .45;
@@ -293,23 +295,32 @@ namespace FamilyPlanner
                 foreach (var rgbPanel in rgbPanels) rgbPanel.Visibility = rgbExpanded ? Visibility.Visible : Visibility.Collapsed;
                 rgbToggle.Content = rgbExpanded ? "RGB ▲" : "RGB ▼";
             };
-            var colorGrid = new UniformGrid { Columns = 2, Margin = new Thickness(-4, 0, -4, 4) };
-            colorGrid.Children.Add(ColorEditor("업무일정", business));
-            colorGrid.Children.Add(ColorEditor("개인일정", personal));
-            foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
-                colorGrid.Children.Add(ColorEditor(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.Color) ? "#E9799A" : editor.Item2.Color, editor.Item2.Name));
-            paletteGroup.Children.Add(colorGrid);
-            var specialColorGrid = new UniformGrid { Columns = 2, Margin = new Thickness(-4, 0, -4, 4) };
-            var holidayEditor = ColorEditor("국경일", holidayColor, "휴일");
-            var baseballEditor = ColorEditor("야구", baseball);
-            var ddayEditor = ColorEditor("D-Day", dday);
-            var anniversaryEditor = ColorEditor("기념일", anniversary);
-            if (holidayColorVisible) specialColorGrid.Children.Add(holidayEditor);
-            if (baseballColorVisible) specialColorGrid.Children.Add(baseballEditor);
-            if (ddayColorVisible) specialColorGrid.Children.Add(ddayEditor);
-            if (anniversaryColorVisible) specialColorGrid.Children.Add(anniversaryEditor);
+            Func<string, int> savedRank = key => { var rank = savedOrder.IndexOf(key); return rank < 0 ? 999 : rank; };
+            var localColorGrid = new UniformGrid { Columns = 3, Margin = new Thickness(-4, 0, -4, 4) };
+            var localEditors = new List<Tuple<string, string, string>> { Tuple.Create("업무일정", business, "local:business"), Tuple.Create("개인일정", personal, "local:personal") };
+            if (baseballColorVisible) localEditors.Add(Tuple.Create("야구", baseball, "local:baseball"));
+            foreach (var local in localEditors.OrderBy(x => savedRank(x.Item3)))
+                localColorGrid.Children.Add(ColorEditor(local.Item1, local.Item2));
+            paletteGroup.Children.Add(new TextBlock { Text = "온하루", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) });
+            paletteGroup.Children.Add(localColorGrid);
+            var googleColorGrid = new UniformGrid { Columns = 3, Margin = new Thickness(-4, 0, -4, 4) };
+            foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2))
+                .OrderBy(x => GoogleTasks.IsSource(x.Item2.Id) ? int.MaxValue : savedRank("google:" + x.Item2.Id)))
+                googleColorGrid.Children.Add(ColorEditor(editor.Item1, string.IsNullOrWhiteSpace(editor.Item2.Color) ? "#E9799A" : editor.Item2.Color, editor.Item2.Name));
+            if (holidayColorVisible) googleColorGrid.Children.Add(ColorEditor("국경일", holidayColor, "휴일", false));
+            if (googleColorGrid.Children.Count > 0)
+            {
+                paletteGroup.Children.Add(new TextBlock { Text = "Google", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 1, 0, 4) });
+                paletteGroup.Children.Add(googleColorGrid);
+            }
+            var specialColorGrid = new UniformGrid { Columns = 3, Margin = new Thickness(-4, 0, -4, 4) };
+            var specialEditors = new List<Tuple<string, UIElement>>();
+            if (ddayColorVisible) specialEditors.Add(Tuple.Create("special:dday", ColorEditor("D-Day", dday)));
+            if (anniversaryColorVisible) specialEditors.Add(Tuple.Create("special:anniversary", ColorEditor("기념일", anniversary)));
+            foreach (var special in specialEditors.OrderBy(x => savedRank(x.Item1))) specialColorGrid.Children.Add(special.Item2);
             if (specialColorGrid.Children.Count > 0)
             {
+                paletteGroup.Children.Add(new TextBlock { Text = "Special Day", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 1, 0, 4) });
                 paletteGroup.Children.Add(specialColorGrid);
             }
             panel.Children.Add(SectionCard(paletteGroup));
@@ -325,7 +336,8 @@ namespace FamilyPlanner
                 selectedPastelStyle = ThemeId == "classic";
                 SetHex("업무일정", palettes[index][0]); SetHex("개인일정", palettes[index][1]);
                 SetHex("야구", palettes[index][2]); SetHex("D-Day", palettes[index][3]);
-                SetHex("기념일", palettes[index][4]); SetHex("국경일", palettes[index][5]);
+                SetHex("기념일", palettes[index][4]);
+                SetHex("국경일", index < presetCount ? OnharuColorPresets.HolidayColor(index) : palettes[index][5]);
                 var usedColors = new HashSet<string>(palettes[index].Take(6), StringComparer.OrdinalIgnoreCase);
                 var colorIndex = 6; var googleIndex = 0;
                 foreach (var editor in sourceEditors.Where(x => !IsHoliday(x.Item2)))
@@ -336,6 +348,7 @@ namespace FamilyPlanner
                     usedColors.Add(color); SetHex(editor.Item1, color); googleIndex++;
                 }
             };
+            allowPresetApply = true;
             refreshPaletteChangeButton = delegate
             {
                 var editable = selectedPaletteIndex != googlePaletteIndex;
@@ -345,7 +358,7 @@ namespace FamilyPlanner
                     updateSelectedPalette.Background = Brush("#F1F5F9"); updateSelectedPalette.Foreground = Brush("#64748B");
                     updateSelectedPalette.BorderBrush = Brush("#CBD5E1"); return;
                 }
-                var accent = OnharuColorPresets.RepresentativeColor(selectedPaletteIndex);
+                var accent = "#4F46E5";
                 updateSelectedPalette.Background = new SolidColorBrush(CategoryColorSystem.Background("classic", accent));
                 updateSelectedPalette.Foreground = new SolidColorBrush(CategoryColorSystem.Foreground("classic", accent));
                 updateSelectedPalette.BorderBrush = new SolidColorBrush(CategoryColorSystem.EditorBorder("classic", (Color)ColorConverter.ConvertFromString(accent)));
@@ -353,7 +366,8 @@ namespace FamilyPlanner
             refreshPaletteChangeButton();
             Func<List<string>> captureColors = delegate
             {
-                var colors = new List<string> { Hex("업무일정"), Hex("개인일정"), Hex("야구"), Hex("D-Day"), Hex("기념일"), Hex("국경일") };
+                var colors = new List<string> { HexOr("업무일정", business), HexOr("개인일정", personal),
+                    HexOr("야구", baseball), HexOr("D-Day", dday), HexOr("기념일", anniversary), HexOr("국경일", holidayColor) };
                 colors.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
                 return colors;
             };
@@ -445,7 +459,6 @@ namespace FamilyPlanner
             orderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
             orderRow.ColumnDefinitions.Add(new ColumnDefinition());
             orderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
-            orderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
             orderRow.Children.Add(new TextBlock { Text = "일정 표시 순서", Foreground = Brush("#475569"), FontSize = 12,
                 VerticalAlignment = VerticalAlignment.Center });
             var orderOptions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
@@ -457,23 +470,12 @@ namespace FamilyPlanner
             var importantFirstOption = new CheckBox { Content = "중요 일정 우선", IsChecked = importantFirst,
                 VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
             Grid.SetColumn(importantFirstOption, 2); orderRow.Children.Add(importantFirstOption);
-            var categoryOrderButton = new Button { Content = "☷  카테고리 순서 설정", Height = 28, Background = Brush("#E0E7FF"), Foreground = Brush("#4338CA"),
-                BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            Round(categoryOrderButton, 10);
-            categoryOrderButton.Click += delegate
-            {
-                var ordered = CategoryOrder.Select(key => orderEntries.First(x => x.Item1 == key)).ToList();
-                var window = new CategoryOrderWindow(ordered) { Owner = this };
-                if (window.ShowDialog() == true) CategoryOrder = window.Result;
-            };
-            Grid.SetColumn(categoryOrderButton, 3); orderRow.Children.Add(categoryOrderButton); panel.Children.Add(SectionCard(orderRow));
-            var themeOptions = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, 0, 2) };
+            var themeOptions = new UniformGrid { Columns = 2, VerticalAlignment = VerticalAlignment.Center };
             foreach (var option in new[] { Tuple.Create("파스텔", "classic", "부드럽고 생동감 있는 기본 스킨"), Tuple.Create("블랙", "dark", "어두운 배경과 선명한 포인트") })
             {
-                var previewBackground = option.Item2 == "dark" ? "#1A1A1A" : "#E7E9FF";
-                var previewBorder = option.Item2 == "dark" ? "#6366F1" : "#B9C1FF";
-                var previewForeground = option.Item2 == "dark" ? "#FFFFFF" : "#4338CA";
+                var previewBackground = option.Item2 == "dark" ? "#1A1A1A" : "#F6F0FF";
+                var previewBorder = option.Item2 == "dark" ? "#6366F1" : "#B49CCB";
+                var previewForeground = option.Item2 == "dark" ? "#FFFFFF" : "#70429B";
                 var choice = new RadioButton { Tag = option.Item2, GroupName = "OnharuTheme", IsChecked = ThemeId == option.Item2,
                     Height = 34, VerticalContentAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0, 0, option.Item2 == "dark" ? 0 : 10, 0), Cursor = Cursors.Hand };
@@ -494,7 +496,7 @@ namespace FamilyPlanner
                     while (SavedPalettes.Count <= customPaletteIndex) SavedPalettes.Add("");
                     for (var i = 0; i < presetCount; i++) SavedPalettes[i] = "";
                     foreach (var editorName in sliders.Keys.ToList()) UpdatePreview(editorName);
-                    if (applyPalette != null) applyPalette(selectedPaletteIndex);
+                    // Changing skin must preserve the user's current colors.
                     refreshPaletteChangeButton();
                 };
                 themeOptions.Children.Add(choice);
@@ -502,20 +504,21 @@ namespace FamilyPlanner
             refreshPastelThemeCard = delegate
             {
                 if (pastelThemeCard == null) return;
-                var accent = OnharuColorPresets.RepresentativeColor(selectedPaletteIndex);
+                var accent = "#70429B";
                 pastelThemeCard.Background = new SolidColorBrush(CategoryColorSystem.Background("classic", accent));
                 pastelThemeCard.BorderBrush = new SolidColorBrush(CategoryColorSystem.EditorBorder("classic", (Color)ColorConverter.ConvertFromString(accent)));
                 var label = pastelThemeCard.Child as TextBlock;
                 if (label != null) label.Foreground = new SolidColorBrush(CategoryColorSystem.Foreground("classic", accent));
             };
             refreshPastelThemeCard();
-            var themeGroup = new StackPanel();
-            var themeHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 7), LastChildFill = true };
-            themeHeader.Children.Add(new TextBlock { Text = "디자인 스킨", Foreground = Brush("#475569"), FontSize = 12,
+            var themeGroup = new Grid { Height = 36 };
+            themeGroup.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(96) });
+            themeGroup.ColumnDefinitions.Add(new ColumnDefinition());
+            themeGroup.Children.Add(new TextBlock { Text = "디자인 스킨", Foreground = Brush("#475569"), FontSize = 12,
                 FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
-            themeGroup.Children.Add(themeHeader); themeGroup.Children.Add(themeOptions); panel.Children.Insert(0, SectionCard(themeGroup));
+            Grid.SetColumn(themeOptions, 1); themeGroup.Children.Add(themeOptions); panel.Children.Insert(0, SectionCard(themeGroup));
 
-            var displayHeader = new TextBlock { Text = "표시 옵션", Foreground = Brush("#475569"), FontSize = 12,
+            var displayHeader = new TextBlock { Text = "메인 달력 표시 옵션", Foreground = Brush("#475569"), FontSize = 12,
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 7) };
             var weekRules = new StackPanel { Orientation = Orientation.Horizontal, Visibility = showWeeks ? Visibility.Visible : Visibility.Collapsed,
                 HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
@@ -544,14 +547,33 @@ namespace FamilyPlanner
             };
             var rollover = new CheckBox { Content = "미완료 Todo 자동 이월", IsChecked = useRollover, Margin = new Thickness(0, 0, 22, 5),
                 VerticalAlignment = VerticalAlignment.Center, ToolTip = "일정 등록·수정 화면에 이월 옵션을 표시합니다." };
-            var googleTasks = new CheckBox { Content = "Google Tasks 동기화", IsChecked = showGoogleTasks,
+            var googleTasks = new CheckBox { Content = "Google Tasks", IsChecked = showGoogleTasks,
                 Margin = new Thickness(0, 0, 22, 5), VerticalAlignment = VerticalAlignment.Center,
-                ToolTip = "Google Tasks의 제한 사항을 확인한 뒤 오른쪽 목록과 동기화를 사용합니다." };
+                ToolTip = "Task의 제목과 날짜는 읽기 전용이며 완료 여부만 Google과 동기화합니다." };
             googleTasks.Checked += delegate
             {
                 var warning = new GoogleTasksWarningWindow { Owner = this };
                 if (warning.ShowDialog() != true) googleTasks.IsChecked = false;
             };
+            var incompleteTodoCard = new CheckBox { Content = "미완료 일정 버튼 표시", IsChecked = showIncompleteTodoButton,
+                Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "세부 달력에서 온하루·Google 일정·Google Tasks의 미완료 할 일을 모아 보는 버튼을 표시합니다." };
+            var incompleteTodoRange = new ComboBox { Width = 128, Height = 26, Background = Brushes.White,
+                BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
+            foreach (var option in new[] { Tuple.Create("최근 1개월", 1), Tuple.Create("최근 3개월", 3), Tuple.Create("최근 6개월", 6), Tuple.Create("최근 12개월", 12) })
+                incompleteTodoRange.Items.Add(new ComboBoxItem { Content = option.Item1 + " 이후", Tag = option.Item2 });
+            incompleteTodoRange.SelectedItem = incompleteTodoRange.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(x => (int)x.Tag == Math.Max(1, incompleteTodoLookbackMonths)) ?? incompleteTodoRange.Items[0];
+            StyleComboBox(incompleteTodoRange);
+            var incompleteTodoRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 2),
+                VerticalAlignment = VerticalAlignment.Center };
+            incompleteTodoRow.Children.Add(incompleteTodoCard); incompleteTodoRow.Children.Add(incompleteTodoRange);
+            var overflowPopupOption = new CheckBox { Content = "세부 달력이 열려 있어도 더보기 팝업 표시",
+                IsChecked = showOverflowPopupWithSidebar, Margin = new Thickness(0, 5, 0, 2),
+                ToolTip = "체크하지 않으면 세부 달력이 열려 있을 때 더보기는 해당 날짜의 상세 일정만 표시합니다." };
+            var googleDragMove = new CheckBox { Content = "드래그로 Google 일정 날짜 변경", IsChecked = allowGoogleDragMove,
+                Margin = new Thickness(0, 4, 0, 1), Foreground = Brush("#475569"), VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "수정 가능한 Google 일정을 달력의 다른 날짜로 옮기고 Google에 반영합니다." };
             var startDay = new StackPanel { Orientation = Orientation.Horizontal, Height = 26 };
             startDay.Children.Add(new TextBlock { Text = "시작 요일", Width = 120, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
             foreach (var pair in new[] { Tuple.Create("월", "monday"), Tuple.Create("화", "tuesday"), Tuple.Create("수", "wednesday"),
@@ -591,8 +613,7 @@ namespace FamilyPlanner
             var otherDisplayOptions = new WrapPanel { Margin = new Thickness(0, 0, 0, 2) };
             lunar.Margin = new Thickness(0, 0, 24, 5); solarTerms.Margin = new Thickness(0, 0, 24, 5);
             otherDisplayOptions.Children.Add(lunar); otherDisplayOptions.Children.Add(solarTerms);
-            otherDisplayOptions.Children.Add(multiDayTop); otherDisplayOptions.Children.Add(completedLastOption); otherDisplayOptions.Children.Add(rollover); otherDisplayOptions.Children.Add(use24Hour);
-            otherDisplayOptions.Children.Add(googleTasks);
+            otherDisplayOptions.Children.Add(multiDayTop); otherDisplayOptions.Children.Add(completedLastOption); otherDisplayOptions.Children.Add(use24Hour);
             var featureIconOptions = new StackPanel { Margin = new Thickness(0) };
             var featureIconRow = new WrapPanel { Margin = new Thickness(0) };
             var headerSwitchRow = new WrapPanel { Margin = new Thickness(0) };
@@ -734,29 +755,117 @@ namespace FamilyPlanner
             todayBoth.Checked += delegate { if (todayColor == "none") todayColor = "#CCFCE7F3"; todayColorButton.Background = Brush(todayColor); todayColorButton.Content = ""; todayIconButton.Background = Brush(todayIconColor); todayIconButton.Content = ""; };
             showWeek.Click += delegate { weekRules.Visibility = showWeek.IsChecked == true ? Visibility.Visible : Visibility.Collapsed; };
             var displayGroup = new StackPanel(); displayGroup.Children.Add(displayHeader);
-            displayGroup.Children.Add(new TextBlock { Text = "달력 내 표시", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             displayGroup.Children.Add(calendarOptions);
             displayGroup.Children.Add(otherDisplayOptions);
-            displayGroup.Children.Add(new Border { Height = 1, Background = Brush("#E2E8F0"), Margin = new Thickness(0, 3, 0, 7) });
-            displayGroup.Children.Add(new TextBlock { Text = "상단 기능 아이콘", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
-            displayGroup.Children.Add(featureIconOptions);
-            panel.Children.Add(SectionCard(displayGroup));
-            var behaviorGroup = new StackPanel();
-            behaviorGroup.Children.Add(new TextBlock { Text = "화면과 동작", Foreground = Brush("#475569"), FontSize = 12,
+            displayGroup.Children.Add(orderRow);
+            var localBusinessCategory = new CheckBox { Content = "업무", IsChecked = businessCategoryVisible, Margin = new Thickness(0, 0, 22, 0) };
+            var localPersonalCategory = new CheckBox { Content = "개인", IsChecked = personalCategoryVisible, Margin = new Thickness(0, 0, 22, 0) };
+            var localBaseballCategory = new CheckBox { Content = "야구", IsChecked = baseballCategoryVisible };
+            var ddayCategory = new CheckBox { Content = "D-Day", IsChecked = ddayCategoryVisible, Margin = new Thickness(0, 0, 22, 0) };
+            var anniversaryCategory = new CheckBox { Content = "기념일", IsChecked = anniversaryCategoryVisible };
+            displayGroup.Children.Add(new Border { Height = 1, Background = Brush("#E2E8F0"), Margin = new Thickness(0, 4, 0, 7) });
+            displayGroup.Children.Add(new TextBlock { Text = "화면과 동작", Foreground = Brush("#64748B"), FontSize = 11,
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
-            behaviorGroup.Children.Add(startDay); behaviorGroup.Children.Add(restDayRow); behaviorGroup.Children.Add(completedDisplay); behaviorGroup.Children.Add(startView);
-            behaviorGroup.Children.Add(startupPosition); behaviorGroup.Children.Add(selectionOptions); behaviorGroup.Children.Add(todayOptions);
-            fontRow.Margin = new Thickness(0, 2, 0, 0); behaviorGroup.Children.Add(fontRow);
-            panel.Children.Add(SectionCard(behaviorGroup));
+            displayGroup.Children.Add(startDay); displayGroup.Children.Add(restDayRow); displayGroup.Children.Add(completedDisplay); displayGroup.Children.Add(startView);
+            displayGroup.Children.Add(startupPosition); displayGroup.Children.Add(selectionOptions); displayGroup.Children.Add(todayOptions);
+            fontRow.Margin = new Thickness(0, 2, 0, 0); displayGroup.Children.Add(fontRow);
+            panel.Children.Add(SectionCard(displayGroup));
+
+            var sourceVisibleBoxes = new Dictionary<string, CheckBox>();
+            var detailGroup = new StackPanel();
+            detailGroup.Children.Add(new TextBlock { Text = "세부 달력 표시 옵션", Foreground = Brush("#475569"), FontSize = 12,
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 7) });
+            var detailCategories = new Grid { Margin = new Thickness(0, 0, 0, 5) };
+            detailCategories.ColumnDefinitions.Add(new ColumnDefinition()); detailCategories.ColumnDefinitions.Add(new ColumnDefinition());
+            var localDetail = new StackPanel();
+            localDetail.Children.Add(new TextBlock { Text = "온하루", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            var localDetailOptions = new WrapPanel();
+            localBusinessCategory.Margin = new Thickness(0, 0, 20, 2); localPersonalCategory.Margin = new Thickness(0, 0, 20, 2); localBaseballCategory.Margin = new Thickness(0, 0, 0, 2);
+            localDetailOptions.Children.Add(localBusinessCategory); localDetailOptions.Children.Add(localPersonalCategory); localDetailOptions.Children.Add(localBaseballCategory);
+            localDetail.Children.Add(localDetailOptions); detailCategories.Children.Add(localDetail);
+            var specialDetail = new StackPanel();
+            specialDetail.Children.Add(new TextBlock { Text = "Special Day", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            var specialDetailOptions = new WrapPanel(); ddayCategory.Margin = new Thickness(0, 0, 20, 2); anniversaryCategory.Margin = new Thickness(0, 0, 0, 2);
+            specialDetailOptions.Children.Add(ddayCategory); specialDetailOptions.Children.Add(anniversaryCategory); specialDetail.Children.Add(specialDetailOptions);
+            Grid.SetColumn(specialDetail, 1); detailCategories.Children.Add(specialDetail); detailGroup.Children.Add(detailCategories);
+            detailGroup.Children.Add(incompleteTodoRow);
+            detailGroup.Children.Add(overflowPopupOption);
+            if (sourceEditors.Count > 0 || hiddenTaskSources.Count > 0)
+            {
+                detailGroup.Children.Add(new Border { Height = 1, Background = Brush("#E2E8F0"), Margin = new Thickness(0, 2, 0, 7) });
+                detailGroup.Children.Add(new TextBlock { Text = "Google", Foreground = Brush("#64748B"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+                var googleDetailGrid = new UniformGrid { Columns = 2 };
+                foreach (var editor in sourceEditors)
+                {
+                    var source = editor.Item2; var holiday = IsHoliday(source); var taskSource = GoogleTasks.IsSource(source.Id);
+                    if (taskSource) continue;
+                    var canWrite = (source.AccessRole == "owner" || source.AccessRole == "writer") && !holiday;
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Height = 27, Margin = new Thickness(0, 0, 12, 2) };
+                    var visibleBox = new CheckBox { Content = source.Name, IsChecked = source.Visible, VerticalAlignment = VerticalAlignment.Center, ToolTip = source.Name };
+                    sourceVisibleBoxes[editor.Item1] = visibleBox; row.Children.Add(visibleBox);
+                    if (canWrite)
+                    {
+                        var editGroup = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(5, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+                        var editCaption = new TextBlock { Text = "(수정", FontSize = 10.5, VerticalAlignment = VerticalAlignment.Center };
+                        var editBox = new CheckBox { IsChecked = source.Editable, Margin = new Thickness(3, 0, 2, 0), VerticalAlignment = VerticalAlignment.Center };
+                        var editClose = new TextBlock { Text = ")", FontSize = 10.5, VerticalAlignment = VerticalAlignment.Center };
+                        Action refreshEditTone = delegate { var tone = editBox.IsChecked == true ? Brush("#111827") : Brush("#94A3B8"); editCaption.Foreground = tone; editClose.Foreground = tone; editBox.Opacity = editBox.IsChecked == true ? 1 : .55; };
+                        editBox.Checked += delegate { refreshEditTone(); }; editBox.Unchecked += delegate { refreshEditTone(); }; refreshEditTone();
+                        editGroup.Children.Add(editCaption); editGroup.Children.Add(editBox); editGroup.Children.Add(editClose);
+                        editBoxes[editor.Item1] = editBox; row.Children.Add(editGroup);
+                    }
+                    else
+                    {
+                        var readOnly = new TextBlock { Text = "읽기 전용", Foreground = Brush("#94A3B8"), FontSize = 10, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+                        Grid.SetColumn(readOnly, 1); row.Children.Add(readOnly);
+                    }
+                    googleDetailGrid.Children.Add(row);
+                }
+                var taskRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 27, Margin = new Thickness(0, 0, 12, 2) };
+                googleTasks.Margin = new Thickness(0); taskRow.Children.Add(googleTasks);
+                taskRow.Children.Add(new TextBlock { Text = " · 읽기 전용, 완료 체크만 가능", Foreground = Brush("#94A3B8"), FontSize = 10,
+                    Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+                googleDetailGrid.Children.Add(taskRow);
+                detailGroup.Children.Add(googleDetailGrid);
+            }
+            panel.Children.Add(SectionCard(detailGroup));
+            var syncGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28 };
+            syncGroup.Children.Add(new TextBlock { Text = "Google 자동 동기화", Width = 120, Foreground = Brush("#475569"), FontSize = 12,
+                FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            var syncOptions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            foreach (var option in new[] { new { Name = "사용 안 함", Minutes = 0 }, new { Name = "5분", Minutes = 5 },
+                new { Name = "15분", Minutes = 15 }, new { Name = "30분", Minutes = 30 }, new { Name = "60분", Minutes = 60 } })
+                syncOptions.Children.Add(new RadioButton { Content = option.Name, Tag = option.Minutes, GroupName = "AutoSync",
+                    IsChecked = autoSyncMinutes == option.Minutes, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center });
+            syncGroup.Children.Add(syncOptions);
+            panel.Children.Add(SectionCard(syncGroup));
             var defaultsGroup = new StackPanel();
-            defaultsGroup.Children.Add(new TextBlock { Text = "새 일정 기본값", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 5) });
+            defaultsGroup.Children.Add(new TextBlock { Text = "입력 화면 · 새 일정", Foreground = Brush("#475569"), FontSize = 12,
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             var defaultsRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 30 };
             var defaultCalendar = new ComboBox { Width = 145, Height = 26, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
-            defaultCalendar.Items.Add(new ComboBoxItem { Content = "온하루 · 업무일정", Tag = "local:business" });
-            defaultCalendar.Items.Add(new ComboBoxItem { Content = "온하루 · 개인일정", Tag = "local:personal" });
-            foreach (var source in activeSources.Where(x => x.Editable && !IsHoliday(x)))
-                defaultCalendar.Items.Add(new ComboBoxItem { Content = "Google · " + source.Name, Tag = "google:" + source.Id });
-            defaultCalendar.SelectedItem = defaultCalendar.Items.OfType<ComboBoxItem>().FirstOrDefault(x => (x.Tag ?? "").ToString() == defaultCalendarKey) ?? defaultCalendar.Items[0];
+            Action refreshDefaultCalendars = delegate
+            {
+                var selected = defaultCalendar.SelectedItem as ComboBoxItem;
+                var selectedKey = selected == null ? defaultCalendarKey : Convert.ToString(selected.Tag);
+                defaultCalendar.Items.Clear();
+                if (localBusinessCategory.IsChecked == true) defaultCalendar.Items.Add(new ComboBoxItem { Content = "온하루 · 업무일정", Tag = "local:business" });
+                if (localPersonalCategory.IsChecked == true) defaultCalendar.Items.Add(new ComboBoxItem { Content = "온하루 · 개인일정", Tag = "local:personal" });
+                if (localBaseballCategory.IsChecked == true) defaultCalendar.Items.Add(new ComboBoxItem { Content = "온하루 · 야구", Tag = "local:baseball" });
+                foreach (var source in activeSources.Where(x => !IsHoliday(x) && !GoogleTasks.IsSource(x.Id)))
+                {
+                    var editor = sourceEditors.FirstOrDefault(x => x.Item2 == source);
+                    var editable = editor != null && editBoxes.ContainsKey(editor.Item1) ? editBoxes[editor.Item1].IsChecked == true : source.Editable;
+                    if (editable) defaultCalendar.Items.Add(new ComboBoxItem { Content = "Google · " + source.Name, Tag = "google:" + source.Id });
+                }
+                if (defaultCalendar.Items.Count == 0) defaultCalendar.Items.Add(new ComboBoxItem { Content = "등록 가능한 일정 없음", Tag = "local:business", IsEnabled = false });
+                defaultCalendar.SelectedItem = defaultCalendar.Items.OfType<ComboBoxItem>().FirstOrDefault(x => Convert.ToString(x.Tag) == selectedKey && x.IsEnabled)
+                    ?? defaultCalendar.Items.OfType<ComboBoxItem>().FirstOrDefault(x => x.IsEnabled) ?? defaultCalendar.Items[0];
+            };
+            refreshDefaultCalendars();
+            localBusinessCategory.Click += delegate { refreshDefaultCalendars(); };
+            localPersonalCategory.Click += delegate { refreshDefaultCalendars(); };
+            localBaseballCategory.Click += delegate { refreshDefaultCalendars(); };
             StyleComboBox(defaultCalendar); defaultsRow.Children.Add(defaultCalendar);
             var defaultAllDayOption = new RadioButton { Content = "하루종일", GroupName = "DefaultTimeMode", IsChecked = defaultAllDay, Margin = new Thickness(12, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
             var defaultTimedOption = new RadioButton { Content = "시간 지정", GroupName = "DefaultTimeMode", IsChecked = !defaultAllDay, Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -766,24 +875,32 @@ namespace FamilyPlanner
                 defaultTime.Items.Add(new ComboBoxItem { Content = string.Format("{0:00}:{1:00}", hour, minute), Tag = hour * 60 + minute });
             defaultTime.SelectedItem = defaultTime.Items.OfType<ComboBoxItem>().OrderBy(x => Math.Abs((int)x.Tag - (defaultStartHour * 60 + defaultStartMinute))).First();
             StyleComboBox(defaultTime); defaultsRow.Children.Add(defaultTime); defaultsGroup.Children.Add(defaultsRow);
-            var defaultsDetail = new StackPanel { Orientation = Orientation.Horizontal, Height = 30, Margin = new Thickness(0, 2, 0, 0) };
-            defaultsDetail.Children.Add(new TextBlock { Text = "소요 시간", Width = 66, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
-            var defaultDuration = new ComboBox { Width = 88, Height = 26, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
-            foreach (var option in new[] { Tuple.Create("30분", 30), Tuple.Create("1시간", 60), Tuple.Create("1시간 30분", 90), Tuple.Create("2시간", 120) })
-                defaultDuration.Items.Add(new ComboBoxItem { Content = option.Item1, Tag = option.Item2 });
-            defaultDuration.SelectedItem = defaultDuration.Items.OfType<ComboBoxItem>().FirstOrDefault(x => (int)x.Tag == defaultDurationMinutes) ?? defaultDuration.Items[0];
-            StyleComboBox(defaultDuration); defaultsDetail.Children.Add(defaultDuration);
-            defaultsDetail.Children.Add(new TextBlock { Text = "기본 알림", Width = 70, Margin = new Thickness(18, 0, 0, 0), Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
-            var defaultReminder = new ComboBox { Width = 105, Height = 26, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), Cursor = Cursors.Hand };
-            foreach (var option in new[] { Tuple.Create("10분 전", 10), Tuple.Create("15분 전", 15), Tuple.Create("30분 전", 30) })
-                defaultReminder.Items.Add(new ComboBoxItem { Content = option.Item1, Tag = option.Item2 });
-            defaultReminder.SelectedItem = defaultReminder.Items.OfType<ComboBoxItem>().FirstOrDefault(x => (int)x.Tag == defaultReminderMinutes) ?? defaultReminder.Items[0];
-            StyleComboBox(defaultReminder); defaultsDetail.Children.Add(defaultReminder); defaultsGroup.Children.Add(defaultsDetail);
-            Action updateDefaultTime = delegate { defaultTime.IsEnabled = defaultTimedOption.IsChecked == true; defaultDuration.IsEnabled = defaultTimedOption.IsChecked == true; };
+            rollover.Margin = new Thickness(0, 3, 0, 2); defaultsGroup.Children.Add(rollover);
+            Action updateDefaultTime = delegate { defaultTime.IsEnabled = defaultTimedOption.IsChecked == true; };
             defaultAllDayOption.Checked += delegate { updateDefaultTime(); }; defaultTimedOption.Checked += delegate { updateDefaultTime(); }; updateDefaultTime();
             panel.Children.Add(SectionCard(defaultsGroup));
+
+            var defaultReminderMode = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(18, 0, 0, 0) };
+            var noDefaultReminder = new RadioButton { Content = "없음", GroupName = "DefaultReminder", IsChecked = defaultReminderMinutes < 0,
+                Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center };
+            var customDefaultReminder = new RadioButton { Content = "직접 선택", GroupName = "DefaultReminder", IsChecked = defaultReminderMinutes >= 0,
+                Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+            var reminderMultiplier = defaultReminderMinutes > 0 && defaultReminderMinutes % 1440 == 0 ? 1440 : defaultReminderMinutes > 0 && defaultReminderMinutes % 60 == 0 ? 60 : 1;
+            var defaultReminderValue = new TextBox { Width = 48, Height = 26, Text = Math.Max(1, defaultReminderMinutes / reminderMultiplier).ToString(),
+                Padding = new Thickness(5, 0, 5, 0), VerticalContentAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center,
+                Background = Brushes.White, BorderBrush = Brush("#CBD5E1"), VerticalAlignment = VerticalAlignment.Center };
+            UiRound.StyleTextBox(defaultReminderValue, 9);
+            var defaultReminderUnit = new ComboBox { Width = 72, Height = 26, Background = Brushes.White, BorderBrush = Brush("#CBD5E1"),
+                Cursor = Cursors.Hand, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 0, 0) };
+            foreach (var option in new[] { Tuple.Create("분 전", 1), Tuple.Create("시간 전", 60), Tuple.Create("일 전", 1440) })
+                defaultReminderUnit.Items.Add(new ComboBoxItem { Content = option.Item1, Tag = option.Item2 });
+            defaultReminderUnit.SelectedItem = defaultReminderUnit.Items.OfType<ComboBoxItem>().First(x => (int)x.Tag == reminderMultiplier);
+            StyleComboBox(defaultReminderUnit);
+            Action updateDefaultReminder = delegate { var enabled = customDefaultReminder.IsChecked == true; defaultReminderValue.IsEnabled = enabled; defaultReminderUnit.IsEnabled = enabled; };
+            noDefaultReminder.Checked += delegate { updateDefaultReminder(); }; customDefaultReminder.Checked += delegate { updateDefaultReminder(); };
+            defaultReminderMode.Children.Add(noDefaultReminder); defaultReminderMode.Children.Add(customDefaultReminder);
+            defaultReminderMode.Children.Add(defaultReminderValue); defaultReminderMode.Children.Add(defaultReminderUnit); updateDefaultReminder();
             var reminderGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28 };
-            reminderGroup.Children.Add(new TextBlock { Text = "알림", Width = 120, Foreground = Brush("#475569"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
             var remindersEnabledOption = new CheckBox { Content = "알림 사용", IsChecked = remindersEnabled, Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
             var reminderSoundOption = new CheckBox { Content = "소리 사용", IsChecked = reminderSound, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center };
             reminderGroup.Children.Add(remindersEnabledOption); reminderGroup.Children.Add(reminderSoundOption);
@@ -799,12 +916,17 @@ namespace FamilyPlanner
             StyleComboBox(quietStart); StyleComboBox(quietEnd); reminderGroup.Children.Add(quietStart);
             reminderGroup.Children.Add(new TextBlock { Text = "~", Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 6, 0) });
             reminderGroup.Children.Add(quietEnd);
-            var reminderPositionGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28, Margin = new Thickness(120, 0, 0, 0) };
-            reminderPositionGroup.Children.Add(new TextBlock { Text = "알림 위치", Width = 72, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
+            var reminderPositionGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28 };
+            reminderPositionGroup.Children.Add(new TextBlock { Text = "알림 위치", Width = 120, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
             foreach (var option in new[] { Tuple.Create("주 모니터 중앙", "screen"), Tuple.Create("온하루 위", "onharu") })
                 reminderPositionGroup.Children.Add(new RadioButton { Content = option.Item1, Tag = option.Item2, GroupName = "ReminderPosition",
                     IsChecked = reminderPosition == option.Item2, Margin = new Thickness(0, 0, 24, 0), VerticalAlignment = VerticalAlignment.Center });
-            var reminderCard = new StackPanel(); reminderCard.Children.Add(reminderGroup); reminderCard.Children.Add(reminderPositionGroup);
+            var defaultReminderRow = new StackPanel { Orientation = Orientation.Horizontal, Height = 30, Margin = new Thickness(0, 1, 0, 0) };
+            defaultReminderRow.Children.Add(new TextBlock { Text = "새 일정 기본 알림", Width = 120, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
+            defaultReminderMode.Margin = new Thickness(0); defaultReminderRow.Children.Add(defaultReminderMode);
+            var reminderCard = new StackPanel();
+            reminderCard.Children.Add(new TextBlock { Text = "알림", Foreground = Brush("#475569"), FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            reminderCard.Children.Add(reminderGroup); reminderCard.Children.Add(defaultReminderRow); reminderCard.Children.Add(reminderPositionGroup);
             panel.Children.Add(SectionCard(reminderCard));
             Action updateQuietHours = delegate
             {
@@ -819,72 +941,47 @@ namespace FamilyPlanner
             reminderSoundOption.Checked += delegate { updateQuietHours(); };
             reminderSoundOption.Unchecked += delegate { updateQuietHours(); };
             updateQuietHours();
-            var syncGroup = new StackPanel { Orientation = Orientation.Horizontal, Height = 28 };
-            syncGroup.Children.Add(new TextBlock { Text = "Google 자동 동기화", Width = 120, Foreground = Brush("#475569"), FontSize = 12,
-                VerticalAlignment = VerticalAlignment.Center });
-            var syncOptions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            foreach (var option in new[] { new { Name = "사용 안 함", Minutes = 0 }, new { Name = "5분", Minutes = 5 },
-                new { Name = "15분", Minutes = 15 }, new { Name = "30분", Minutes = 30 }, new { Name = "60분", Minutes = 60 } })
-                syncOptions.Children.Add(new RadioButton { Content = option.Name, Tag = option.Minutes, GroupName = "AutoSync",
-                    IsChecked = autoSyncMinutes == option.Minutes, Margin = new Thickness(0, 0, 22, 0), VerticalAlignment = VerticalAlignment.Center });
-            syncGroup.Children.Add(syncOptions);
-            var googleDragMove = new CheckBox { Content = "드래그로 Google 일정 날짜 변경", IsChecked = allowGoogleDragMove,
-                Margin = new Thickness(120, 3, 0, 1), Foreground = Brush("#475569"),
-                ToolTip = "수정 가능한 Google 일정을 달력의 다른 날짜로 옮기고 Google에 반영합니다." };
-            var syncCard = new StackPanel(); syncCard.Children.Add(syncGroup); syncCard.Children.Add(googleDragMove);
-            panel.Children.Add(SectionCard(syncCard));
             var updateOption = new CheckBox { Content = "새 버전 자동 확인 · 설치 전 항상 확인",
                 IsChecked = automaticUpdateChecks, Foreground = Brush("#475569"), FontSize = 12,
                 Margin = new Thickness(0, 1, 0, 1), VerticalAlignment = VerticalAlignment.Center,
                 ToolTip = "하루에 한 번 GitHub Release를 확인합니다. 동의 없이 설치하지 않습니다." };
-            panel.Children.Add(SectionCard(updateOption));
-            if (activeSources.Count > 0 || hiddenTaskSources.Count > 0)
-            {
-                var permissionGroup = new StackPanel();
-                permissionGroup.Children.Add(new TextBlock { Text = "Google 일정 수정 권한", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 5) });
-                var permissionGrid = new UniformGrid { Columns = 2 };
-                foreach (var editor in sourceEditors)
-                {
-                    var source = editor.Item2; var holiday = IsHoliday(source); var taskSource = GoogleTasks.IsSource(source.Id);
-                    var canWrite = taskSource || source.AccessRole == "owner" || source.AccessRole == "writer";
-                    var label = taskSource ? source.Name + " · ONHARU 등록 Task" : source.Name + (holiday || !canWrite ? " · 읽기 전용" : " · 수정 가능");
-                    var box = new CheckBox { Content = label,
-                        IsChecked = source.Editable && canWrite && !holiday, IsEnabled = canWrite && !holiday, Margin = new Thickness(0, 0, 10, 7),
-                        ToolTip = taskSource ? "체크하면 온하루에서 이 목록에 Task를 만들고 수정할 수 있습니다." : label,
-                        Visibility = taskSource && !showGoogleTasks ? Visibility.Collapsed : Visibility.Visible };
-                    if (taskSource)
-                    {
-                        googleTasks.Checked += delegate { if (googleTasks.IsChecked == true) box.Visibility = Visibility.Visible; };
-                        googleTasks.Unchecked += delegate { box.Visibility = Visibility.Collapsed; };
-                    }
-                    editBoxes[editor.Item1] = box; permissionGrid.Children.Add(box);
-                }
-                foreach (var source in hiddenTaskSources)
-                {
-                    var box = new CheckBox { Content = source.Name + " · ONHARU 등록 Task",
-                        IsChecked = source.Editable, Margin = new Thickness(0, 0, 10, 7),
-                        ToolTip = "체크하면 온하루에서 이 목록에 Task를 만들고 수정할 수 있습니다.",
-                        Visibility = Visibility.Collapsed };
-                    googleTasks.Checked += delegate { if (googleTasks.IsChecked == true) { box.Visibility = Visibility.Visible; box.IsChecked = true; } };
-                    googleTasks.Unchecked += delegate { box.Visibility = Visibility.Collapsed; };
-                    hiddenTaskEditBoxes[source] = box; permissionGrid.Children.Add(box);
-                }
-                permissionGroup.Children.Add(permissionGrid); panel.Children.Add(SectionCard(permissionGroup));
-            }
-            var save = new Button { Content = "✓  설정 저장", Height = 44, Background = saveGradient, Foreground = Brushes.White,
-                BorderThickness = new Thickness(0), FontWeight = FontWeights.Bold, FontSize = 14, Margin = new Thickness(0, 10, 0, 0), Cursor = Cursors.Hand };
+            var buttonColorTool = new CheckBox { Content = "ONHARU 버튼 색상 도구", IsChecked = enableButtonColorTool,
+                Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 3, 0, 1),
+                ToolTip = "켜면 버튼을 마우스 오른쪽 버튼으로 눌러 배경과 글씨 색상을 직접 조정할 수 있습니다." };
+            var dragMaster = new CheckBox { Content = "드래그로 일정 옮기기", IsChecked = allowDragMove, Foreground = Brush("#475569"), FontSize = 12,
+                Margin = new Thickness(0, 5, 0, 3), VerticalAlignment = VerticalAlignment.Center };
+            var localDrag = new CheckBox { Content = "온하루 일정", IsChecked = allowLocalDragMove, Margin = new Thickness(18, 0, 18, 1) };
+            googleDragMove.Content = "Google 일정"; googleDragMove.Margin = new Thickness(0, 0, 18, 1);
+            var detailCardDrag = new CheckBox { Content = "세부 일정 카드", IsChecked = allowDetailCardDrag, Margin = new Thickness(0, 0, 18, 1) };
+            var specialCardDrag = new CheckBox { Content = "Special Day 카드", IsChecked = allowSpecialCardDrag, Margin = new Thickness(0, 0, 0, 1) };
+            var dragChildren = new WrapPanel(); dragChildren.Children.Add(localDrag); dragChildren.Children.Add(googleDragMove); dragChildren.Children.Add(detailCardDrag); dragChildren.Children.Add(specialCardDrag);
+            Action updateDragOptions = delegate { dragChildren.IsEnabled = dragMaster.IsChecked == true; dragChildren.Opacity = dragMaster.IsChecked == true ? 1 : .45; };
+            dragMaster.Checked += delegate { updateDragOptions(); }; dragMaster.Unchecked += delegate { updateDragOptions(); }; updateDragOptions();
+            var generalOptions = new StackPanel(); generalOptions.Children.Add(updateOption); generalOptions.Children.Add(buttonColorTool); generalOptions.Children.Add(dragMaster); generalOptions.Children.Add(dragChildren);
+            panel.Children.Add(SectionCard(generalOptions));
+            var featureGroup = new StackPanel();
+            featureGroup.Children.Add(new TextBlock { Text = "상단 기능 아이콘", Foreground = Brush("#475569"), FontSize = 12,
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            featureGroup.Children.Add(featureIconOptions); panel.Children.Add(SectionCard(featureGroup));
+            var save = OnharuPopupChrome.ActionButton("✓  설정 저장", double.NaN); save.Height = 44; save.FontSize = 14; save.Margin = new Thickness(0, 10, 0, 0);
             Round(save, 13);
             save.Click += delegate
             {
-                BusinessColor = Hex("업무일정"); PersonalColor = Hex("개인일정");
-                BaseballColor = Hex("야구"); DdayColor = Hex("D-Day");
-                AnniversaryColor = Hex("기념일"); HolidayColor = Hex("국경일");
+                BusinessColor = HexOr("업무일정", business); PersonalColor = HexOr("개인일정", personal);
+                BaseballColor = HexOr("야구", baseball); DdayColor = HexOr("D-Day", dday);
+                AnniversaryColor = HexOr("기념일", anniversary); HolidayColor = HexOr("국경일", holidayColor);
                 foreach (var editor in sourceEditors)
                 {
                     if (!IsHoliday(editor.Item2)) editor.Item2.Color = Hex(editor.Item1);
-                    editor.Item2.Editable = editBoxes.ContainsKey(editor.Item1) && editBoxes[editor.Item1].IsChecked == true;
+                    if (sourceVisibleBoxes.ContainsKey(editor.Item1)) editor.Item2.Visible = sourceVisibleBoxes[editor.Item1].IsChecked == true;
+                    editor.Item2.Editable = !GoogleTasks.IsSource(editor.Item2.Id) && editBoxes.ContainsKey(editor.Item1) && editBoxes[editor.Item1].IsChecked == true;
                 }
-                foreach (var entry in hiddenTaskEditBoxes) entry.Key.Editable = entry.Value.IsChecked == true;
+                foreach (var source in hiddenTaskSources) source.Editable = false;
+                CategoryOrder = localColorGrid.Children.Cast<FrameworkElement>().Select(x => x.Tag as string == "업무일정" ? "local:business" : x.Tag as string == "야구" ? "local:baseball" : "local:personal")
+                    .Concat(googleColorGrid.Children.Cast<FrameworkElement>().Where(x => (string)x.Tag != "국경일")
+                        .Select(x => "google:" + sourceEditors.First(y => y.Item1 == (string)x.Tag).Item2.Id))
+                    .Concat(activeSources.Where(IsHoliday).Select(x => "google:" + x.Id))
+                    .Concat(specialColorGrid.Children.Cast<FrameworkElement>().Select(x => (string)x.Tag == "D-Day" ? "special:dday" : "special:anniversary")).ToList();
                 SelectedFontSize = (double)fontOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
                 OrderMode = orderOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 ImportantFirst = importantFirstOption.IsChecked == true;
@@ -902,18 +999,31 @@ namespace FamilyPlanner
                 ShowRangeSwitch = rangeSwitch.IsChecked == true;
                 ShowThemeSwitch = themeSwitch.IsChecked == true;
                 ShowPositionSwitch = positionSwitch.IsChecked == true;
+                BusinessCategoryVisible = localBusinessCategory.IsChecked == true;
+                PersonalCategoryVisible = localPersonalCategory.IsChecked == true;
+                BaseballCategoryVisible = localBaseballCategory.IsChecked == true;
+                DdayCategoryVisible = ddayCategory.IsChecked == true;
+                AnniversaryCategoryVisible = anniversaryCategory.IsChecked == true;
                 UseDiary = diary.IsChecked == true;
                 UseRollover = rollover.IsChecked == true;
+                ShowIncompleteTodoButton = incompleteTodoCard.IsChecked == true;
+                ShowOverflowPopupWithSidebar = overflowPopupOption.IsChecked == true;
+                IncompleteTodoLookbackMonths = (int)((ComboBoxItem)incompleteTodoRange.SelectedItem).Tag;
                 ShowGoogleTasks = googleTasks.IsChecked == true;
+                AllowDragMove = dragMaster.IsChecked == true;
+                AllowLocalDragMove = localDrag.IsChecked == true;
                 AllowGoogleDragMove = googleDragMove.IsChecked == true;
+                AllowDetailCardDrag = detailCardDrag.IsChecked == true;
+                AllowSpecialCardDrag = specialCardDrag.IsChecked == true;
                 UseProBaseball = proBaseball.IsChecked == true;
                 AutomaticUpdateChecks = updateOption.IsChecked == true;
+                EnableButtonColorTool = buttonColorTool.IsChecked == true;
                 ThemeId = themeOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 PaletteSelectionIndex = selectedPaletteIndex;
-                LockPalettePlacement = lockPaletteOption.IsChecked == true;
+                RandomizePaletteOnStartup = false;
                 if (selectedPaletteIndex == customPaletteIndex)
                 {
-                    var customColors = new List<string> { Hex("업무일정"), Hex("개인일정"), Hex("야구"), Hex("D-Day"), Hex("기념일"), Hex("국경일") };
+                    var customColors = new List<string> { BusinessColor, PersonalColor, BaseballColor, DdayColor, AnniversaryColor, HolidayColor };
                     customColors.AddRange(sourceEditors.Where(x => !IsHoliday(x.Item2)).Select(x => Hex(x.Item1)));
                     CustomPalette = customColors;
                 }
@@ -932,18 +1042,19 @@ namespace FamilyPlanner
                 DefaultAllDay = defaultAllDayOption.IsChecked == true;
                 var timeValue = (int)((ComboBoxItem)defaultTime.SelectedItem).Tag;
                 DefaultStartHour = timeValue / 60; DefaultStartMinute = timeValue % 60;
-                DefaultDurationMinutes = (int)((ComboBoxItem)defaultDuration.SelectedItem).Tag;
-                DefaultReminderMinutes = (int)((ComboBoxItem)defaultReminder.SelectedItem).Tag;
+                int reminderValue; if (!int.TryParse(defaultReminderValue.Text, out reminderValue)) reminderValue = 10;
+                reminderValue = Math.Max(1, Math.Min(999, reminderValue));
+                DefaultReminderMinutes = noDefaultReminder.IsChecked == true ? -1 : reminderValue * (int)((ComboBoxItem)defaultReminderUnit.SelectedItem).Tag;
                 RemindersEnabled = remindersEnabledOption.IsChecked == true;
                 ReminderSound = reminderSoundOption.IsChecked == true;
                 QuietStartHour = (int)((ComboBoxItem)quietStart.SelectedItem).Tag; QuietEndHour = (int)((ComboBoxItem)quietEnd.SelectedItem).Tag;
                 ReminderPosition = reminderPositionGroup.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
                 DialogResult = true;
             };
-            topSave.Click += delegate { save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); };
             printButton.Click += delegate { if (PrintRequested != null) PrintRequested(); };
             var dataGroup = new StackPanel();
-            dataGroup.Children.Add(new TextBlock { Text = "일정 관리  (JSON·ICS는 로컬 일정 · Excel CSV는 Google 포함 전체 일정)", Foreground = Brush("#475569"), FontSize = 12, Margin = new Thickness(0, 0, 0, 4) });
+            dataGroup.Children.Add(new TextBlock { Text = "일정 관리  (JSON·ICS는 로컬 일정 · Excel CSV는 Google 포함 전체 일정)", Foreground = Brush("#475569"), FontSize = 12,
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
             Func<string, string, UIElement> actionCaption = delegate(string first, string second)
             {
                 var caption = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
@@ -1014,9 +1125,6 @@ namespace FamilyPlanner
             { return Math.Max(360, Math.Min(650, workAreaHeight * .70 - 60)); };
             var contentScroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = compactScrollHeight(SystemParameters.WorkArea.Height), Opacity = 0 };
-            Action updateTopSave = delegate { topSave.Visibility = contentScroll.ComputedVerticalScrollBarVisibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed; };
-            contentScroll.ScrollChanged += delegate { updateTopSave(); };
-            contentScroll.SizeChanged += delegate { updateTopSave(); };
             var popupLayout = new Grid(); popupLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); popupLayout.RowDefinitions.Add(new RowDefinition());
             popupLayout.Children.Add(header); Grid.SetRow(contentScroll, 1); popupLayout.Children.Add(contentScroll);
             Loaded += delegate
@@ -1024,12 +1132,9 @@ namespace FamilyPlanner
                 contentScroll.MaxHeight = compactScrollHeight(Forms.Screen.FromHandle(new WindowInteropHelper(this).Handle).WorkingArea.Height);
                 contentScroll.ApplyTemplate();
                 UiRound.SoftenScrollBars(contentScroll);
-                updateTopSave();
                 contentScroll.Opacity = 1;
             };
-            var shell = new Border { Background = Brush("#FFF8FAFC"), CornerRadius = new CornerRadius(18),
-                BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1), Child = popupLayout };
-            Content = UiRound.EmphasizePopup(shell);
+            Content = OnharuPopupChrome.Shell(popupLayout);
         }
 
         static string GooglePresetVariant(string hex, int ordinal)
@@ -1056,49 +1161,99 @@ namespace FamilyPlanner
             return candidate;
         }
 
-        UIElement ColorEditor(string name, string hex, string displayName = null)
+        UIElement ColorEditor(string name, string hex, string displayName = null, bool allowColorChange = true)
         {
             var color = (Color)ColorConverter.ConvertFromString(hex);
             var box = new StackPanel { Margin = new Thickness(0, 0, 0, 3) };
-            var title = new DockPanel { Height = 24, LastChildFill = true, Margin = new Thickness(0, 0, 0, 2), VerticalAlignment = VerticalAlignment.Center };
-            var preview = new Border { Width = 42, Height = 20, CornerRadius = new CornerRadius(6),
+            var title = new DockPanel { Height = 21, LastChildFill = false, Margin = new Thickness(0, 0, 0, 1), VerticalAlignment = VerticalAlignment.Center };
+            var preview = new Border { Width = 38, Height = 17, CornerRadius = new CornerRadius(5),
                 Background = PaletteEditorPreview(color), VerticalAlignment = VerticalAlignment.Center };
             previews[name] = preview; DockPanel.SetDock(preview, Dock.Right); title.Children.Add(preview);
-            var select = new CheckBox { Tag = name, Content = (displayName ?? name) + " 색상", FontWeight = FontWeights.SemiBold,
-                FontSize = 14, Foreground = PaletteEditorForeground(color), VerticalAlignment = VerticalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Left,
+            var select = new TextBlock { Tag = name, Text = displayName ?? name, FontWeight = FontWeights.SemiBold,
+                FontSize = 12, Foreground = PaletteEditorForeground(color), VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 7, 0), Cursor = Cursors.Hand };
             editorTitles[name] = select;
-            colorSelections.Add(select);
-            select.Checked += delegate
-            {
-                colorSelectionOrder.Remove(select); colorSelectionOrder.Add(select);
-                UpdateColorSelectionAvailability();
-            };
-            select.Unchecked += delegate
-            {
-                colorSelectionOrder.Remove(select);
-                UpdateColorSelectionAvailability();
-            };
             DockPanel.SetDock(select, Dock.Left); title.Children.Add(select); box.Children.Add(title);
             var rgbPanel = new StackPanel { Visibility = Visibility.Collapsed };
             rgbPanels.Add(rgbPanel); box.Children.Add(rgbPanel);
             var rgb = new[] { color.R, color.G, color.B }; var set = new Slider[3]; var labels = new TextBlock[3]; var channels = new TextBlock[3];
             for (var i = 0; i < 3; i++)
             {
-                var row = new Grid { Height = 18 };
+                var row = new Grid { Height = 16 };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) }); row.ColumnDefinitions.Add(new ColumnDefinition());
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(38) });
                 var channel = new TextBlock { Text = new[] { "R", "G", "B" }[i], Foreground = PaletteEditorForeground(color) }; row.Children.Add(channel); channels[i] = channel;
-                var slider = new Slider { Minimum = 0, Maximum = 255, Value = rgb[i], Tag = name, Height = 17 }; Grid.SetColumn(slider, 1); row.Children.Add(slider); set[i] = slider;
+                var slider = new Slider { Minimum = 0, Maximum = 255, Value = rgb[i], Tag = name, Height = 15 }; Grid.SetColumn(slider, 1); row.Children.Add(slider); set[i] = slider;
                 var value = new TextBlock { Text = rgb[i].ToString(), Foreground = PaletteEditorForeground(color), HorizontalAlignment = HorizontalAlignment.Right }; Grid.SetColumn(value, 2); row.Children.Add(value); labels[i] = value;
                 slider.ValueChanged += delegate { UpdatePreview(name); }; rgbPanel.Children.Add(row);
             }
             sliders[name] = set; values[name] = labels; editorChannels[name] = channels;
-            var card = new Border { Background = PaletteEditorBackground(color), BorderBrush = PaletteEditorBorder(color),
-                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Padding = new Thickness(12, 5, 12, 4),
-                Margin = new Thickness(4, 0, 4, 5), Child = box };
+            var card = new Border { Background = PaletteEditorBackground(color), BorderBrush = PaletteEditorBorder(color), Tag = name,
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(8, 3, 8, 3),
+                Margin = new Thickness(4, 0, 4, 4), Child = box, AllowDrop = true, Cursor = Cursors.Arrow };
+            Action openPalette = delegate
+            {
+                var menu = new ContextMenu { PlacementTarget = card, Placement = PlacementMode.Bottom, StaysOpen = false };
+                var palettes = OnharuColorPresets.Palettes();
+                for (var row = 0; row < palettes.Length; row++)
+                {
+                    var header = new MenuItem { Header = OnharuColorPresets.Names[row], IsEnabled = false, FontWeight = FontWeights.SemiBold };
+                    menu.Items.Add(header);
+                    foreach (var hexValue in palettes[row])
+                    {
+                        var selectedHex = hexValue;
+                        var swatch = new Border { Width = 164, Height = 24, CornerRadius = new CornerRadius(7),
+                            Background = new SolidColorBrush(CategoryColorSystem.Background(ThemeId, selectedHex)),
+                            BorderBrush = new SolidColorBrush(CategoryColorSystem.EditorBorder(ThemeId, (Color)ColorConverter.ConvertFromString(selectedHex))),
+                            BorderThickness = new Thickness(1), Padding = new Thickness(8, 0, 8, 0),
+                            Child = new TextBlock { Text = selectedHex, VerticalAlignment = VerticalAlignment.Center,
+                                Foreground = new SolidColorBrush(CategoryColorSystem.Foreground(ThemeId, selectedHex)) } };
+                        var item = new MenuItem { Header = swatch, Padding = new Thickness(2), Tag = selectedHex };
+                        item.Click += delegate { SetHex(name, selectedHex); };
+                        menu.Items.Add(item);
+                    }
+                    if (row < palettes.Length - 1) menu.Items.Add(new Separator());
+                }
+                card.ContextMenu = menu; menu.IsOpen = true;
+            };
+            if (allowColorChange)
+            {
+                select.MouseLeftButtonUp += delegate { openPalette(); };
+                preview.Cursor = Cursors.Hand;
+                preview.MouseLeftButtonUp += delegate { openPalette(); };
+            }
+            else
+            {
+                select.Cursor = Cursors.Arrow;
+                preview.Cursor = Cursors.Arrow;
+                card.ToolTip = "공휴일은 프리셋별 빨강 계열로 유지됩니다.";
+            }
+            card.PreviewMouseMove += delegate(object sender, MouseEventArgs e)
+            {
+                if (e.LeftButton != MouseButtonState.Pressed || HasColorEditorControl(e.OriginalSource as DependencyObject)) return;
+                DragDrop.DoDragDrop(card, card, DragDropEffects.Move);
+            };
+            card.DragOver += delegate(object sender, DragEventArgs e)
+            {
+                var dragged = e.Data.GetData(typeof(Border)) as Border;
+                e.Effects = dragged != null && dragged.Parent == card.Parent ? DragDropEffects.Move : DragDropEffects.None;
+                e.Handled = true;
+            };
+            card.Drop += delegate(object sender, DragEventArgs e)
+            {
+                var dragged = e.Data.GetData(typeof(Border)) as Border;
+                var parent = card.Parent as Panel;
+                if (dragged == null || parent == null || dragged.Parent != parent || dragged == card) return;
+                var target = parent.Children.IndexOf(card); parent.Children.Remove(dragged); parent.Children.Insert(target, dragged);
+            };
             editorCards[name] = card; UpdatePreview(name); return card;
+        }
+
+        static bool HasColorEditorControl(DependencyObject source)
+        {
+            for (var current = source; current != null; current = VisualTreeHelper.GetParent(current))
+                if (current is CheckBox || current is Slider || current is Button) return true;
+            return false;
         }
 
         void UpdateColorSelectionAvailability()
@@ -1146,14 +1301,19 @@ namespace FamilyPlanner
         {
             var s = sliders[name]; return string.Format("#{0:X2}{1:X2}{2:X2}", (byte)s[0].Value, (byte)s[1].Value, (byte)s[2].Value);
         }
+        string HexOr(string name, string fallback)
+        {
+            return sliders.ContainsKey(name) ? Hex(name) : fallback;
+        }
         void SetHex(string name, string hex)
         {
+            if (!sliders.ContainsKey(name)) return;
             var color = (Color)ColorConverter.ConvertFromString(hex); var s = sliders[name];
             s[0].Value = color.R; s[1].Value = color.G; s[2].Value = color.B; UpdatePreview(name);
         }
         static Border SectionCard(UIElement child)
         {
-            return new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#E2E8F0"), BorderThickness = new Thickness(1),
+            return new Border { Background = Brush(OnharuPopupChrome.ContentSurfaceColor), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(11), Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0, 0, 0, 6), Child = child };
         }
 
@@ -1171,7 +1331,7 @@ namespace FamilyPlanner
             value.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
             value.SetValue(ContentPresenter.MarginProperty, new Thickness(10, 0, 24, 0)); grid.AppendChild(value);
             var arrow = new FrameworkElementFactory(typeof(TextBlock));
-            arrow.SetValue(TextBlock.TextProperty, "▾"); arrow.SetValue(TextBlock.FontSizeProperty, 10.0);
+            arrow.SetValue(TextBlock.TextProperty, "▾"); arrow.SetValue(TextBlock.FontSizeProperty, 11.5);
             arrow.SetValue(TextBlock.ForegroundProperty, Brush("#64748B")); arrow.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
             arrow.SetValue(TextBlock.WidthProperty, 24.0); arrow.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
             arrow.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center); arrow.SetValue(TextBlock.MarginProperty, new Thickness(0, 0, 2, 0));
@@ -1188,7 +1348,7 @@ namespace FamilyPlanner
             popup.SetValue(Popup.StaysOpenProperty, false);
             popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen") { RelativeSource = RelativeSource.TemplatedParent, Mode = BindingMode.TwoWay });
             var popupBorder = new FrameworkElementFactory(typeof(Border));
-            popupBorder.SetValue(Border.BackgroundProperty, Brushes.White); popupBorder.SetValue(Border.BorderBrushProperty, Brush("#C7D2FE"));
+            popupBorder.SetValue(Border.BackgroundProperty, Brushes.White); popupBorder.SetValue(Border.BorderBrushProperty, Brush("#D5D8DE"));
             popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1)); popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
             popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 3, 0, 0));
             popupBorder.SetBinding(Border.WidthProperty, new Binding("ActualWidth") { RelativeSource = RelativeSource.TemplatedParent });
@@ -1201,12 +1361,18 @@ namespace FamilyPlanner
             itemRoot.AppendChild(itemContent);
             var itemTemplate = new ControlTemplate(typeof(ComboBoxItem)) { VisualTree = itemRoot };
             var hover = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
-            hover.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, Brush("#F1F5F9")));
+            hover.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, Brush(OnharuPopupChrome.SupportSurfaceColor)));
             var selected = new Trigger { Property = ComboBoxItem.IsSelectedProperty, Value = true };
-            selected.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, Brush("#EEF2FF")));
+            selected.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, Brush(OnharuPopupChrome.SelectionSurfaceColor)));
             itemTemplate.Triggers.Add(hover); itemTemplate.Triggers.Add(selected);
             var itemStyle = new Style(typeof(ComboBoxItem)); itemStyle.Setters.Add(new Setter(ComboBoxItem.TemplateProperty, itemTemplate));
             itemStyle.Setters.Add(new Setter(ComboBoxItem.ForegroundProperty, Brush("#334155"))); combo.ItemContainerStyle = itemStyle;
+            combo.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (!combo.IsEnabled) return;
+                if (ItemsControl.ContainerFromElement(combo, e.OriginalSource as DependencyObject) is ComboBoxItem) return;
+                combo.Focus(); combo.IsDropDownOpen = !combo.IsDropDownOpen; e.Handled = true;
+            };
             combo.DropDownOpened += delegate
             {
                 combo.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(delegate

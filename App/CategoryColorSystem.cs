@@ -9,22 +9,32 @@ namespace FamilyPlanner
 
         public static Color Background(string theme, string hex)
         {
+            string pairBackground, pairForeground;
+            if (OnharuColorPresets.TryPastelPair(hex, out pairBackground, out pairForeground))
+                return theme == "dark" ? WhiteReadableBackground(Parse(pairForeground)) : Parse(pairBackground);
             return Background(theme, Parse(hex));
         }
 
         public static Color Background(string theme, Color color)
         {
+            string pairBackground, pairForeground;
+            if (OnharuColorPresets.TryPastelPair(ToHex(color), out pairBackground, out pairForeground))
+                return theme == "dark" ? WhiteReadableBackground(Parse(pairForeground)) : Parse(pairBackground);
             if (theme == "dark") return WhiteReadableBackground(Vivid(color));
             return MixWhite(Vivid(color), .80);
         }
 
         public static Color Foreground(string theme, string hex)
         {
+            string pairBackground, pairForeground;
+            if (theme != "dark" && OnharuColorPresets.TryPastelPair(hex, out pairBackground, out pairForeground)) return Parse(pairForeground);
             return Foreground(theme, Parse(hex));
         }
 
         public static Color Foreground(string theme, Color color)
         {
+            string pairBackground, pairForeground;
+            if (theme != "dark" && OnharuColorPresets.TryPastelPair(ToHex(color), out pairBackground, out pairForeground)) return Parse(pairForeground);
             var background = Background(theme, color);
             var vivid = Vivid(color);
             var dark = Scale(vivid, .30);
@@ -100,6 +110,12 @@ namespace FamilyPlanner
         {
             if (ContrastRatio(background, preferred) >= MinimumContrast) return preferred;
             return ReadableForeground(background);
+        }
+
+        public static Color ReadableEmphasisForeground(Color background, Color preferred)
+        {
+            if (ContrastRatio(background, preferred) >= 3.0) return preferred;
+            return ReadableForeground(background, preferred);
         }
 
         public static string ToHex(Color color)

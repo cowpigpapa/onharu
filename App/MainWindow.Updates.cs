@@ -14,9 +14,12 @@ namespace FamilyPlanner
                 var update = await UpdateService.CheckAsync();
                 settings.LastUpdateCheckUtc = DateTime.UtcNow; Store.SaveSettings(settings);
                 if (update == null) { if (manual) ShowNotice("현재 최신 버전을 사용하고 있습니다.", false, "업데이트 확인"); return; }
+                // Preserve the normal physical rectangle before the update dialog or
+                // installer can change the active monitor/window presentation state.
+                SaveWindowSettings();
                 var window = new UpdateAvailableWindow(update); PlaceCalendarDialog(window);
                 ShowBlockingDialog(window);
-                if (window.InstallerStarted) ExitApplication();
+                if (window.InstallerStarted) { preservePlacementOnExit = true; ExitApplication(); }
             }
             catch (Exception ex)
             {

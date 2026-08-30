@@ -71,7 +71,6 @@ namespace FamilyPlanner
         bool IsItemVisible(PlannerItem item)
         {
             if (GoogleTasks.IsTask(item) && !settings.ShowGoogleTasks) return false;
-            if (item.Category == "야구" && !settings.UseProBaseball) return false;
             if (!string.IsNullOrWhiteSpace(item.GoogleCalendarId))
             {
                 if (settings.GoogleCalendars == null || !settings.GoogleCalendars.Any(x => x.Id == item.GoogleCalendarId)) return false;
@@ -97,9 +96,7 @@ namespace FamilyPlanner
 
         int GroupOrder(PlannerItem item)
         {
-            var key = item.Category == "업무일정" ? "local:business" : item.Category == "야구" ? "local:baseball" : string.IsNullOrWhiteSpace(item.GoogleCalendarId) ? "local:personal" : "google:" + item.GoogleCalendarId;
-            var index = settings.CategoryOrder == null ? -1 : settings.CategoryOrder.IndexOf(key);
-            return index < 0 ? 999 : index;
+            return CategoryOrderPolicy.Rank(settings.CategoryOrder, CategoryOrderPolicy.ItemKey(item));
         }
 
         int GetWeekNumber(DateTime date)
@@ -124,10 +121,11 @@ namespace FamilyPlanner
             if (settings.GoogleCalendars == null || !settings.GoogleCalendars.Any(x => settings.ShowGoogleTasks || !GoogleTasks.IsSource(x.Id)))
             {
                 googleFilterPanel.Children.Add(new TextBlock { Text = "G 연결 후 목록이 표시됩니다.", Foreground = T("Disabled"), FontSize = Ui(11) });
+                UpdateGroupFilterChecks();
                 return;
             }
-            var orderedSources = settings.GoogleCalendars.Where(x => settings.ShowGoogleTasks || !GoogleTasks.IsSource(x.Id))
-                .OrderBy(x => CategoryRank("google:" + x.Id)).ThenBy(x => x.Name).ToList();
+            var orderedSources = CategoryOrderPolicy.GoogleSources(
+                settings.GoogleCalendars.Where(x => settings.ShowGoogleTasks || !GoogleTasks.IsSource(x.Id)), settings.CategoryOrder).ToList();
             var boxes = new List<CheckBox>();
             foreach (var source in orderedSources)
             {
@@ -138,8 +136,8 @@ namespace FamilyPlanner
                         ToolTip = label, VerticalAlignment = VerticalAlignment.Center },
                     IsChecked = source.Visible, Foreground = Brush(color), Background = Brush(color), Tag = color,
                     Margin = new Thickness(0, 0, 4, 6), HorizontalAlignment = HorizontalAlignment.Stretch };
-                StyleThemeCheckBox(box, color);
-                box.Click += delegate { source.Visible = box.IsChecked == true; Store.SaveSettings(settings); RenderAll(); };
+                StyleVividCheckBox(box, color);
+                box.Click += delegate { source.Visible = box.IsChecked == true; Store.SaveSettings(settings); UpdateGroupFilterChecks(); RenderAll(); };
                 filters[key] = box; boxes.Add(box);
             }
             var grid = new Grid();
@@ -153,6 +151,87 @@ namespace FamilyPlanner
             var divider = new Border { Width = 1, Background = T("Grid"), Margin = new Thickness(8, 1, 8, 2) };
             grid.Children.Add(left); Grid.SetColumn(divider, 1); grid.Children.Add(divider); Grid.SetColumn(right, 2); grid.Children.Add(right);
             googleFilterPanel.Children.Add(grid);
+            UpdateGroupFilterChecks();
+        }
+
+        void ApplySidebarCategoryOrder()
+        {
+            ReorderFilterPanel(localFilterRow, new[] {
+                Tuple.Create("업무일정", "local:business"), Tuple.Create("개인일정", "local:personal"), Tuple.Create("야구", "local:baseball") });
+            ReorderFilterPanel(specialFilterRow, new[] {
+                Tuple.Create("D-Day", "special:dday"), Tuple.Create("기념일", "special:anniversary") });
+        }
+
+        void ReorderFilterPanel(Panel panel, IEnumerable<Tuple<string, string>> entries)
+        {
+            if (panel == null) return;
+            var boxes = entries.Where(x => filters.ContainsKey(x.Item1))
+                .OrderBy(x => CategoryOrderPolicy.Rank(settings.CategoryOrder, x.Item2))
+                .Select(x => filters[x.Item1]).ToList();
+            foreach (var box in boxes) panel.Children.Remove(box);
+            foreach (var box in boxes) panel.Children.Add(box);
+            if (panel == specialFilterRow) NormalizeSpecialFilterSpacing();
+        }
+
+        void NormalizeSpecialFilterSpacing()
+        {
+            if (specialFilterRow == null) return;
+            var boxes = specialFilterRow.Children.OfType<CheckBox>().ToList();
+            for (var i = 0; i < boxes.Count; i++) boxes[i].Margin = new Thickness(0, 0, i == boxes.Count - 1 ? 0 : 7, 4);
+        }
+
+        CheckBox HeaderAllFilter(string toolTip, Action<bool> change)
+        {
+            var box = new CheckBox { IsThreeState = true, Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+                Cursor = System.Windows.Input.Cursors.Hand, ToolTip = toolTip };
+            StyleVividCheckBox(box, SupportAccentColor());
+            box.Click += delegate { change(box.IsChecked == true); };
+            return box;
+        }
+
+        void SetLocalFilters(bool visible)
+        {
+            SetFilterValues(VisibleFilterKeys(new[] { "업무일정", "개인일정", "야구" }), visible);
+        }
+
+        void SetSpecialFilters(bool visible)
+        {
+            SetFilterValues(VisibleFilterKeys(new[] { "D-Day", "기념일" }), visible);
+        }
+
+        IEnumerable<string> VisibleFilterKeys(IEnumerable<string> keys)
+        {
+            return keys.Where(key => filters.ContainsKey(key) && filters[key].Visibility == Visibility.Visible);
+        }
+
+        void SetFilterValues(IEnumerable<string> keys, bool visible)
+        {
+            foreach (var key in keys) if (filters.ContainsKey(key)) filters[key].IsChecked = visible;
+            SaveWindowSettings(); UpdateGroupFilterChecks(); RenderAll();
+        }
+
+        void SetGoogleFilters(bool visible)
+        {
+            foreach (var source in settings.GoogleCalendars.Where(x => settings.ShowGoogleTasks || !GoogleTasks.IsSource(x.Id)))
+            {
+                source.Visible = visible;
+                CheckBox box; if (filters.TryGetValue("google:" + source.Id, out box)) box.IsChecked = visible;
+            }
+            Store.SaveSettings(settings); UpdateGroupFilterChecks(); RenderAll();
+        }
+
+        void UpdateGroupFilterChecks()
+        {
+            SetHeaderAllState(localAllFilter, VisibleFilterKeys(new[] { "업무일정", "개인일정", "야구" }).Select(x => filters[x]));
+            SetHeaderAllState(specialAllFilter, VisibleFilterKeys(new[] { "D-Day", "기념일" }).Select(x => filters[x]));
+            SetHeaderAllState(googleAllFilter, filters.Where(x => x.Key.StartsWith("google:")).Select(x => x.Value));
+        }
+
+        static void SetHeaderAllState(CheckBox header, IEnumerable<CheckBox> entries)
+        {
+            if (header == null) return;
+            var boxes = entries.ToList(); header.Visibility = boxes.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+            header.IsChecked = boxes.Count == 0 || boxes.All(x => x.IsChecked == true) ? true : boxes.All(x => x.IsChecked != true) ? false : (bool?)null;
         }
 
         static bool IsHolidayCalendar(GoogleCalendarSetting source)
@@ -162,8 +241,7 @@ namespace FamilyPlanner
 
         int CategoryRank(string key)
         {
-            var index = settings.CategoryOrder == null ? -1 : settings.CategoryOrder.IndexOf(key);
-            return index < 0 ? 999 : index;
+            return CategoryOrderPolicy.Rank(settings.CategoryOrder, key);
         }
     }
 }

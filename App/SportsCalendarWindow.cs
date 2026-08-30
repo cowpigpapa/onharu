@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Threading.Tasks;
 
 namespace FamilyPlanner
 {
@@ -25,6 +26,7 @@ namespace FamilyPlanner
         readonly Dictionary<string, CheckBox> favoriteChecks = new Dictionary<string, CheckBox>(StringComparer.OrdinalIgnoreCase);
         bool favoriteOnly;
         readonly Button registerButton;
+        readonly ComboBox registrationTarget;
         readonly HashSet<string> existingIds;
         readonly Dictionary<string, SportsGame> selected = new Dictionary<string, SportsGame>();
         double uiScale = 1.0;
@@ -32,10 +34,11 @@ namespace FamilyPlanner
         DateTime month = DateTime.Today;
         internal List<PlannerItem> SelectedItems { get; private set; }
         internal string FavoriteTeam { get { return string.Join("|", favoriteTeams); } }
-        internal event Action<List<PlannerItem>> RegistrationRequested;
+        internal event Func<List<PlannerItem>, Task<string>> RegistrationRequested;
         internal event Action<double> ViewScaleChanged;
 
-        internal SportsCalendarWindow(IEnumerable<string> existingSportsIds, string favoriteTeam, double initialScale)
+        internal SportsCalendarWindow(IEnumerable<string> existingSportsIds, string favoriteTeam, double initialScale,
+            IEnumerable<GoogleCalendarSetting> googleCalendars, bool googleConnected)
         {
             uiScale = initialScale < .95 ? .90 : initialScale > 1.05 ? 1.15 : 1.0;
             existingIds = new HashSet<string>(existingSportsIds ?? Enumerable.Empty<string>()); favoriteTeams.AddRange((favoriteTeam ?? "").Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.OrdinalIgnoreCase).Take(2));
@@ -43,6 +46,7 @@ namespace FamilyPlanner
             Title = "KBO 경기 일정"; Width = Math.Min(SystemParameters.WorkArea.Width - 24, 1100 * uiScale); Height = Math.Min(SystemParameters.WorkArea.Height - 24, 944 * uiScale); MinWidth = Math.Min(940, Width); MinHeight = Math.Min(780, Height); WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; WindowStartupLocation = WindowStartupLocation.CenterOwner;
             var root = new DockPanel { Margin = new Thickness(20, 16, 20, 18) };
             var controls = new Grid { Margin = new Thickness(0, 0, 0, 10), Background = Brushes.Transparent }; controls.ColumnDefinitions.Add(new ColumnDefinition()); controls.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); controls.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); controls.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            OnharuPopupChrome.StyleHeader(controls);
             var navigation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center }; previousPeriodButton = OnharuPopupChrome.Button("«", 23, "#E0E7FF", "#4338CA"); var previous = OnharuPopupChrome.Button("‹", 23, "#EEF2FF", "#4338CA"); var today = OnharuPopupChrome.Button("오늘", 46, "#EEF2FF", "#4338CA"); var next = OnharuPopupChrome.Button("›", 23, "#EEF2FF", "#4338CA"); nextPeriodButton = OnharuPopupChrome.Button("»", 23, "#E0E7FF", "#4338CA");
             foreach (var button in new[] { previousPeriodButton, previous, today, next, nextPeriodButton }) { button.Height = 27; button.Padding = new Thickness(0); }
             previousPeriodButton.FontSize = nextPeriodButton.FontSize = 15; previous.FontSize = next.FontSize = 16; today.FontSize = 12.5; previousPeriodButton.FontWeight = nextPeriodButton.FontWeight = today.FontWeight = FontWeights.SemiBold;
@@ -54,16 +58,39 @@ namespace FamilyPlanner
             rangeSwitch = new OnharuSegmentedSwitch(new[] { "4주", "월" }, new[] { 48.0, 42.0 }, 0, delegate(int index) { SetRange(index == 0 ? 4 : 0); });
             scaleSwitch = new OnharuSegmentedSwitch(new[] { "작게", "중간", "크게" }, new[] { 46.0, 46.0, 46.0 },
                 uiScale < .95 ? 0 : uiScale > 1.05 ? 2 : 1, delegate(int index) { ApplyViewScale(index == 0 ? .90 : index == 1 ? 1.0 : 1.15); });
+            OnharuPopupChrome.StyleSegment(gameFilterSwitch); OnharuPopupChrome.StyleSegment(rangeSwitch); OnharuPopupChrome.StyleSegment(scaleSwitch);
             gameFilterSwitch.Margin = rangeSwitch.Margin = scaleSwitch.Margin = new Thickness(0, 0, 7, 0);
             var titleActions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 0, 7) }; titleActions.Children.Add(OnharuPopupChrome.FeatureTitle("⚾", "KBO 경기 일정")); var refreshTop = OnharuPopupChrome.Button("↻ 새로고침", 84, "#ECFDF5", "#047857"); refreshTop.Height = 27; refreshTop.Margin = new Thickness(10, 0, 0, 0); refreshTop.Click += delegate { LoadGames(true); }; titleActions.Children.Add(refreshTop); controls.Children.Add(titleActions);
-            var viewOptions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 0, 7) }; viewOptions.Children.Add(gameFilterSwitch); viewOptions.Children.Add(rangeSwitch); viewOptions.Children.Add(scaleSwitch); var closeTop = OnharuPopupChrome.CloseButton(this); closeTop.Width = closeTop.Height = 27; closeTop.Margin = new Thickness(1, 0, 0, 0); viewOptions.Children.Add(closeTop); Grid.SetColumn(viewOptions, 1); controls.Children.Add(viewOptions); controls.Children.Add(navigation);
+            var viewOptions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 0, 7) }; viewOptions.Children.Add(gameFilterSwitch); viewOptions.Children.Add(rangeSwitch); viewOptions.Children.Add(scaleSwitch); var closeTop = OnharuPopupChrome.ToolCloseButton(this); closeTop.Margin = new Thickness(1, 0, 0, 0); viewOptions.Children.Add(closeTop); Grid.SetColumn(viewOptions, 1); controls.Children.Add(viewOptions); controls.Children.Add(navigation);
             var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center }; right.Children.Add(new TextBlock { Text = "응원팀", FontSize = 12 * uiScale, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#475569"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) }); favoritePicker = OnharuPopupChrome.Button("응원팀 선택  ▾", 150, "#FFFFFF", "#334155"); favoritePicker.Height = 30; favoritePicker.VerticalContentAlignment = VerticalAlignment.Center; favoritePicker.BorderBrush = OnharuPopupChrome.Brush("#C7D2FE"); favoritePicker.BorderThickness = new Thickness(1); favoritePicker.ToolTip = "최대 2팀까지 선택"; favoritePopup = new Popup { Placement = PlacementMode.Bottom, PlacementTarget = favoritePicker, AllowsTransparency = true, StaysOpen = false }; favoritePicker.PreviewMouseLeftButtonDown += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e) { if (!favoritePopup.IsOpen) return; favoritePopup.IsOpen = false; e.Handled = true; }; favoritePicker.Click += delegate { BuildFavoritePopup(); favoritePopup.IsOpen = true; }; right.Children.Add(favoritePicker); UpdateFavoritePicker();
             AddButton(right, "응원팀 경기 선택", 100, "#FFF7ED", "#C2410C", delegate { SelectFavoriteGames(); });
             AddButton(right, "전체 선택 취소", 92, "#EEF2FF", "#4338CA", delegate { selected.Clear(); RenderCalendar(); UpdateRegisterButton(); status.Text = "경기 선택을 모두 취소했습니다."; });
             Grid.SetColumn(right, 1); Grid.SetRow(right, 1); controls.Children.Add(right); OnharuPopupChrome.EnableDrag(this, controls); DockPanel.SetDock(controls, Dock.Top); root.Children.Add(controls);
-            var footer = new Grid { Margin = new Thickness(0, 10, 0, 0) }; footer.ColumnDefinitions.Add(new ColumnDefinition()); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(190) });
+            var footer = new Grid { Margin = new Thickness(0, 10, 0, 0) }; footer.ColumnDefinitions.Add(new ColumnDefinition()); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var footerLeft = new StackPanel { Orientation = Orientation.Horizontal }; var apiButton = OnharuPopupChrome.Button("API 설정", 72, "#F1F5F9", "#475569"); apiButton.Margin = new Thickness(0, 0, 10, 0); apiButton.Click += delegate { new SportsApiSetupWindow { Owner = this }.ShowDialog(); }; footerLeft.Children.Add(apiButton); footerLeft.Children.Add(status); footer.Children.Add(footerLeft);
-            registerButton = OnharuPopupChrome.PrimaryButton("선택 경기 ONHARU 등록", double.NaN); registerButton.Height = 40; registerButton.IsEnabled = false; registerButton.Click += delegate { SelectedItems = selected.Values.Where(x => !existingIds.Contains("parse-kbo:" + x.Id)).Select(ToPlannerItem).ToList(); if (SelectedItems.Count == 0) { status.Text = "새로 등록할 경기를 선택해 주세요."; return; } if (RegistrationRequested != null) RegistrationRequested(SelectedItems); foreach (var item in SelectedItems) existingIds.Add(item.SportsGameId); selected.Clear(); RenderCalendar(); UpdateRegisterButton(); status.Text = "선택한 경기 " + SelectedItems.Count + "개를 ONHARU에 등록했습니다."; }; Grid.SetColumn(registerButton, 1); footer.Children.Add(registerButton); DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
+            var registration = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            registrationTarget = new ComboBox { Width = 210, Height = 40, Margin = new Thickness(10, 0, 8, 0), Padding = new Thickness(9, 0, 5, 0), VerticalContentAlignment = VerticalAlignment.Center };
+            SettingsWindow.StyleComboBox(registrationTarget);
+            registrationTarget.Items.Add(new ComboBoxItem { Content = "ONHARU 로컬 일정", Tag = null, IsSelected = true });
+            if (googleConnected)
+                foreach (var source in (googleCalendars ?? Enumerable.Empty<GoogleCalendarSetting>()).Where(x => x.Editable && !GoogleTasks.IsSource(x.Id) && (x.AccessRole == "owner" || x.AccessRole == "writer")).OrderBy(x => x.Primary ? 0 : 1).ThenBy(x => x.Name))
+                    registrationTarget.Items.Add(new ComboBoxItem { Content = "Google · " + source.Name, Tag = source });
+            registration.Children.Add(registrationTarget);
+            registerButton = OnharuPopupChrome.PrimaryButton("선택 경기 등록", 190); registerButton.Height = 40; registerButton.IsEnabled = false;
+            registerButton.Click += async delegate
+            {
+                SelectedItems = selected.Values.Where(x => !existingIds.Contains(SportsApi.RegistrationId(x))).Select(ToPlannerItem).ToList();
+                if (SelectedItems.Count == 0) { status.Text = "새로 등록할 경기를 선택해 주세요."; return; }
+                var target = (registrationTarget.SelectedItem as ComboBoxItem == null ? null : (registrationTarget.SelectedItem as ComboBoxItem).Tag) as GoogleCalendarSetting;
+                if (target != null)
+                    foreach (var item in SelectedItems) { item.GoogleCalendarId = target.Id; item.GoogleCalendarName = target.Name; item.GoogleCalendarColor = target.Color; item.PendingGoogleSync = true; }
+                registerButton.IsEnabled = false;
+                var message = RegistrationRequested == null ? null : await RegistrationRequested(SelectedItems);
+                foreach (var item in SelectedItems) existingIds.Add(item.SportsGameId);
+                selected.Clear(); RenderCalendar(); UpdateRegisterButton();
+                status.Text = string.IsNullOrWhiteSpace(message) ? "선택한 경기 " + SelectedItems.Count + "개를 등록했습니다." : message;
+            };
+            registration.Children.Add(registerButton); Grid.SetColumn(registration, 1); footer.Children.Add(registration); DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
             calendarHost.Children.Add(calendar); loadingOverlay = new Border { Background = OnharuPopupChrome.Brush("#F4F7FB"), Visibility = Visibility.Collapsed, Child = new Border { Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(14), Padding = new Thickness(22, 15, 22, 15), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = new StackPanel { Children = { new TextBlock { Text = "⚾", FontSize = 25, HorizontalAlignment = HorizontalAlignment.Center }, new TextBlock { Text = "경기 일정을 준비하고 있어요…", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#4338CA"), Margin = new Thickness(0, 7, 0, 0) } } } } }; Panel.SetZIndex(loadingOverlay, 10); calendarHost.Children.Add(loadingOverlay);
             root.Children.Add(new Border { Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#DDE4EE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(13), ClipToBounds = true, Child = calendarHost }); Content = OnharuPopupChrome.Shell(root); Loaded += delegate { LoadGames(false); };
         }
@@ -172,7 +199,7 @@ namespace FamilyPlanner
         }
         void UpdateFavoriteChecks() { foreach (var pair in favoriteChecks) { var selectedTeam = favoriteTeams.Contains(pair.Key); pair.Value.IsEnabled = selectedTeam || favoriteTeams.Count < 2; if (pair.Value.IsChecked != selectedTeam) pair.Value.IsChecked = selectedTeam; } }
         void FavoriteSelectionChanged() { UpdateFavoritePicker(); UpdateFavoriteChecks(); if (favoriteOnly && favoriteTeams.Count == 0) SetGameFilter(false); else if (IsLoaded) RenderCalendar(); }
-        void SelectFavoriteGames() { if (favoriteTeams.Count == 0) { status.Text = "먼저 응원팀을 선택해 주세요."; return; } foreach (var game in games.Where(x => favoriteTeams.Contains(x.AwayTeam) || favoriteTeams.Contains(x.HomeTeam))) if (!existingIds.Contains("parse-kbo:" + game.Id)) selected[game.Id] = game; RenderCalendar(); UpdateRegisterButton(); status.Text = string.Join(" · ", favoriteTeams) + " 경기 " + selected.Count + "개를 선택했습니다."; }
+        void SelectFavoriteGames() { if (favoriteTeams.Count == 0) { status.Text = "먼저 응원팀을 선택해 주세요."; return; } foreach (var game in games.Where(x => favoriteTeams.Contains(x.AwayTeam) || favoriteTeams.Contains(x.HomeTeam))) if (!existingIds.Contains(SportsApi.RegistrationId(game))) selected[game.Id] = game; RenderCalendar(); UpdateRegisterButton(); status.Text = string.Join(" · ", favoriteTeams) + " 경기 " + selected.Count + "개를 선택했습니다."; }
 
         void RenderCalendar()
         {
@@ -195,7 +222,7 @@ namespace FamilyPlanner
 
         CheckBox GameChoice(SportsGame game)
         {
-            var verticalScale = Math.Min(1.0, uiScale); var rowHeight = 21 * verticalScale; var id = "parse-kbo:" + game.Id; var content = new StackPanel { Orientation = Orientation.Horizontal, Height = rowHeight };
+            var verticalScale = Math.Min(1.0, uiScale); var rowHeight = 21 * verticalScale; var id = SportsApi.RegistrationId(game); var content = new StackPanel { Orientation = Orientation.Horizontal, Height = rowHeight };
             var timeText = game.IsCancelled ? "취소" : game.LocalStart.ToString("HH:mm"); content.Children.Add(new TextBlock { Text = timeText, Width = 42 * uiScale, FontSize = 11.5 * uiScale, Foreground = OnharuPopupChrome.Brush(game.IsCancelled ? "#EF4444" : "#64748B"), VerticalAlignment = VerticalAlignment.Center });
             content.Children.Add(TeamSymbol(game.AwayTeam, 24 * verticalScale)); content.Children.Add(new TextBlock { Text = game.HasScore ? "  " + game.AwayScore + " : " + game.HomeScore + "  " : "  vs  ", FontSize = (game.HasScore ? 11.5 : 10) * uiScale, FontWeight = game.HasScore ? FontWeights.Bold : FontWeights.Normal, VerticalAlignment = VerticalAlignment.Center }); content.Children.Add(TeamSymbol(game.HomeTeam, 24 * verticalScale));
             if (game.IsCancelled) foreach (var child in content.Children.OfType<TextBlock>()) child.TextDecorations = TextDecorations.Strikethrough;
@@ -217,7 +244,7 @@ namespace FamilyPlanner
             var panel = new StackPanel { Margin = new Thickness(22, 16, 22, 20) }; panel.Children.Add(OnharuPopupChrome.Header(window, "⚾  " + date.ToString("M월 d일 dddd") + " · " + dayGames.Count + "경기", "#0F766E"));
             foreach (var game in dayGames)
             {
-                var id = "parse-kbo:" + game.Id; var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(TeamSymbol(game.AwayTeam, 34)); row.Children.Add(new TextBlock { Text = game.AwayTeam, Width = 82, Margin = new Thickness(9, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold }); row.Children.Add(new TextBlock { Text = game.HasScore ? game.AwayScore + "  :  " + game.HomeScore : game.IsCancelled ? "취소" : game.LocalStart.ToString("HH:mm"), Width = 70, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = OnharuPopupChrome.Brush(game.IsCancelled ? "#EF4444" : "#475569"), FontWeight = FontWeights.Bold }); row.Children.Add(TeamSymbol(game.HomeTeam, 34)); row.Children.Add(new TextBlock { Text = game.HomeTeam, Margin = new Thickness(9, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
+                var id = SportsApi.RegistrationId(game); var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(TeamSymbol(game.AwayTeam, 34)); row.Children.Add(new TextBlock { Text = game.AwayTeam, Width = 82, Margin = new Thickness(9, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold }); row.Children.Add(new TextBlock { Text = game.HasScore ? game.AwayScore + "  :  " + game.HomeScore : game.IsCancelled ? "취소" : game.LocalStart.ToString("HH:mm"), Width = 70, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = OnharuPopupChrome.Brush(game.IsCancelled ? "#EF4444" : "#475569"), FontWeight = FontWeights.Bold }); row.Children.Add(TeamSymbol(game.HomeTeam, 34)); row.Children.Add(new TextBlock { Text = game.HomeTeam, Margin = new Thickness(9, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
                 var box = new CheckBox { Content = row, IsChecked = selected.ContainsKey(game.Id), IsEnabled = !existingIds.Contains(id), Height = 48, Padding = new Thickness(8, 4, 8, 4), Margin = new Thickness(0, 0, 0, 5), ToolTip = game.Stadium }; box.Checked += delegate { selected[game.Id] = game; }; box.Unchecked += delegate { selected.Remove(game.Id); }; panel.Children.Add(box);
             }
             var close = OnharuPopupChrome.FooterButton("선택 적용", "#4F46E5", "#FFFFFF"); close.Margin = new Thickness(0, 8, 0, 0); close.Click += delegate { window.Close(); }; panel.Children.Add(close); window.Content = OnharuPopupChrome.Shell(panel); window.Closed += delegate { RenderCalendar(); UpdateRegisterButton(); }; window.ShowDialog();
@@ -225,6 +252,6 @@ namespace FamilyPlanner
         static string TeamShort(string team) { foreach (var name in new[] { "KIA", "SSG", "LG", "KT", "NC", "두산", "삼성", "롯데", "한화", "키움" }) if ((team ?? "").IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0) return name; return string.IsNullOrWhiteSpace(team) ? "?" : team.Substring(0, Math.Min(2, team.Length)); }
         static string TeamColor(string team) { var name = TeamShort(team); if (name == "KIA" || name == "SSG") return "#CE0E2D"; if (name == "LG") return "#C30452"; if (name == "KT") return "#111827"; if (name == "NC") return "#315288"; if (name == "두산") return "#131230"; if (name == "삼성") return "#074CA1"; if (name == "롯데") return "#041E42"; if (name == "한화") return "#F37321"; if (name == "키움") return "#570514"; return "#64748B"; }
         void UpdateRegisterButton() { registerButton.IsEnabled = selected.Count > 0; registerButton.Content = selected.Count == 0 ? "선택 경기 ONHARU 등록" : "선택 경기 " + selected.Count + "개 등록"; }
-        static PlannerItem ToPlannerItem(SportsGame game) { var start = game.LocalStart; return new PlannerItem { Id = Guid.NewGuid().ToString("N"), SportsGameId = "parse-kbo:" + game.Id, Title = "⚾ " + game.Title, Start = start, End = start.AddHours(3), AllDay = false, Category = "야구", CreatedInOnharu = true, Notes = "KBO 경기 일정" + (string.IsNullOrWhiteSpace(game.Stadium) ? "" : " · " + game.Stadium) }; }
+        static PlannerItem ToPlannerItem(SportsGame game) { var start = game.LocalStart; return new PlannerItem { Id = Guid.NewGuid().ToString("N"), SportsGameId = SportsApi.RegistrationId(game), Title = "⚾ " + game.Title, Start = start, End = start.AddHours(3), AllDay = false, Category = "야구", CreatedInOnharu = true, Notes = "KBO 경기 일정" + (string.IsNullOrWhiteSpace(game.Stadium) ? "" : " · " + game.Stadium) }; }
     }
 }

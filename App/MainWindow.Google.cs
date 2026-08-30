@@ -15,7 +15,6 @@ namespace FamilyPlanner
     public partial class MainWindow
     {
         bool localItemsOfferShown;
-        bool randomizePaletteAfterConnect;
 
         async void GoogleClick(object sender, RoutedEventArgs e)
         {
@@ -41,6 +40,7 @@ namespace FamilyPlanner
             if (ShowBlockingDialog(chooser) != true) return;
             var logout = chooser.SelectedAction == "logout";
             if (!logout && chooser.SelectedAction != "change") return;
+            if (logout && !ConfirmGoogleLogout()) return;
             GoogleCalendar.Disconnect(); Store.SetAccount(null); items.Clear();
             settings.ActiveGoogleAccountId = null; settings.GoogleCalendars.Clear();
             if (logout) items.AddRange(Store.LoadLocal());
@@ -52,9 +52,16 @@ namespace FamilyPlanner
         void ToggleGoogleConnection(object sender, RoutedEventArgs e)
         {
             if (!GoogleCalendar.IsConnected) { GoogleClick(sender, e); return; }
+            if (!ConfirmGoogleLogout()) return;
             GoogleCalendar.Disconnect(); Store.SetAccount(null); items.Clear(); items.AddRange(Store.LoadLocal());
             settings.ActiveGoogleAccountId = null; settings.GoogleCalendars.Clear();
             Store.SaveSettings(settings); BuildGoogleFilters(); RenderAll(); UpdateGoogleButton(); StartAutoSync();
+        }
+
+        bool ConfirmGoogleLogout()
+        {
+            var confirm = new GoogleLogoutConfirmWindow(); PlaceCalendarDialog(confirm);
+            return ShowBlockingDialog(confirm) == true;
         }
 
         void LoadConnectedAccountItems()
@@ -71,7 +78,6 @@ namespace FamilyPlanner
                 if (saveLocal) Store.SaveLocal(items);
                 googleConnecting = true; googleButton.IsEnabled = true; googleButton.Content = "로그인 취소";
                 await GoogleCalendar.ConnectAsync();
-                randomizePaletteAfterConnect = !settings.LockPalettePlacement && settings.SelectedPaletteIndex >= 0 && settings.SelectedPaletteIndex < 5;
                 return true;
             }
             catch (HttpListenerException ex) { return GoogleConnectFailed(ex); }
@@ -139,8 +145,6 @@ namespace FamilyPlanner
                     }
                 }
                 settings.GoogleCalendars = calendarSources.Concat(taskSources).ToList();
-                var paletteChanged = randomizePaletteAfterConnect && RandomizeRecommendedPalettePlacement();
-                randomizePaletteAfterConnect = false;
                 syncProblem = null;
                 var primary = settings.GoogleCalendars.FirstOrDefault(x => x.Primary);
                 if (primary != null)
@@ -149,9 +153,11 @@ namespace FamilyPlanner
                 }
                 var allowedCalendars = new HashSet<string>(settings.GoogleCalendars.Select(x => x.Id));
                 items.RemoveAll(x => !string.IsNullOrWhiteSpace(x.GoogleCalendarId) && !allowedCalendars.Contains(x.GoogleCalendarId) && !x.PendingGoogleSync);
+                foreach (var sportsItem in items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId))) sportsItem.SportsGameId = SportsApi.RegistrationId(sportsItem);
+                CollapseDuplicateSportsItems();
                 settings.CategoryOrder = (settings.CategoryOrder ?? new List<string>()).Where(x => !x.StartsWith("google:") || allowedCalendars.Contains(x.Substring(7))).ToList();
                 Store.Save(items); Store.SaveSettings(settings); BuildGoogleFilters();
-                if (paletteChanged) ApplyTheme(settings.ThemeId); else RenderAll();
+                RenderAll();
                 OfferDormantLocalItems();
                 syncWatch.Stop(); ShowGoogleStatus(taskWarning ?? "동기화 완료", taskWarning == null ? "#16A34A" : "#D97706", taskWarning == null ? 1800 : 3500);
                 if (showSuccess)
@@ -274,7 +280,7 @@ namespace FamilyPlanner
             if (accountStatus == null) return;
             googleAccountVisualVersion++;
             if (googleLoginButton != null) googleLoginButton.Content = GoogleCalendar.IsConnected ? "Logout" : "Login";
-            if (googleAccountCard != null) googleAccountCard.Background = Brush("#EEF2FF");
+            if (googleAccountCard != null) googleAccountCard.Background = OnharuStateColors.GoogleSurfaceBrush(settings.ThemeId);
             var primary = settings.GoogleCalendars == null ? null : settings.GoogleCalendars.FirstOrDefault(x => x.Primary);
             if (GoogleCalendar.IsConnected)
             {
@@ -283,14 +289,15 @@ namespace FamilyPlanner
                     ? " · " + syncProblem + (pending > 0 ? " (동기화 대기 " + pending + "건)" : "")
                     : pending > 0 ? " · 동기화 대기 " + pending + "건" : " · Gmail";
                 accountStatus.Text = "G  " + (primary == null ? "Google 계정" : primary.Name) + state;
-                accountStatus.Foreground = syncProblem != null || pending > 0 ? Brush("#DB2777") : Brush("#4338CA");
+                accountStatus.Foreground = syncProblem != null || pending > 0 ? Brush("#FFF3B0") : Brushes.White;
             }
             else
             {
                 accountStatus.Text = "G  로그아웃됨 · 로컬 저장";
-                accountStatus.Foreground = Brush("#7C3AED");
+                accountStatus.Foreground = Brushes.White;
             }
             accountStatus.ToolTip = accountStatus.Text;
+            if (googleLoginButton != null) TemporarySegmentPaletteTool.ApplyOverride(googleLoginButton);
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(StartAccountMarquee));
         }
 

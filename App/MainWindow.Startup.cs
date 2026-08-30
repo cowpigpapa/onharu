@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -25,6 +26,16 @@ namespace FamilyPlanner
 
         void RepairLoadedData()
         {
+            var sportsChanged = false;
+            foreach (var sportsItem in items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId)))
+            {
+                var stableId = SportsApi.RegistrationId(sportsItem);
+                if (sportsItem.SportsGameId == stableId) continue;
+                sportsItem.SportsGameId = stableId; sportsChanged = true;
+            }
+            sportsChanged |= CollapseDuplicateSportsItems();
+            if (sportsChanged) Store.Save(items);
+
             if (!settings.AnniversarySeparationComplete)
             {
                 foreach (var legacy in items.Where(x => x.ShowDday && string.IsNullOrWhiteSpace(x.AnniversaryType)))
@@ -58,7 +69,6 @@ namespace FamilyPlanner
 
         void ConfigureInitialWindow()
         {
-            RandomizeRecommendedPalettePlacement();
             if (!string.IsNullOrWhiteSpace(settings.BusinessColor)) Colors["업무일정"] = settings.BusinessColor;
             if (!string.IsNullOrWhiteSpace(settings.PersonalColor)) Colors["개인일정"] = settings.PersonalColor;
             if (!string.IsNullOrWhiteSpace(settings.BaseballColor)) Colors["야구"] = settings.BaseballColor;
@@ -94,48 +104,13 @@ namespace FamilyPlanner
             Topmost = false; ShowInTaskbar = false; ResizeMode = ResizeMode.NoResize;
         }
 
-        bool RandomizeRecommendedPalettePlacement()
-        {
-            if (settings.LockPalettePlacement || settings.SelectedPaletteIndex < 0 || settings.SelectedPaletteIndex >= 5) return false;
-            var palettes = OnharuColorPresets.Palettes();
-            var selected = palettes[settings.SelectedPaletteIndex];
-            if (settings.SavedPalettes != null && settings.SavedPalettes.Count > settings.SelectedPaletteIndex)
-            {
-                var saved = (settings.SavedPalettes[settings.SelectedPaletteIndex] ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                if (saved.Length >= 6) selected = saved;
-            }
-
-            var sources = (settings.GoogleCalendars ?? new List<GoogleCalendarSetting>())
-                .Where(x => !GoogleTasks.IsSource(x.Id) && !IsHolidayCalendar(x)).ToList();
-            var primary = GoogleCalendar.IsConnected ? sources.FirstOrDefault(x => x.Primary) : null;
-            var representative = OnharuColorPresets.RepresentativeColor(settings.SelectedPaletteIndex);
-            var colors = selected.Skip(6).Concat(new[] { selected[1], selected[3], selected[4] })
-                .Where(x => !string.IsNullOrWhiteSpace(x) && !x.Equals(representative, StringComparison.OrdinalIgnoreCase))
-                .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => Guid.NewGuid()).ToList();
-            colors.AddRange(sources.Select(x => x.Color).Concat(new[] { settings.BusinessColor, settings.PersonalColor, settings.DdayColor, settings.AnniversaryColor })
-                .Where(x => !string.IsNullOrWhiteSpace(x) && !x.Equals(representative, StringComparison.OrdinalIgnoreCase))
-                .Where(x => !colors.Contains(x, StringComparer.OrdinalIgnoreCase)));
-
-            var colorIndex = 0;
-            Func<string> next = delegate { return colorIndex < colors.Count ? colors[colorIndex++] : representative; };
-            if (primary != null) primary.Color = representative; else settings.BusinessColor = representative;
-            if (primary != null) settings.BusinessColor = next();
-            settings.PersonalColor = next();
-            settings.DdayColor = next();
-            settings.AnniversaryColor = next();
-            foreach (var source in sources.Where(x => x != primary)) source.Color = next();
-            foreach (var item in items.Where(x => !string.IsNullOrWhiteSpace(x.GoogleCalendarId)))
-            {
-                var source = sources.FirstOrDefault(x => x.Id == item.GoogleCalendarId);
-                if (source != null) item.GoogleCalendarColor = source.Color;
-            }
-            Colors["업무일정"] = settings.BusinessColor; Colors["개인일정"] = settings.PersonalColor;
-            Colors["D-Day"] = settings.DdayColor; Colors["기념일"] = settings.AnniversaryColor;
-            return true;
-        }
-
         void AttachWindowLifecycle()
         {
+            PreviewKeyDown += async delegate(object sender, KeyEventArgs e)
+            {
+                if (e.Key != Key.Z || (Keyboard.Modifiers & ModifierKeys.Control) == 0 || HasBlockingDialog) return;
+                e.Handled = true; await UndoCalendarAction();
+            };
             Loaded += async delegate
             {
                 explorerFrame.SetActionSink(desktopActions.WindowHandle);
@@ -154,7 +129,9 @@ namespace FamilyPlanner
             {
                 CloseAuxiliaryWindows();
                 Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplaySettingsChanged;
-                Store.Save(items); SaveWindowSettings();
+                Store.Save(items);
+                if (preservePlacementOnExit) Store.SaveSettings(settings);
+                else SaveWindowSettings();
                 explorerFrame.Dispose(); desktopActions.Dispose();
                 if (trayIcon != null) { trayIcon.Visible = false; trayIcon.Dispose(); }
             };

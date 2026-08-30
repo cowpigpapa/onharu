@@ -81,18 +81,27 @@ namespace FamilyPlanner
                 var setup = new SportsApiSetupWindow(); PlaceCalendarDialog(setup); ShowBlockingDialog(setup);
                 if (!SportsApiKeyStore.HasKey) { ShowNotice("프로야구 일정을 사용하려면 API 키를 연결해 주세요.", false, "프로야구 일정"); return; }
             }
+            foreach (var item in items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId))) item.SportsGameId = SportsApi.RegistrationId(item);
+            CollapseDuplicateSportsItems();
             sportsWindow = new SportsCalendarWindow(items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId)).Select(x => x.SportsGameId),
-                settings.FavoriteBaseballTeam, settings.SportsCalendarScale);
+                settings.FavoriteBaseballTeam, settings.SportsCalendarScale, settings.GoogleCalendars, GoogleCalendar.IsConnected);
             PlaceCalendarDialog(sportsWindow);
             sportsWindow.ViewScaleChanged += delegate(double scale)
             {
                 settings.SportsCalendarScale = scale;
                 Store.SaveSettings(settings);
             };
-            sportsWindow.RegistrationRequested += delegate(List<PlannerItem> selectedItems)
+            sportsWindow.RegistrationRequested += async delegate(List<PlannerItem> selectedItems)
             {
                 foreach (var item in selectedItems) if (!items.Any(x => x.SportsGameId == item.SportsGameId)) items.Add(item);
+                CollapseDuplicateSportsItems();
                 Store.Save(items); RenderAll();
+                var googleItems = selectedItems.Where(x => !string.IsNullOrWhiteSpace(x.GoogleCalendarId)).ToList();
+                foreach (var item in googleItems) await SaveGoogleItem(item);
+                var pending = googleItems.Count(x => x.PendingGoogleSync);
+                return pending > 0 ? "PC 저장 완료 · Google 동기화 대기 " + pending + "건" :
+                    googleItems.Count > 0 ? "선택한 경기 " + selectedItems.Count + "개를 Google Calendar에 등록했습니다." :
+                    "선택한 경기 " + selectedItems.Count + "개를 PC에 등록했습니다.";
             };
             sportsWindow.Closed += delegate
             {
@@ -101,6 +110,23 @@ namespace FamilyPlanner
                 sportsWindow = null;
             };
             sportsWindow.Show(); sportsWindow.Activate();
+        }
+
+        bool CollapseDuplicateSportsItems()
+        {
+            var changed = false;
+            foreach (var item in items)
+            {
+                var stableId = SportsApi.RegistrationId(item);
+                if (string.IsNullOrWhiteSpace(stableId) || item.SportsGameId == stableId) continue;
+                item.SportsGameId = stableId; changed = true;
+            }
+            foreach (var group in items.Where(x => !string.IsNullOrWhiteSpace(x.SportsGameId)).GroupBy(x => x.SportsGameId).Where(x => x.Count() > 1).ToList())
+            {
+                var keep = group.OrderByDescending(x => !string.IsNullOrWhiteSpace(x.GoogleEventId)).ThenByDescending(x => x.CreatedInOnharu).First();
+                changed |= items.RemoveAll(x => x != keep && x.SportsGameId == group.Key) > 0;
+            }
+            return changed;
         }
     }
 }

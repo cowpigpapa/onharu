@@ -23,7 +23,7 @@ namespace FamilyPlanner
             cancel.Click += delegate { Choice = "cancel"; Close(); }; actions.Children.Add(cancel);
             var exit = ActionButton("종료", "#FEE2E2", "#DC2626"); exit.Click += delegate { Choice = "exit"; Close(); };
             exit.Margin = new Thickness(5, 0, 0, 0); Grid.SetColumn(exit, 1); actions.Children.Add(exit); panel.Children.Add(actions);
-            Content = UiRound.EmphasizePopup(new Border { Background = Brush("#FFFAFCFF"), CornerRadius = new CornerRadius(18), Child = panel });
+            Content = OnharuPopupChrome.Shell(panel);
         }
 
         static Button ActionButton(string text, string background, string foreground)

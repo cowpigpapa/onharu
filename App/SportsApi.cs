@@ -60,6 +60,13 @@ namespace FamilyPlanner
             return games;
         }
         internal static bool HasCachedMonth(int year, int month) { return File.Exists(CachePath(year, month)); }
+        internal static string RegistrationId(SportsGame game) { return "parse-kbo:" + game.LocalStart.ToString("yyyyMMdd") + "-" + game.Title; }
+        internal static string RegistrationId(PlannerItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.SportsGameId) &&
+                (string.IsNullOrWhiteSpace(item.Notes) || !item.Notes.StartsWith("KBO 경기 일정", StringComparison.Ordinal))) return null;
+            return "parse-kbo:" + item.Start.ToString("yyyyMMdd") + "-" + (item.Title ?? "").TrimStart('⚾', ' ');
+        }
         static async Task<List<SportsGame>> Fetch(int year, int month, string key)
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;

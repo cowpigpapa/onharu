@@ -3,10 +3,17 @@ $ErrorActionPreference = 'Stop'
 
 $mainSources = (Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'MainWindow*.cs' | ForEach-Object { Get-Content $_.FullName -Raw -Encoding UTF8 }) -join "`n"
 $settingsSource = Get-Content (Join-Path $PSScriptRoot 'SettingsWindow.cs') -Raw -Encoding UTF8
+$addItemSource = Get-Content (Join-Path $PSScriptRoot 'AddItemWindow.cs') -Raw -Encoding UTF8
 $storageSource = Get-Content (Join-Path $PSScriptRoot 'LocalStorage.cs') -Raw -Encoding UTF8
+$temporaryPaletteSource = Get-Content (Join-Path $PSScriptRoot 'TemporarySegmentPaletteTool.cs') -Raw -Encoding UTF8
 if ($storageSource.Contains('Samples()') -or $storageSource.Contains('가족 저녁 식사') -or $storageSource.Contains('주간 업무 보고')) { throw 'Clean install must not create sample schedules.' }
 $calendarStyleSource = Get-Content (Join-Path $PSScriptRoot 'OnharuCalendarStyle.cs') -Raw -Encoding UTF8
 $deleteSource = Get-Content (Join-Path $PSScriptRoot 'LocalDataDeleteWindow.cs') -Raw -Encoding UTF8
+$cursorSource = Get-Content (Join-Path $PSScriptRoot 'UiCursor.cs') -Raw -Encoding UTF8
+foreach ($undoFeature in @('UiCursor.DragCopy', 'GetAsyncKeyState(0x11)', 'UiCursor.ControlDown', 'TimeSpan.FromMilliseconds(25)', 'dragCursorTimer.Start()', 'QueryContinueDrag', 'RegisterUndo(copy ? "일정 복사" : "일정 이동"', 'RegisterCreateUndo(window.Result)', 'RegisterEditUndo(originalItem)', 'RegisterUnsupportedUndo("반복 일정', 'RegisterDeleteUndo(deletedItems', 'await UndoCalendarAction()')) {
+    if (-not (($mainSources + $cursorSource).Contains($undoFeature))) { throw "Calendar copy cursor or undo support is missing: $undoFeature" }
+}
+if ($mainSources.Contains('action.Name + "을 되돌')) { throw 'Undo result message uses an invalid fixed Korean object particle.' }
 foreach ($dataAction in @('ExportFile', 'ExportEmail', 'DeleteLocalData')) {
     if (-not $settingsSource.Contains('SettingsDataAction.' + $dataAction)) { throw "Data action is missing: $dataAction" }
 }
@@ -21,8 +28,8 @@ foreach ($placementFeature in @('MatchWindowToPhysicalFrame(target)', 'TryGetPub
         throw "Resolution-safe mode placement is missing: $placementFeature"
     }
 }
-foreach ($settledPlacementFeature in @('GetDpiForWindow', 'stableTicks < 2', 'Opacity = intendedOpacity', 'explorerFrame.Disable()')) {
-    if (-not $mainSources.Contains($settledPlacementFeature)) { throw "DPI-settled WPF handoff is missing: $settledPlacementFeature" }
+foreach ($settledPlacementFeature in @('GetDpiForWindow', 'if (hasTarget) MatchWindowToPhysicalFrame(target);', 'Opacity = intendedOpacity', 'explorerFrame.Disable()')) {
+    if (-not $mainSources.Contains($settledPlacementFeature)) { throw "Candidate-17 WPF handoff is missing: $settledPlacementFeature" }
 }
 foreach ($logicalPlacementFeature in @('nativeDpi / 96.0', 'Left = frame.Left / scale', 'Width = Math.Max(MinWidth')) {
     if (-not $mainSources.Contains($logicalPlacementFeature)) { throw "Current-frame WPF placement is missing: $logicalPlacementFeature" }
@@ -56,7 +63,8 @@ foreach ($case in $cases) {
 
 $settingsType = $assembly.GetType('FamilyPlanner.PlannerSettings', $true)
 $settings = [Activator]::CreateInstance($settingsType)
-if ($settings.Version -ne 45) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.Version -ne 48) { throw "Unexpected settings version: $($settings.Version)" }
+if ($settings.IncompleteTodoLookbackMonths -ne 1) { throw 'Incomplete To-Do lookback must default to one month.' }
 if ($settings.ThemeId -ne 'classic') { throw "Theme must default to classic: $($settings.ThemeId)" }
 if (-not $settings.AutomaticUpdateChecks) { throw 'Automatic update checks must default to enabled.' }
 if ($settings.UseMonthView -or $settings.VisibleWeekCount -ne 4) { throw 'Clean-install calendar must default to a four-week view.' }
@@ -73,7 +81,8 @@ if ($settings.UseTimetable) { throw 'Timetable must be opt-in by default.' }
 if (-not $settings.UseDiary) { throw 'Diary must be visible by default.' }
 if (-not $settings.DdayPanelVisible) { throw 'D-Day panel must default to visible.' }
 if (-not $settings.CompletedLast) { throw 'CompletedLast must default to true.' }
-if ($settings.DefaultCalendarKey -ne 'local:business' -or -not $settings.DefaultAllDay -or $settings.DefaultStartHour -ne 9 -or $settings.DefaultDurationMinutes -ne 30) { throw 'New-item defaults are invalid.' }
+if ($settings.DefaultCalendarKey -ne 'local:business' -or -not $settings.DefaultAllDay -or $settings.DefaultStartHour -ne 9) { throw 'New-item defaults are invalid.' }
+if ($settingsType.GetField('DefaultDurationMinutes')) { throw 'Removed default-duration setting must not remain.' }
 if ($settings.StartViewMode -ne 'today') { throw 'Clean-install start date must be today.' }
 if (-not $settings.ReminderSound -or $settings.QuietStartHour -ne 22 -or $settings.QuietEndHour -ne 7) { throw 'Reminder defaults are invalid.' }
 if ($null -eq $settings.DateBackgroundColors) { throw 'DateBackgroundColors must be initialized.' }
@@ -90,18 +99,42 @@ foreach ($diaryInputFeature in @('settings.UseDiary ? new DiaryDateHitTarget(dat
     if (-not $mainSources.Contains($diaryInputFeature)) { throw "Diary date-only input routing is missing: $diaryInputFeature" }
 }
 if ($mainSources.Contains('lunar.MouseLeftButtonDown += openDiary')) { throw 'Lunar text must not open the diary editor.' }
+foreach ($logoutConfirmFeature in @('if (!ConfirmGoogleLogout()) return;', 'GoogleLogoutConfirmWindow', 'Google 계정에서 로그아웃하시겠습니까?', '온하루 로컬 일정은 그대로 유지됩니다.')) {
+    if (-not (($mainSources + (Get-Content (Join-Path $PSScriptRoot 'GoogleAccountActionWindow.cs') -Raw -Encoding UTF8)).Contains($logoutConfirmFeature))) { throw "Google logout confirmation is missing: $logoutConfirmFeature" }
+}
 if (-not $settingsSource.Contains('Content = "일기장"')) { throw 'Diary feature setting is missing.' }
-if (-not $settingsSource.Contains('Content = "Google Tasks 동기화"')) { throw 'Google Tasks opt-in setting is missing.' }
-foreach ($dragFeature in @('EnableItemDrag(bar, item)', 'EnableItemDrag(text, item)', 'EnableCalendarDrop()', 'MoveItemToDate(item, targetDate.Value', 'DragDropEffects.Move | DragDropEffects.Copy', 'CopyItem(item)')) {
+foreach ($taskReadOnlyFeature in @('Content = "Google Tasks"', 'Text = " · 읽기 전용, 완료 체크만 가능"', 'googleDetailGrid.Children.Add(taskRow)', 'GoogleTasks.IsTask(item) || !source.Editable', 'item.GoogleReadOnly = true')) {
+    if (-not (($settingsSource + $mainSources + (Get-Content (Join-Path $PSScriptRoot 'GoogleTasksService.cs') -Raw -Encoding UTF8)).Contains($taskReadOnlyFeature))) { throw "Google Tasks read-only opt-in is missing: $taskReadOnlyFeature" }
+}
+$desktopHookSource = Get-Content (Join-Path (Split-Path -Parent $PSScriptRoot) 'ExplorerLayer\DesktopHook.cpp') -Raw -Encoding UTF8
+foreach ($fixedUndoFeature in @('g_onharuOwnsUndo = insideOnharu', 'WH_KEYBOARD', 'WM_KILLFOCUS', "wParam == 'Z'", 'SetFocus(hwnd)', 'PostDesktopAction(110, 0)', 'action == 110', 'UndoCalendarAction()')) {
+    if (-not (($desktopHookSource + $mainSources).Contains($fixedUndoFeature))) { throw "Fixed-mode undo feature missing: $fixedUndoFeature" }
+}
+if ($desktopHookSource.Contains('SetForegroundWindow(GetAncestor(hwnd, GA_ROOT))')) { throw 'Fixed-layer clicks must not foreground Explorer; this repaints the desktop during mode transitions.' }
+foreach ($temporaryPaletteRefresh in @('TemporarySegmentPaletteTool.ApplyOverride(positionModeSwitch)')) {
+    if (-not $mainSources.Contains($temporaryPaletteRefresh)) { throw "Temporary button colors must survive mode/detail refresh: $temporaryPaletteRefresh" }
+}
+if ($settingsSource.Contains('syncCard.Children.Add(googleTasks)')) { throw 'Google Tasks must not be placed in automatic sync settings.' }
+foreach ($groupFilterFeature in @('HeaderAllFilter("온하루 등록 전체 선택/해제"', 'HeaderAllFilter("Google 일정 전체 선택/해제"', 'HeaderAllFilter("Special Day Card 전체 선택/해제"', 'SetLocalFilters(bool visible)', 'SetGoogleFilters(bool visible)', 'SetSpecialFilters(bool visible)')) {
+    if (-not $mainSources.Contains($groupFilterFeature)) { throw "Detail group all-filter is missing: $groupFilterFeature" }
+}
+foreach ($addItemAlignmentFeature in @('showDday.Height = important.Height = 20', 'importantColors.Height = 20', 'titleCaption.VerticalAlignment = VerticalAlignment.Center')) {
+    if (-not $addItemSource.Contains($addItemAlignmentFeature)) { throw "Add-item D-Day/important alignment is missing: $addItemAlignmentFeature" }
+}
+foreach ($detailBorderRule in @('importantCard ? EventTextBrush(categoryItems[0])', 'settings.ThemeId == "dark" ? T("Grid") : Brush("#CBD5E1")', 'CategoryColorSystem.DetailBorder(settings.ThemeId, groupColor)', 'BorderThickness = new Thickness(1)')) {
+    if (-not $mainSources.Contains($detailBorderRule)) { throw "Detail-card border rule is missing: $detailBorderRule" }
+}
+if ($mainSources.Contains('TemporarySegmentPaletteTool.ApplyOverride(detailScroll)') -or $mainSources.Contains('TemporarySegmentPaletteTool.Attach(detailScroll)')) { throw 'Detail scrollbar must not accept category palette overrides.' }
+foreach ($dragFeature in @('EnableItemDrag(bar, item)', 'EnableItemDrag(row, item)', 'IsInteractiveDragContent', 'EnableCalendarDrop()', 'MoveItemToDate(item, targetDate.Value', 'DragDropEffects.Move | DragDropEffects.Copy', 'CopyItem(item)')) {
     if (-not $mainSources.Contains($dragFeature)) { throw "Calendar item drag-and-drop is missing: $dragFeature" }
 }
-if (-not $settingsSource.Contains('드래그로 Google 일정 날짜 변경') -or -not $mainSources.Contains('settings.AllowGoogleDragMove')) { throw 'Google drag-move opt-in is missing.' }
-if (-not $mainSources.Contains('IsAutomaticSportsItem(item)') -or -not $mainSources.Contains('item.Category == "야구" && !settings.UseProBaseball')) { throw 'KBO drag and visibility protection is missing.' }
+if (-not $settingsSource.Contains('드래그로 일정 옮기기') -or -not $mainSources.Contains('settings.AllowGoogleDragMove')) { throw 'Google drag-move opt-in is missing.' }
+if (-not $mainSources.Contains('IsAutomaticSportsItem(item)') -or -not $mainSources.Contains('settings.BaseballVisible')) { throw 'KBO drag protection or independent category visibility is missing.' }
 if (-not $mainSources.Contains('item.GoogleEventType == "birthday"') -or -not $mainSources.Contains('반복 일정 원본은 이동할 수 없습니다.')) { throw 'Google recurring-instance drag policy is invalid.' }
-foreach ($dragFeedback in @('ONHARU_BLOCKED_ITEM_DRAG', 'DragRestriction(item)', 'baseballFeatureEnabled', 'settings.BaseballVisible = true')) {
+foreach ($dragFeedback in @('ONHARU_BLOCKED_ITEM_DRAG', 'DragRestriction(item)')) {
     if (-not $mainSources.Contains($dragFeedback)) { throw "Drag feedback or baseball activation is missing: $dragFeedback" }
 }
-foreach ($detailOrderFeature in @('EnableDetailCardOrder(groupHeader, detailCard, groupKey)', 'DetailGroupDragFormat', 'ReorderDetailGroup(source, groupName', 'settings.DetailCategoryOrder')) {
+foreach ($detailOrderFeature in @('EnableDetailCardOrder(groupHeaderSurface, detailCard, groupKey)', 'Mouse.Capture(card)', 'ReorderDetailGroup(groupName, (string)targetCard.Tag', 'settings.DetailCategoryOrder')) {
     if (-not $mainSources.Contains($detailOrderFeature)) { throw "Detail card drag order is missing: $detailOrderFeature" }
 }
 foreach ($diaryToggleFeature in @('if (!settings.UseDiary)', 'settings.UseDiary && diaryDates.Contains', 'if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close()')) {
@@ -135,7 +168,10 @@ foreach ($searchFeature in @('Tuple.Create(', '"custom")', 'customFrom.SelectedD
 foreach ($searchPolishFeature in @('SettingsWindow.StyleComboBox(range)', 'void ScheduleRender()', 'DispatcherPriority.Background', 'StyleDatePicker(customFrom)', 'UiRound.SoftenScrollBars(resultScroller)', 'Margin = new Thickness(12, 5, 12, 5)')) {
     if (-not $searchSource.Contains($searchPolishFeature)) { throw "Search visual or responsiveness polish is missing: $searchPolishFeature" }
 }
-foreach ($searchLayoutFeature in @('var titleGroup = new StackPanel', 'titleGroup.Children.Add(todayButton)', 'Grid.SetColumn(range, 1)', 'Grid.SetColumn(search, 2)', 'SearchCalendarDayStyle()', 'SearchCalendarButtonStyle()', 'Margin = new Thickness(0, 7, 82, 0)')) {
+foreach ($comboFeature in @('FontSizeProperty, 11.5', 'combo.PreviewMouseLeftButtonDown', 'ItemsControl.ContainerFromElement(combo', 'combo.IsDropDownOpen = !combo.IsDropDownOpen', 'OnharuPopupChrome.SelectionSurfaceColor')) {
+    if (-not $settingsSource.Contains($comboFeature)) { throw "Shared combo box behavior is missing: $comboFeature" }
+}
+foreach ($searchLayoutFeature in @('var titleGroup = new StackPanel', 'titleGroup.Children.Add(todayButton)', 'Grid.SetColumn(range, 1)', 'Grid.SetColumn(search, 2)', 'OnharuCalendarStyle.Create()', 'Margin = new Thickness(0, 7, 70, 0)')) {
     if (-not $searchSource.Contains($searchLayoutFeature)) { throw "Search layout cleanup is missing: $searchLayoutFeature" }
 }
 $migrationSource = Get-Content (Join-Path $PSScriptRoot 'V21Migration.cs') -Raw -Encoding UTF8
@@ -154,6 +190,12 @@ foreach ($removedDataFlag in @('public bool ImportItemsFile', 'public bool Expor
 }
 foreach ($ddayCardFeature in @('(x.Start.Date - DateTime.Today).Days >= -7', 'isToday ? "D-Day"', 'Colors["D-Day"]', 'Colors["기념일"]', 'CategoryColorSystem.DetailBackground')) {
     if (-not $mainSource.Contains($ddayCardFeature)) { throw "D-Day 카드 7일 보존 규칙이 누락됐습니다: $ddayCardFeature" }
+}
+foreach ($modeCardFeature in @('OnharuDetailCard:mode:time', 'OnharuDetailCard:mode:incomplete', 'IsWithinDetailCard(control)')) {
+    if (-not (($mainSources + $temporaryPaletteSource).Contains($modeCardFeature))) { throw "Time and incomplete detail cards must ignore unrelated visual-path color overrides: $modeCardFeature" }
+}
+foreach ($ddayColorFeature in @('var ddayColorChanged = !string.Equals(Colors["D-Day"], window.DdayColor', 'classic|automation:OnharuDetailCard:special:D-Day', 'dark|automation:OnharuDetailCard:special:D-Day')) {
+    if (-not $mainSource.Contains($ddayColorFeature)) { throw "D-Day color override reset is missing: $ddayColorFeature" }
 }
 $sportsSource = Get-Content (Join-Path $PSScriptRoot 'SportsCalendarWindow.cs') -Raw -Encoding UTF8
 $sportsApiSource = Get-Content (Join-Path $PSScriptRoot 'SportsApiWindows.cs') -Raw -Encoding UTF8
@@ -177,8 +219,8 @@ $explorerLayerSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MainWi
 foreach ($compactTitleFeature in @('void UpdateCompactHeaderTypography()', 'monthTitle.FontSize = 17')) {
     if (-not $mainSource.Contains($compactTitleFeature)) { throw "작은 화면용 고정 날짜 제목이 누락됐습니다: $compactTitleFeature" }
 }
-if ($explorerLayerSource -notmatch '(?s)DwmwaCloak = 13.*?void PublishAndCloak\(\).*?explorerFrame\.Publish.*?LayerHostController\.Start.*?explorerFrame\.SetActionSink.*?SetWindowCloaked\(true\).*?void ShowPreparedWpf.*?Opacity = 0;.*?SetWindowCloaked\(false\).*?BeginPreparedWpfSettle.*?Opacity = intendedOpacity;.*?explorerFrame\.Disable\(\)') {
-    throw 'Fixed/edit transitions must prewarm WPF, restore its opacity, and then release the Explorer frame without animation.'
+if ($explorerLayerSource -notmatch '(?s)DwmwaCloak = 13.*?void PublishAndCloak\(\).*?explorerFrame\.Publish.*?LayerHostController\.Start.*?explorerFrame\.SetActionSink.*?SetWindowCloaked\(true\).*?void ShowPreparedWpf.*?Opacity = 0;.*?BeginPreparedWpfSettle.*?Opacity = intendedOpacity;.*?SetWindowCloaked\(false\);.*?explorerFrame\.Disable\(\)') {
+    throw 'Fixed/edit transitions must prepare the visible WPF surface while cloaked, then uncloak it before releasing the Explorer frame.'
 }
 if ($mainSource.Contains('Topmost = true; ShowInTaskbar = true;')) { throw 'Position editor is incorrectly pinned above every application.' }
 if ($mainSource.Contains('DragMove(); DesktopLayer.Lower(this);')) { throw 'Dragging the position editor still lowers it behind other windows.' }
@@ -214,7 +256,7 @@ foreach ($anniversaryConversionFeature in @('new AnniversaryWindow(existing)', '
     if (-not (($addItemSource + $mainSource + (Get-Content (Join-Path $PSScriptRoot 'AnniversaryWindow.cs') -Raw -Encoding UTF8)).Contains($anniversaryConversionFeature))) { throw "Anniversary conversion is missing: $anniversaryConversionFeature" }
 }
 foreach ($compactScheduleFeature in @('CompactScrollHeight(SystemParameters.WorkArea.Height)', 'workAreaHeight * .78 - 64', 'Grid.SetColumn(minuteGrid, 1)', 'Color.FromRgb(3, 105, 161)',
-    'Height = 46', 'Content = "✓  일정 저장"', 'Content = "직접 선택"', 'SettingsWindow.StyleComboBox(customReminderUnit)')) {
+    'Height = 46', 'ActionButton("✓  일정 저장"', 'Content = "직접 선택"', 'SettingsWindow.StyleComboBox(customReminderUnit)')) {
     if (-not $addItemSource.Contains($compactScheduleFeature)) { throw "노트북용 일정창 압축 구성이 누락됐습니다: $compactScheduleFeature" }
 }
 foreach ($removedReminderShortcut in @('Name = "10분 전"', 'Name = "30분 전"', 'Name = "하루 전"')) {
@@ -276,7 +318,7 @@ if ($addItemSource.Contains('"✓  수정 저장"') -or $addItemSource.Contains(
 foreach ($ddayIndependenceFeature in @('D-Day is an independent summary view', 'Task SetTodoCompleted(PlannerItem item, bool completed)', 'ToggleTodoFromDesktop(itemHit.Item)')) {
     if (-not $mainSource.Contains($ddayIndependenceFeature)) { throw "D-Day independence or detail title toggle is missing: $ddayIndependenceFeature" }
 }
-foreach ($specialDayFilterFeature in @('Text = "Special Day Card"', 'var specialFilterRow = new StackPanel', 'Grid.SetRowSpan(divider, 2)', 'Width = new GridLength(118)', 'localFilterRow = new UniformGrid { Columns = 2 }', '"야구"')) {
+foreach ($specialDayFilterFeature in @('Text = "Special Day Card"', 'specialFilterRow = new StackPanel', 'Grid.SetRowSpan(divider, 2)', 'Width = new GridLength(118)', 'localFilterRow = new UniformGrid { Columns = 2 }', '"야구"')) {
     if (-not $mainSource.Contains($specialDayFilterFeature)) { throw "Special Day filter grouping is missing: $specialDayFilterFeature" }
 }
 $detailSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Detail.cs') -Raw -Encoding UTF8
@@ -351,9 +393,105 @@ foreach ($yearlyModeFeature in @('yearlyNth.IsChecked == true ? "yearly_nth" : "
 foreach ($compactDetailFeature in @('titleText.Inlines.Add(new System.Windows.Documents.Run', 'Foreground = T("Disabled")', 'if (!item.AllDay && IsMultiDay(item))', 'Margin = new Thickness(0, 8, 0, 0)')) {
     if (-not $mainSource.Contains($compactDetailFeature)) { throw "Compact detail layout is missing: $compactDetailFeature" }
 }
-$categoryOrderSource = Get-Content (Join-Path $PSScriptRoot 'CategoryOrderWindow.cs') -Raw -Encoding UTF8
-foreach ($categoryMoveFeature in @('previousOffset + direction * 48', 'Mouse.Capture(null); Mouse.Synchronize();')) {
-    if (-not $categoryOrderSource.Contains($categoryMoveFeature)) { throw "Category-order pointer synchronization is missing: $categoryMoveFeature" }
+foreach ($fixedWeekPickerFeature in @('button.Tag = "week_count:" + selectedCount', 'navigation.StartsWith("week_count:"', 'ApplyWeekCount(weekCount)')) {
+    if (-not $mainSources.Contains($fixedWeekPickerFeature)) { throw "Fixed-layer week picker is missing: $fixedWeekPickerFeature" }
+}
+foreach ($fixedWeekHitFeature in @('TryApplyWeekCountAt(root, point)', 'button.TransformToAncestor(root)', 'ApplyWeekCount(count)')) {
+    if (-not $mainSources.Contains($fixedWeekHitFeature)) { throw "Fixed-layer week option direct hit handling is missing: $fixedWeekHitFeature" }
+}
+$anniversaryCardSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Anniversary.cs') -Raw -Encoding UTF8
+if (-not $anniversaryCardSource.Contains('Margin = new Thickness(0, 4, 0, 7)')) { throw 'D-Day and anniversary cards must use the common detail-card outer spacing.' }
+foreach ($detailRhythm in @('groupCollapsed ? 0 : 5', 'Margin = new Thickness(0, 4, 0, 7)', 'Margin = new Thickness(3), IsHitTestVisible = false')) {
+    if (-not $mainSources.Contains($detailRhythm)) { throw "Detail spacing rhythm is missing: $detailRhythm" }
+}
+if (-not $mainSources.Contains('new Border { Height = 8, Background = Brushes.Transparent }')) { throw 'Date header to first-card spacing is invalid.' }
+if ($anniversaryCardSource.Contains('ddaySectionCollapsed ? 17') -or $anniversaryCardSource.Contains('anniversarySectionCollapsed ? 17')) { throw 'Collapsed special-card title height still clips text descenders.' }
+foreach ($categoryMoveFeature in @('DragDrop.DoDragDrop(card, card, DragDropEffects.Move)', 'dragged.Parent != parent', 'CategoryOrder = localColorGrid.Children')) {
+    if (-not $settingsSource.Contains($categoryMoveFeature)) { throw "In-group color-card ordering is missing: $categoryMoveFeature" }
+}
+foreach ($colorEditorLayoutFeature in @('localColorGrid = new UniformGrid { Columns = 3', 'googleColorGrid = new UniformGrid { Columns = 3', 'specialColorGrid = new UniformGrid { Columns = 3', 'Text = displayName ?? name', 'Cursor = Cursors.Arrow', 'local:baseball', 'ColorEditor("국경일", holidayColor, "휴일", false)', 'Action openPalette = delegate', 'OnharuColorPresets.Palettes()')) {
+    if (-not $settingsSource.Contains($colorEditorLayoutFeature)) { throw "Three-column grouped color editor is missing: $colorEditorLayoutFeature" }
+}
+foreach ($googleSettingsOrderFeature in @('CategoryOrderPolicy.GoogleSources(', 'googleDetailGrid.Children.Add(taskRow);', 'generalOptions.Children.Add(dragChildren)', 'panel.Children.Add(SectionCard(generalOptions));')) {
+    if (-not $settingsSource.Contains($googleSettingsOrderFeature)) { throw "Google settings order is missing: $googleSettingsOrderFeature" }
+}
+foreach ($visibleGroupFilterFeature in @('VisibleFilterKeys(new[] { "업무일정", "개인일정", "야구" })', 'filters[key].Visibility == Visibility.Visible', 'SetHeaderAllState(localAllFilter, VisibleFilterKeys')) {
+    if (-not $mainSources.Contains($visibleGroupFilterFeature)) { throw "Visible-category group filter rule is missing: $visibleGroupFilterFeature" }
+}
+foreach ($detailPaletteFeature in @('AttachDetailCard(detailCard, groupHeader, groupKey)', 'AttachDetailCard(ddayCard,', 'AttachDetailCard(anniversaryCard,', 'IsWithinDetailCard(e.OriginalSource as DependencyObject)', 'OnharuDetailCard:')) {
+    if (-not (($mainSources + (Get-Content (Join-Path $PSScriptRoot 'TemporarySegmentPaletteTool.cs') -Raw -Encoding UTF8)).Contains($detailPaletteFeature))) { throw "Detail-card palette routing is missing: $detailPaletteFeature" }
+}
+foreach ($compactOverflowFeature in @('+ "개 더보기"', 'visibleLaneLimit', 'detailMode = "selected"')) {
+    if (-not $mainSources.Contains($compactOverflowFeature)) { throw "Calendar overflow navigation is missing: $compactOverflowFeature" }
+}
+foreach ($collapsedFilterSpacing in @('filterGroups.Margin = new Thickness(0, 0, 0, visible ? 14 : 6)', 'googleHeader.Margin = new Thickness(0, 0, 0, visible ? 7 : 10)')) {
+    if (-not $mainSources.Contains($collapsedFilterSpacing)) { throw "Collapsed sidebar spacing is missing: $collapsedFilterSpacing" }
+}
+foreach ($todoSummaryFeature in @('ShowIncompleteTodoButton', '미완료 To-Do', '기한 지남', '다가오는 할 일', 'detailIncompleteMode')) {
+    if (-not (($settingsSource + $mainSources + (Get-Content (Join-Path $PSScriptRoot 'PlannerSettings.cs') -Raw -Encoding UTF8)).Contains($todoSummaryFeature))) { throw "Incomplete To-Do card is missing: $todoSummaryFeature" }
+}
+if (-not $settingsSource.Contains('var incompleteTodoRange = new ComboBox { Width = 128')) { throw 'Incomplete To-Do range labels can be clipped.' }
+if (-not $mainSource.Contains('var rangeTitle = detailMode != "selected" || detailIncompleteMode;')) { throw 'Incomplete To-Do date range glyph is missing.' }
+foreach ($miniCalendarFeature in @('VisibleCalendarRange()', 'OnharuCalendarStyle.Apply(picker)', '현재 표시  ')) {
+    if (-not $mainSources.Contains($miniCalendarFeature)) { throw "Header mini-calendar navigation is missing: $miniCalendarFeature" }
+}
+if (-not $mainSources.Contains('CornerRadius = new CornerRadius(continuesBefore ? 0 : 4')) { throw 'Multi-day week-boundary continuation styling is missing.' }
+$addItemSource = Get-Content (Join-Path $PSScriptRoot 'AddItemWindow.cs') -Raw -Encoding UTF8
+$orderPolicySource = Get-Content (Join-Path $PSScriptRoot 'CategoryOrderPolicy.cs') -Raw -Encoding UTF8
+foreach ($sharedOrderFeature in @('CategoryOrderPolicy.Rank(localOrder, x.Item2)', 'CategoryOrderPolicy.GoogleSources(')) {
+    if (-not $addItemSource.Contains($sharedOrderFeature)) { throw "New-item calendar order does not use the shared policy: $sharedOrderFeature" }
+}
+foreach ($sharedOrderFeature in @('ItemKey(PlannerItem item)', 'GoogleSources(IEnumerable<GoogleCalendarSetting> sources')) {
+    if (-not $orderPolicySource.Contains($sharedOrderFeature)) { throw "Shared category order policy is missing: $sharedOrderFeature" }
+}
+$sportsCalendarSource = Get-Content (Join-Path $PSScriptRoot 'SportsCalendarWindow.cs') -Raw -Encoding UTF8
+$sportsMainSource = Get-Content (Join-Path $PSScriptRoot 'SportsApiWindows.cs') -Raw -Encoding UTF8
+$googleCalendarSource = Get-Content (Join-Path $PSScriptRoot 'GoogleCalendarService.cs') -Raw -Encoding UTF8
+foreach ($sportsGoogleFeature in @('ONHARU 로컬 일정', 'Google · ', 'x.Editable && !GoogleTasks.IsSource', 'StyleComboBox(registrationTarget)', 'item.GoogleCalendarId = target.Id', 'await RegistrationRequested(SelectedItems)')) {
+    if (-not $sportsCalendarSource.Contains($sportsGoogleFeature)) { throw "KBO local/Google registration target is missing: $sportsGoogleFeature" }
+}
+foreach ($sportsIdentityFeature in @('RegistrationId(SportsGame game)', 'onharuSportsGameId', 'CollapseDuplicateSportsItems')) {
+    if (-not (($sportsCalendarSource + $sportsMainSource + $googleCalendarSource + $mainSources + (Get-Content (Join-Path $PSScriptRoot 'SportsApi.cs') -Raw -Encoding UTF8)).Contains($sportsIdentityFeature))) { throw "Stable KBO identity is missing: $sportsIdentityFeature" }
+}
+foreach ($legacySportsIdentityFeature in @('!item.Notes.StartsWith("KBO 경기 일정", StringComparison.Ordinal)', 'var stableId = SportsApi.RegistrationId(item);', 'item.SportsGameId = stableId; changed = true;')) {
+    if (-not (($sportsMainSource + (Get-Content (Join-Path $PSScriptRoot 'SportsApi.cs') -Raw -Encoding UTF8)).Contains($legacySportsIdentityFeature))) { throw "Legacy KBO duplicate repair is missing: $legacySportsIdentityFeature" }
+}
+foreach ($localCategoryFeature in @('세부 달력 표시 옵션', 'BusinessCategoryVisible', 'PersonalCategoryVisible', 'BaseballCategoryVisible', 'DdayCategoryVisible', 'AnniversaryCategoryVisible')) {
+    if (-not (($settingsSource + $mainSources).Contains($localCategoryFeature))) { throw "Independent local category visibility setting is missing: $localCategoryFeature" }
+}
+foreach ($hiddenCategorySaveFeature in @('HexOr("업무일정", business)', 'HexOr("개인일정", personal)', 'HexOr("야구", baseball)', 'HexOr("D-Day", dday)', 'HexOr("기념일", anniversary)')) {
+    if (-not $settingsSource.Contains($hiddenCategorySaveFeature)) { throw "Hidden category color must survive settings save: $hiddenCategorySaveFeature" }
+}
+if (-not $settingsSource.Contains('if (!sliders.ContainsKey(name)) return;')) { throw 'Preset changes must skip hidden category color editors.' }
+foreach ($immediateCategoryRefresh in @('Content = BuildLayout();', 'RenderAll();', 'if (positionLocked) PublishAndHide();')) {
+    if (-not $mainSources.Contains($immediateCategoryRefresh)) { throw "Settings category changes must refresh immediately: $immediateCategoryRefresh" }
+}
+foreach ($detailColorOrderFeature in @('IsSpecialDetailGroup(string groupKey)', 'IsSpecialDetailGroup((string)x.Card.Tag) ? 1', 'ReadableEmphasisForeground')) {
+    if (-not $mainSources.Contains($detailColorOrderFeature)) { throw "Detail special-card order or important color rule is missing: $detailColorOrderFeature" }
+}
+if (-not $mainSources.Contains('item.Category == "야구"') -or -not $mainSources.Contains('Tag = "Unavailable"')) { throw 'Detail cards must show an unavailable checkbox for baseball and non-actionable all-day events.' }
+if (-not $googleCalendarSource.Contains('IsAlreadyDeleted(error)')) { throw 'Google delete must accept an already-deleted remote event and clear the local cache.' }
+foreach ($googleConvergenceFeature in @('uploadedEventIds', '!uploadedEventIds.Contains(x.GoogleEventId)', '!remoteIds.Contains(x.GoogleEventId)')) {
+    if (-not $googleCalendarSource.Contains($googleConvergenceFeature)) { throw "Google calendar convergence protection is missing: $googleConvergenceFeature" }
+}
+if (-not $mainSources.Contains("Property='Tag' Value='Unavailable'") -or -not $mainSources.Contains("Property='Text' Value='×'")) { throw 'Unavailable detail checkbox X marker is missing.' }
+if (-not $sportsMainSource.Contains('foreach (var item in googleItems) await SaveGoogleItem(item)')) { throw 'KBO Google registration must use the existing Google save path.' }
+foreach ($sportsCategoryFeature in @('"onharuCategory"', 'value == "야구" ? "야구"')) {
+    if (-not $googleCalendarSource.Contains($sportsCategoryFeature)) { throw "KBO Google category round-trip is missing: $sportsCategoryFeature" }
+}
+$printSource = Get-Content (Join-Path $PSScriptRoot 'CalendarPrintWindow.cs') -Raw -Encoding UTF8
+$updateSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Updates.cs') -Raw -Encoding UTF8
+$startupSource = Get-Content (Join-Path $PSScriptRoot 'MainWindow.Startup.cs') -Raw -Encoding UTF8
+if (-not $printSource.Contains('dialog.PrintVisual(page')) { throw 'Calendar print dispatch is missing.' }
+if ($mainSources.Contains('new CalendarPrintWindow(Content as System.Windows.Media.Visual, delegate')) { throw 'Printing must not switch the fixed Explorer layer while the spooler owns the UI thread.' }
+foreach ($fixedPrintFeature in @('Application.Current.MainWindow = this', 'Application.Current.MainWindow = mainWindow', 'if (HasBlockingDialog)')) {
+    if (-not (($printSource + $mainSources).Contains($fixedPrintFeature))) { throw "Fixed-mode native print ownership is missing: $fixedPrintFeature" }
+}
+if (-not $updateSource.Contains('SaveWindowSettings();') -or -not $updateSource.Contains('preservePlacementOnExit = true')) { throw 'Update launch must preserve the current monitor placement.' }
+if (-not $startupSource.Contains('if (preservePlacementOnExit) Store.SaveSettings(settings)')) { throw 'Update exit must not overwrite the preserved placement.' }
+$layerControllerSource = Get-Content (Join-Path $PSScriptRoot 'LayerHostController.cs') -Raw -Encoding UTF8
+foreach ($layerShutdownFeature in @('hostPath = ResolveHostPath()', 'Process.GetProcessesByName("Onharu.LayerHost")', 'host.WaitForExit(4000)', 'host.Kill()')) {
+    if (-not $layerControllerSource.Contains($layerShutdownFeature)) { throw "LayerHost shutdown verification is missing: $layerShutdownFeature" }
 }
 $completion = $addItem.GetMethod('UsesCompletionCheck', [Reflection.BindingFlags]'NonPublic,Static')
 if (-not $completion.Invoke($null, @($false, $false))) { throw 'Timed items must use completion checks.' }

@@ -13,6 +13,8 @@ namespace FamilyPlanner
     {
         [DataMember] public DateTime Date;
         [DataMember] public string Title;
+        [DataMember(EmitDefaultValue = false)] public string Mood;
+        [DataMember(EmitDefaultValue = false)] public string Lead;
         [DataMember] public string Content;
         [DataMember] public DateTime UpdatedAt;
     }
@@ -49,8 +51,15 @@ namespace FamilyPlanner
 
         public static void Delete(DateTime date)
         {
+            Delete(new[] { date });
+        }
+
+        public static void Delete(IEnumerable<DateTime> dates)
+        {
+            var selected = new HashSet<DateTime>((dates ?? Enumerable.Empty<DateTime>()).Select(x => x.Date));
+            if (selected.Count == 0) return;
             var entries = Load();
-            if (entries.RemoveAll(x => x.Date.Date == date.Date) > 0) Save(entries);
+            if (entries.RemoveAll(x => selected.Contains(x.Date.Date)) > 0) Save(entries);
         }
 
         static void Save(List<DiaryEntry> entries)

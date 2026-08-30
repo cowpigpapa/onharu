@@ -52,6 +52,8 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 
 ## 현재 릴리스
 
+- 개발 버전: `2.2.6-test` 로컬 시험 중. 홈페이지의 기존 2.2.5 시험판과 GitHub Latest·정식 다운로드 2.2.4는 유지한다.
+
 - 공개 버전: `2.2.4`
 - 공식 릴리스: `https://github.com/cowpigpapa/onharu/releases/tag/v2.2.4`
 - 설치판: `ONHARU-2.2.4-Setup.exe` / 2,388,167 bytes

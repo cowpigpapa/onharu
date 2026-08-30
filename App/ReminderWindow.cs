@@ -52,7 +52,7 @@ namespace FamilyPlanner
             }
             var done = new Button { Content = "확인", Height = 32, Width = 64, Background = Brush("#4F46E5"), Foreground = Brushes.White, BorderThickness = new Thickness(0) };
             UiRound.Apply(done, 9); done.Click += delegate { if (!completed) { completed = true; complete(null); Close(); } }; actions.Children.Add(done); content.Children.Add(actions);
-            Content = UiRound.EmphasizePopup(new Border { Background = Brush("#F7F7FF"), CornerRadius = new CornerRadius(18), Child = content });
+            Content = OnharuPopupChrome.Shell(content);
             Closed += delegate { if (!completed) { completed = true; complete(null); } };
         }
         static Brush Brush(string hex) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); }

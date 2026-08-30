@@ -11,6 +11,19 @@ namespace FamilyPlanner
     internal static class OnharuPopupChrome
     {
         const double TopDragHeight = 60;
+        internal const string SurfaceColor = "#FFF7F7FA";
+        internal const string HeaderSurfaceColor = "#E8E9ED";
+        internal const string ContentSurfaceColor = "#FFFFFF";
+        internal const string SupportSurfaceColor = "#F3F1EF";
+        internal const string BorderColor = "#A9AFBA";
+        internal const string PrimarySurfaceColor = "#DDF3F1";
+        internal const string PrimaryTextColor = "#0F665F";
+        internal const string PrimaryBorderColor = "#82C9C2";
+        internal const string ActionSurfaceColor = "#147D75";
+        internal const string ActionTextColor = "#FFFFFF";
+        internal const string SelectionSurfaceColor = "#FBE8DE";
+        internal const string SelectionTextColor = "#9A3412";
+        internal const string SelectionBorderColor = "#E4AA8D";
         static readonly DependencyProperty TopDragEnabledProperty = DependencyProperty.RegisterAttached(
             "TopDragEnabled", typeof(bool), typeof(OnharuPopupChrome), new PropertyMetadata(false));
         static readonly DependencyProperty FirstFrameStyledProperty = DependencyProperty.RegisterAttached(
@@ -18,19 +31,41 @@ namespace FamilyPlanner
 
         internal static Button CloseButton(Window window)
         {
-            var button = Button("×", 32, "#FEE2E2", "#DC2626");
-            button.FontSize = 17; button.FontWeight = FontWeights.SemiBold; button.ToolTip = "닫기";
+            var button = Button("", 32, "#475569", "#FFFFFF");
+            button.BorderBrush = Brush("#334155");
+            button.Padding = new Thickness(0); button.HorizontalContentAlignment = HorizontalAlignment.Center; button.VerticalContentAlignment = VerticalAlignment.Center;
+            button.Content = new TextBlock { Text = "×", FontSize = 18, FontFamily = new FontFamily("Segoe UI Symbol"), FontWeight = FontWeights.SemiBold,
+                Foreground = Brush("#FFFFFF"), Padding = new Thickness(0), TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            button.ToolTip = "닫기";
+            button.Click += delegate(object sender, RoutedEventArgs e) { e.Handled = true; window.Close(); };
+            return button;
+        }
+
+        internal static Button ToolCloseButton(Window window)
+        {
+            var button = Button("", 26, "#FFFFFF", "#111827");
+            button.Height = 26; button.Padding = new Thickness(0); button.BorderBrush = Brush("#D6DCE8"); button.ToolTip = "닫기";
+            button.Content = new System.Windows.Shapes.Path { Data = Geometry.Parse("M5,5 L13,13 M13,5 L5,13"), Stroke = Brush("#111827"),
+                StrokeThickness = 1.7, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                Width = 18, Height = 18, Stretch = Stretch.None, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             button.Click += delegate(object sender, RoutedEventArgs e) { e.Handled = true; window.Close(); };
             return button;
         }
 
         internal static Button Button(string text, double width, string background, string foreground)
         {
+            if (background == "#4F46E5" || background == "#5F3DC4" || background == "#7C3AED")
+            { background = PrimarySurfaceColor; foreground = PrimaryTextColor; }
+            else if (background == "#EEF2FF" || background == "#E0E7FF")
+            { background = SelectionSurfaceColor; foreground = SelectionTextColor; }
             var button = new Button { Content = text, Width = width, Height = 32, Background = Brush(background),
-                Foreground = Brush(foreground), BorderThickness = new Thickness(0), Cursor = Cursors.Hand,
+                Foreground = Brush(foreground), BorderBrush = Brush(ButtonBorder(background)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand,
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
             var border = new FrameworkElementFactory(typeof(Border));
             border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
             border.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
             var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
             presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -39,13 +74,40 @@ namespace FamilyPlanner
             return button;
         }
 
+        internal static void StyleSegment(OnharuSegmentedSwitch control)
+        {
+            if (control == null) return;
+            control.SetPalette(Brush(SelectionSurfaceColor), Brush(SelectionTextColor), Brush("#F8FAFC"), Brush("#64748B"), Brush(SelectionBorderColor));
+        }
+
+        static string ButtonBorder(string background)
+        {
+            return background == PrimarySurfaceColor ? PrimaryBorderColor
+                : background == SelectionSurfaceColor || background == "#E0E7FF" || background == "#EEF2FF" ? SelectionBorderColor
+                : background == "#ECFDF5" ? "#86D7C5" : background == "#FFF7ED" ? "#F4B892"
+                : background == "#FCE7F3" || background == "#FFF1F2" || background == "#FEE2E2" ? "#F2A9BD" : "#C7C3D6";
+        }
+
         internal static DockPanel Header(Window window, string title, string color)
         {
-            var header = new DockPanel { Margin = new Thickness(0, 0, 0, 11) };
+            var header = new DockPanel { Margin = new Thickness(0, 0, 0, 11), Background = Brush(HeaderSurfaceColor) };
             var close = CloseButton(window); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
             header.Children.Add(new TextBlock { Text = title, FontSize = 19, FontWeight = FontWeights.Bold,
-                Foreground = Brush(color), VerticalAlignment = VerticalAlignment.Center });
+                Foreground = Brush("#334155"), VerticalAlignment = VerticalAlignment.Center });
             EnableDrag(window, header); return header;
+        }
+
+        internal static void StyleHeader(Panel header)
+        {
+            if (header == null) return;
+            header.Background = Brush(HeaderSurfaceColor);
+            Action clip = delegate
+            {
+                if (header.ActualWidth > 0 && header.ActualHeight > 0)
+                    header.Clip = new RectangleGeometry(new Rect(0, 0, header.ActualWidth, header.ActualHeight), 10, 10);
+            };
+            header.Loaded += delegate { clip(); };
+            header.SizeChanged += delegate { clip(); };
         }
 
         internal static Button FooterButton(string text, string background, string foreground)
@@ -56,9 +118,33 @@ namespace FamilyPlanner
 
         internal static Button PrimaryButton(string text, double width)
         {
-            var button = Button(text, width, "#4F46E5", "#FFFFFF");
-            button.FontWeight = FontWeights.Bold;
-            button.Background = new LinearGradientBrush(Brush("#4F46E5").Color, Brush("#7C3AED").Color, 0);
+            var button = Button(text, width, PrimarySurfaceColor, PrimaryTextColor);
+            button.FontWeight = FontWeights.Bold; button.BorderBrush = Brush(PrimaryBorderColor); button.BorderThickness = new Thickness(1);
+            return button;
+        }
+
+        // 공통 펼침 토글: 설정 콤보박스와 같은 표면에 제목은 왼쪽, 화살표는 오른쪽에 둔다.
+        internal static Button DisclosureButton(string text, double width, bool expanded)
+        {
+            var button = Button("", width, "#FFFFFF", "#334155");
+            button.BorderBrush = Brush("#CBD5E1");
+            SetDisclosure(button, text, expanded); return button;
+        }
+
+        internal static void SetDisclosure(Button button, string text, bool expanded)
+        {
+            var row = new DockPanel { Margin = new Thickness(10, 0, 13, 0), LastChildFill = true };
+            var arrow = new TextBlock { Text = expanded ? "▴" : "▾", FontSize = 11.5,
+                Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            DockPanel.SetDock(arrow, Dock.Right); row.Children.Add(arrow);
+            row.Children.Add(new TextBlock { Text = text, Foreground = Brush("#334155"), VerticalAlignment = VerticalAlignment.Center });
+            button.Content = row;
+        }
+
+        internal static Button ActionButton(string text, double width)
+        {
+            var button = Button(text, width, ActionSurfaceColor, ActionTextColor);
+            button.FontWeight = FontWeights.Bold; button.BorderBrush = Brush(ActionSurfaceColor);
             return button;
         }
 
@@ -66,13 +152,13 @@ namespace FamilyPlanner
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             row.Children.Add(new Border { Width = 34, Height = 34, Margin = new Thickness(0, 0, 10, 0),
-                Background = Brush("#EEF2FF"), BorderBrush = Brush("#C7D2FE"), BorderThickness = new Thickness(1),
+                Background = Brush(SupportSurfaceColor), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10), Child = new TextBlock { Text = glyph, FontSize = 17,
                     FontFamily = new FontFamily("Segoe UI Symbol"), FontWeight = FontWeights.Bold,
-                    Foreground = Brush("#4F46E5"), HorizontalAlignment = HorizontalAlignment.Center,
+                    Foreground = Brush("#1F2937"), HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center } });
             row.Children.Add(new TextBlock { Text = title, FontSize = 20, FontWeight = FontWeights.Bold,
-                Foreground = Brush("#1E293B"), VerticalAlignment = VerticalAlignment.Center });
+                Foreground = Brush("#334155"), VerticalAlignment = VerticalAlignment.Center });
             return row;
         }
 
@@ -127,7 +213,7 @@ namespace FamilyPlanner
 
         internal static Border Shell(UIElement content)
         {
-            var shell = UiRound.EmphasizePopup(new Border { Background = Brush("#FFF8FAFC"), BorderBrush = Brush("#A5B4FC"),
+            var shell = UiRound.EmphasizePopup(new Border { Background = Brush(SurfaceColor), BorderBrush = Brush(BorderColor),
                 BorderThickness = new Thickness(1.5), CornerRadius = new CornerRadius(18), Child = content });
             shell.Loaded += delegate { EnableTopDrag(Window.GetWindow(shell)); };
             return shell;

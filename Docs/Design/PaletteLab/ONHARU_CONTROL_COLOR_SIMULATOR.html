@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Onharu Control Color Simulator</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Onharu Control Color Simulator" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Onharu Control Color Simulator&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: var(--border-radius-lg, 12.5px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress {
+  display: flex;
+  height: 6px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 6px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: 16px !important;
+  height: 16px !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;style&gt;
+#onharu-shell-sim{font-family:&quot;Segoe UI&quot;,&quot;Noto Sans KR&quot;,sans-serif;color:var(--foreground)}#onharu-shell-sim *{box-sizing:border-box}
+#onharu-shell-sim .oh-preset-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-bottom:12px}.oh-preset{min-height:42px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--card-foreground);padding:7px;text-align:left;cursor:pointer}.oh-preset[aria-pressed=&quot;true&quot;]{outline:2px solid var(--ring)}.oh-dots{display:flex;gap:3px;margin-top:4px}.oh-dots i{width:17px;height:7px;border-radius:4px}
+#onharu-shell-sim .oh-layout{display:grid;grid-template-columns:minmax(0,1fr) 228px;gap:12px;align-items:start}.oh-stage{min-width:0;position:relative}.oh-window{border-radius:19px;padding:11px;box-shadow:0 16px 36px rgba(18,18,35,.18);min-width:0;transition:.15s}.oh-header{display:grid;grid-template-columns:minmax(230px,1fr) auto;gap:10px;align-items:start;margin-bottom:8px}.oh-brand-line{display:flex;align-items:center;gap:7px;height:30px;font-size:16px;font-weight:600;white-space:nowrap}.oh-logo{display:grid;grid-template-columns:repeat(3,6px);gap:2px;padding:5px;border-radius:8px}.oh-logo i{width:6px;height:6px;border-radius:2px}.oh-nav{display:flex;gap:3px;align-items:center;margin-left:3px}.oh-date-range{font-size:14px;font-weight:600;padding-left:32px}#onharu-shell-sim button{font:inherit}.oh-icon,.oh-pill{height:25px;border:1px solid;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;cursor:default}.oh-icon{width:27px;padding:0}.oh-pill{padding:0 8px;font-size:12px;font-weight:600}.oh-toolbar{display:grid;gap:4px;justify-items:end}.oh-tools,.oh-switch-row{display:flex;gap:5px;align-items:center}.oh-split{display:flex;border:1px solid;border-radius:10px;overflow:hidden;height:25px}.oh-split span{padding:3px 8px;font-size:12px;white-space:nowrap;display:flex;align-items:center}.oh-opacity{width:70px;height:4px;border-radius:3px;position:relative;margin-right:4px}.oh-opacity:after{content:&quot;&quot;;position:absolute;width:10px;height:10px;border-radius:50%;right:4px;top:-3px;background:currentColor}
+#onharu-shell-sim .oh-body{display:grid;grid-template-columns:minmax(0,1fr) 224px;gap:9px}.oh-calendar,.oh-side{border:1px solid;border-radius:14px;overflow:hidden}.oh-weekdays{display:grid;grid-template-columns:32px repeat(7,1fr);text-align:center;font-size:11px;padding:7px 0}.oh-weekdays span:nth-child(2),.oh-weekdays span:nth-child(8),.oh-grid&gt;.oh-day:nth-child(8n+2),.oh-grid&gt;.oh-day:nth-child(8n){color:#DC6B73}.oh-grid{display:grid;grid-template-columns:32px repeat(7,1fr);grid-template-rows:repeat(4,72px)}.oh-week{font-size:10px;padding:8px 4px;text-align:center;border-top:1px solid}.oh-day{min-width:0;padding:5px;border-top:1px solid;border-left:1px solid;font-size:11px}.oh-day strong{font-weight:500}.oh-event{margin-top:4px;padding:3px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;font-weight:600}.oh-side{padding:9px;position:relative}.oh-account{border-radius:9px;padding:7px 8px;display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:8px}.oh-filter-group{display:grid;grid-template-columns:1fr 1fr;gap:4px 9px;font-size:11px;margin-bottom:7px}.oh-filter-title{font-size:11px;margin:6px 0 4px;display:flex;justify-content:space-between}.oh-check{display:flex;align-items:center;gap:4px}.oh-check i{width:13px;height:13px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;color:white;font-style:normal;font-size:9px}.oh-tabs{display:flex;gap:5px;margin:7px 0}.oh-tabs .oh-pill{flex:1}.oh-side-date{font-size:15px;font-weight:700;border-top:1px solid;padding-top:8px;margin-top:6px}.oh-card{border:1px solid;border-radius:10px;padding:7px;margin-top:7px;font-size:11px}.oh-card strong{display:block;margin-bottom:4px}.oh-card p{margin:3px 0}.oh-scroll{position:absolute;right:3px;top:66px;width:5px;height:212px;border-radius:4px}.oh-scroll i{display:block;width:5px;height:64px;border-radius:4px}
+#onharu-shell-sim .oh-settings{display:none;border:1px solid;border-radius:14px;padding:12px;margin-top:9px}.oh-settings.is-open{display:block}.oh-settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}.oh-settings-title{font-size:17px;font-weight:700}.oh-settings-actions{display:flex;gap:5px}.oh-setting-section{border:1px solid;border-radius:11px;padding:9px;margin-top:7px;font-size:11px}.oh-section-title{font-weight:600;margin-bottom:7px}.oh-radio-row,.oh-option-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:5px 0}.oh-radio{display:flex;gap:4px;align-items:center}.oh-radio i{width:12px;height:12px;border:1px solid;border-radius:50%;position:relative}.oh-radio.active i:after{content:&quot;&quot;;position:absolute;inset:3px;border-radius:50%;background:currentColor}.oh-palette{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.oh-color-card{border:1px solid;border-radius:9px;padding:7px;font-weight:600;display:flex;align-items:center;gap:5px}.oh-color-card i{width:13px;height:13px;border:1px solid;border-radius:2px;background:#fff}
+#onharu-shell-sim .oh-control-panel{display:grid;gap:8px}.oh-control-panel h3{margin:0;font-size:14px}.oh-control-panel label{display:grid;grid-template-columns:1fr 38px;gap:7px;align-items:center;font-size:11px}.oh-control-panel input[type=color]{width:38px;height:28px;padding:2px;border:1px solid var(--border);border-radius:7px;background:var(--card)}.oh-view-row{display:flex;gap:5px}.oh-view-row button{flex:1;min-height:36px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--card-foreground);cursor:pointer}.oh-view-row button[aria-pressed=true]{outline:2px solid var(--ring)}
+@media(max-width:780px){#onharu-shell-sim .oh-preset-grid{grid-template-columns:repeat(2,1fr)}#onharu-shell-sim .oh-layout{grid-template-columns:1fr}#onharu-shell-sim .oh-body{grid-template-columns:1fr}#onharu-shell-sim .oh-side{display:none}}
+&lt;/style&gt;
+&lt;div id=&quot;onharu-shell-sim&quot;&gt;&lt;div class=&quot;oh-preset-grid&quot; aria-label=&quot;조합 10개&quot;&gt;&lt;/div&gt;&lt;div class=&quot;oh-layout&quot;&gt;&lt;div class=&quot;oh-stage&quot; aria-live=&quot;polite&quot;&gt;&lt;div class=&quot;oh-window&quot;&gt;
+&lt;header class=&quot;oh-header&quot;&gt;&lt;div&gt;&lt;div class=&quot;oh-brand-line&quot;&gt;&lt;span class=&quot;oh-logo&quot;&gt;&lt;/span&gt;&lt;span&gt;온하루 · ONHARU&lt;/span&gt;&lt;span class=&quot;oh-nav&quot;&gt;&lt;button class=&quot;oh-icon&quot;&gt;‹&lt;/button&gt;&lt;button class=&quot;oh-pill oh-today&quot;&gt;오늘&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;›&lt;/button&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-date-range&quot;&gt;2026년 8월 16일 - 9월 12일&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;oh-toolbar&quot;&gt;&lt;div class=&quot;oh-tools&quot;&gt;&lt;span class=&quot;oh-opacity&quot;&gt;&lt;/span&gt;&lt;button class=&quot;oh-icon&quot;&gt;⌕&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;▦&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;✎&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;◉&lt;/button&gt;&lt;button class=&quot;oh-icon oh-settings-open&quot;&gt;⚙&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;—&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;□&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;×&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;oh-switch-row&quot;&gt;&lt;span class=&quot;oh-split&quot;&gt;&lt;span class=&quot;active&quot;&gt;4주&lt;/span&gt;&lt;span&gt;월 전체&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;oh-split&quot;&gt;&lt;span class=&quot;active&quot;&gt;파스텔&lt;/span&gt;&lt;span&gt;블랙&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;oh-split&quot;&gt;&lt;span class=&quot;active&quot;&gt;이동&lt;/span&gt;&lt;span&gt;고정&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/header&gt;
+&lt;div class=&quot;oh-body&quot;&gt;&lt;section class=&quot;oh-calendar&quot;&gt;&lt;div class=&quot;oh-weekdays&quot;&gt;&lt;span&gt;주&lt;/span&gt;&lt;span&gt;일&lt;/span&gt;&lt;span&gt;월&lt;/span&gt;&lt;span&gt;화&lt;/span&gt;&lt;span&gt;수&lt;/span&gt;&lt;span&gt;목&lt;/span&gt;&lt;span&gt;금&lt;/span&gt;&lt;span&gt;토&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-grid&quot;&gt;&lt;/div&gt;&lt;/section&gt;&lt;aside class=&quot;oh-side&quot;&gt;&lt;div class=&quot;oh-account&quot;&gt;&lt;span&gt;G Juan Lee · Gmail&lt;/span&gt;&lt;span&gt;Logout&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-filter-title&quot;&gt;&lt;span&gt;온하루 등록 ▼&lt;/span&gt;&lt;span&gt;Special Day Card&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-filter-group&quot;&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;업무&lt;/span&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;D-Day&lt;/span&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;개인&lt;/span&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;기념일&lt;/span&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;야구&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-filter-title&quot;&gt;&lt;span&gt;Google ▼&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-filter-group&quot;&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;내 캘린더&lt;/span&gt;&lt;span class=&quot;oh-check&quot;&gt;&lt;i&gt;✓&lt;/i&gt;품질관리팀&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-tabs&quot;&gt;&lt;button class=&quot;oh-pill active&quot;&gt;선택날짜&lt;/button&gt;&lt;button class=&quot;oh-pill&quot;&gt;이번 주&lt;/button&gt;&lt;button class=&quot;oh-pill&quot;&gt;다음 주&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;oh-side-date&quot;&gt;★ 8월 26일 (수)&lt;/div&gt;&lt;div class=&quot;oh-card&quot;&gt;&lt;strong&gt;업무 일정&lt;/strong&gt;&lt;p&gt;□ 10:30 프로젝트 회의&lt;/p&gt;&lt;p&gt;□ 14:00 자료 정리&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;oh-card&quot;&gt;&lt;strong&gt;D-Day&lt;/strong&gt;&lt;p&gt;ONHARU 공개 · D-18&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;oh-card&quot;&gt;&lt;strong&gt;기념일&lt;/strong&gt;&lt;p&gt;서아 생일 · D-42&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;oh-scroll&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;&lt;/aside&gt;&lt;/div&gt;
+&lt;section class=&quot;oh-settings&quot;&gt;&lt;div class=&quot;oh-settings-head&quot;&gt;&lt;span class=&quot;oh-settings-title&quot;&gt;⚙ 온하루 설정&lt;/span&gt;&lt;span class=&quot;oh-settings-actions&quot;&gt;&lt;button class=&quot;oh-pill&quot;&gt;✓ 설정 저장&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;▣&lt;/button&gt;&lt;button class=&quot;oh-icon&quot;&gt;ⓘ&lt;/button&gt;&lt;button class=&quot;oh-icon oh-settings-close&quot;&gt;×&lt;/button&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;oh-setting-section&quot;&gt;&lt;div class=&quot;oh-section-title&quot;&gt;디자인 스킨&lt;/div&gt;&lt;div class=&quot;oh-radio-row&quot;&gt;&lt;span class=&quot;oh-radio active&quot;&gt;&lt;i&gt;&lt;/i&gt;파스텔 · 부드럽고 생동감 있는 기본 스킨&lt;/span&gt;&lt;span class=&quot;oh-radio&quot;&gt;&lt;i&gt;&lt;/i&gt;블랙 · 어두운 배경과 선명한 포인트&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;oh-setting-section&quot;&gt;&lt;div class=&quot;oh-section-title&quot;&gt;추천 색상 조합 · 12색 톤 팔레트&lt;/div&gt;&lt;div class=&quot;oh-radio-row&quot;&gt;&lt;span class=&quot;oh-radio active&quot;&gt;&lt;i&gt;&lt;/i&gt;맑고 선명한&lt;/span&gt;&lt;span class=&quot;oh-radio&quot;&gt;&lt;i&gt;&lt;/i&gt;차분한 중간톤&lt;/span&gt;&lt;span class=&quot;oh-radio&quot;&gt;&lt;i&gt;&lt;/i&gt;밝고 산뜻한&lt;/span&gt;&lt;button class=&quot;oh-pill&quot;&gt;RGB ▼&lt;/button&gt;&lt;button class=&quot;oh-pill&quot;&gt;내 설정으로 저장&lt;/button&gt;&lt;button class=&quot;oh-pill&quot;&gt;추천색 초기화&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;oh-palette&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;oh-setting-section&quot;&gt;&lt;div class=&quot;oh-section-title&quot;&gt;화면과 동작&lt;/div&gt;&lt;div class=&quot;oh-option-row&quot;&gt;&lt;span&gt;◉ 오늘&lt;/span&gt;&lt;span&gt;○ 마지막으로 본 날짜&lt;/span&gt;&lt;span&gt;☑ 음력 표시&lt;/span&gt;&lt;span&gt;☑ 주차 표시&lt;/span&gt;&lt;span&gt;☑ 드래그로 일정 옮기기&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;oh-setting-section&quot;&gt;&lt;div class=&quot;oh-section-title&quot;&gt;세부 달력 표시 옵션&lt;/div&gt;&lt;div class=&quot;oh-option-row&quot;&gt;&lt;span&gt;☑ 업무&lt;/span&gt;&lt;span&gt;☑ 개인&lt;/span&gt;&lt;span&gt;☑ 야구&lt;/span&gt;&lt;span&gt;☑ D-Day&lt;/span&gt;&lt;span&gt;☑ 기념일&lt;/span&gt;&lt;span&gt;☑ 내 캘린더 (수정 ☑)&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;oh-setting-section&quot;&gt;&lt;div class=&quot;oh-section-title&quot;&gt;알림&lt;/div&gt;&lt;div class=&quot;oh-option-row&quot;&gt;&lt;span&gt;☑ 알림 사용&lt;/span&gt;&lt;span&gt;☑ 소리 사용&lt;/span&gt;&lt;span&gt;◉ 직접 선택&lt;/span&gt;&lt;span class=&quot;oh-pill&quot;&gt;10분 전⌄&lt;/span&gt;&lt;span&gt;◉ 주 모니터 중앙&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/section&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;aside class=&quot;card oh-control-panel&quot;&gt;&lt;h3 class=&quot;oh-selected&quot;&gt;조합 1 · 바이올렛 균형&lt;/h3&gt;&lt;div class=&quot;oh-view-row&quot;&gt;&lt;button type=&quot;button&quot; data-view=&quot;main&quot; aria-pressed=&quot;true&quot;&gt;메인 달력&lt;/button&gt;&lt;button type=&quot;button&quot; data-view=&quot;settings&quot; aria-pressed=&quot;false&quot;&gt;설정&lt;/button&gt;&lt;/div&gt;&lt;label&gt;앱 배경 &lt;input type=&quot;color&quot; data-key=&quot;window&quot;&gt;&lt;/label&gt;&lt;label&gt;기본 글씨 &lt;input type=&quot;color&quot; data-key=&quot;text&quot;&gt;&lt;/label&gt;&lt;label&gt;활성 버튼 &lt;input type=&quot;color&quot; data-key=&quot;action&quot;&gt;&lt;/label&gt;&lt;label&gt;활성 글씨 &lt;input type=&quot;color&quot; data-key=&quot;actionText&quot;&gt;&lt;/label&gt;&lt;label&gt;비활성 버튼 &lt;input type=&quot;color&quot; data-key=&quot;inactive&quot;&gt;&lt;/label&gt;&lt;label&gt;아이콘 배경 &lt;input type=&quot;color&quot; data-key=&quot;icon&quot;&gt;&lt;/label&gt;&lt;label&gt;아이콘 글씨 &lt;input type=&quot;color&quot; data-key=&quot;iconText&quot;&gt;&lt;/label&gt;&lt;label&gt;이동·스크롤 &lt;input type=&quot;color&quot; data-key=&quot;neutral&quot;&gt;&lt;/label&gt;&lt;label&gt;Google 배경 &lt;input type=&quot;color&quot; data-key=&quot;google&quot;&gt;&lt;/label&gt;&lt;label&gt;Google 글씨 &lt;input type=&quot;color&quot; data-key=&quot;googleText&quot;&gt;&lt;/label&gt;&lt;label&gt;일정 카드 &lt;input type=&quot;color&quot; data-key=&quot;card&quot;&gt;&lt;/label&gt;&lt;label&gt;일정 글씨 &lt;input type=&quot;color&quot; data-key=&quot;cardText&quot;&gt;&lt;/label&gt;&lt;/aside&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;script&gt;
+(()=&gt;{const root=document.getElementById(&#x27;onharu-shell-sim&#x27;);const raw=[[&#x27;현재 온하루&#x27;,&#x27;#F1F5F9&#x27;,&#x27;#0F172A&#x27;,&#x27;#D8D2F3&#x27;,&#x27;#493A91&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#111827&#x27;,&#x27;#B0B0B8&#x27;,&#x27;#EAF2FF&#x27;,&#x27;#315DA8&#x27;,&#x27;#FFF1F7&#x27;,&#x27;#F20D7A&#x27;],[&#x27;라벤더 파스텔&#x27;,&#x27;#FBFAFF&#x27;,&#x27;#312A46&#x27;,&#x27;#8B7BE0&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#EEEAFE&#x27;,&#x27;#F6F2FF&#x27;,&#x27;#514582&#x27;,&#x27;#B9B3CA&#x27;,&#x27;#F2EEFF&#x27;,&#x27;#5A43A4&#x27;,&#x27;#F5F0FF&#x27;,&#x27;#57458C&#x27;],[&#x27;소프트 블루&#x27;,&#x27;#F7FAFF&#x27;,&#x27;#26344A&#x27;,&#x27;#4E7FD8&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#E7EFFC&#x27;,&#x27;#F4F8FF&#x27;,&#x27;#315D89&#x27;,&#x27;#AAB5C5&#x27;,&#x27;#EAF4FF&#x27;,&#x27;#255B9B&#x27;,&#x27;#EDF5FF&#x27;,&#x27;#315D89&#x27;],[&#x27;민트 포인트&#x27;,&#x27;#F7FCFA&#x27;,&#x27;#243B36&#x27;,&#x27;#38998B&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#DFF4EF&#x27;,&#x27;#F1FBF8&#x27;,&#x27;#276A58&#x27;,&#x27;#A9BBB7&#x27;,&#x27;#E8F7F3&#x27;,&#x27;#23776D&#x27;,&#x27;#E6F7F0&#x27;,&#x27;#276A58&#x27;],[&#x27;피치 코랄&#x27;,&#x27;#FFF9F6&#x27;,&#x27;#442E2A&#x27;,&#x27;#DF735E&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#FCE8E2&#x27;,&#x27;#FFF5F1&#x27;,&#x27;#9A4938&#x27;,&#x27;#C4AEA8&#x27;,&#x27;#FFF0EB&#x27;,&#x27;#A44735&#x27;,&#x27;#FFF0EA&#x27;,&#x27;#9A4938&#x27;],[&#x27;노랑·파랑&#x27;,&#x27;#FFFCF2&#x27;,&#x27;#253A65&#x27;,&#x27;#315DA8&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#FFF3C9&#x27;,&#x27;#FFF9E5&#x27;,&#x27;#315DA8&#x27;,&#x27;#AAA99E&#x27;,&#x27;#FFF6D8&#x27;,&#x27;#315DA8&#x27;,&#x27;#FFF2C7&#x27;,&#x27;#315DA8&#x27;],[&#x27;핑크·핫핑크&#x27;,&#x27;#FFF8FC&#x27;,&#x27;#4B2940&#x27;,&#x27;#E83E8C&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#FBE4F0&#x27;,&#x27;#FFF2F8&#x27;,&#x27;#B62668&#x27;,&#x27;#C2ACB7&#x27;,&#x27;#FFE8F3&#x27;,&#x27;#B62668&#x27;,&#x27;#FFEAF4&#x27;,&#x27;#B62668&#x27;],[&#x27;중립 바이올렛&#x27;,&#x27;#F8F8FA&#x27;,&#x27;#282831&#x27;,&#x27;#7565C8&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#E9E9EF&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#444552&#x27;,&#x27;#92939C&#x27;,&#x27;#F0F0F3&#x27;,&#x27;#50515B&#x27;,&#x27;#F3F0FF&#x27;,&#x27;#514582&#x27;],[&#x27;블랙 차분형&#x27;,&#x27;#15161A&#x27;,&#x27;#F2F2F5&#x27;,&#x27;#7462CF&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#30313A&#x27;,&#x27;#22242B&#x27;,&#x27;#F4F4F7&#x27;,&#x27;#8C8C96&#x27;,&#x27;#202D42&#x27;,&#x27;#A9C7FF&#x27;,&#x27;#26332F&#x27;,&#x27;#C9F0E3&#x27;],[&#x27;블랙 컬러형&#x27;,&#x27;#111318&#x27;,&#x27;#F7F7FA&#x27;,&#x27;#9A75D8&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#2A2732&#x27;,&#x27;#20232C&#x27;,&#x27;#FFFFFF&#x27;,&#x27;#737783&#x27;,&#x27;#2A2740&#x27;,&#x27;#D5C8FF&#x27;,&#x27;#3B2635&#x27;,&#x27;#FFD4E8&#x27;]];const palettes=raw.map((p,i)=&gt;({name:`조합 ${i+1} · ${p[0]}`,window:p[1],text:p[2],action:p[3],actionText:p[4],inactive:p[5],icon:p[6],iconText:p[7],neutral:p[8],google:p[9],googleText:p[10],card:p[11],cardText:p[12]}));let current={...palettes[0]};const grid=root.querySelector(&#x27;.oh-grid&#x27;),dates=[&#x27;W33&#x27;,&#x27;16&#x27;,&#x27;17&#x27;,&#x27;18&#x27;,&#x27;19&#x27;,&#x27;20&#x27;,&#x27;21&#x27;,&#x27;22&#x27;,&#x27;W34&#x27;,&#x27;23&#x27;,&#x27;24&#x27;,&#x27;25&#x27;,&#x27;26&#x27;,&#x27;27&#x27;,&#x27;28&#x27;,&#x27;29&#x27;,&#x27;W35&#x27;,&#x27;30&#x27;,&#x27;31&#x27;,&#x27;1&#x27;,&#x27;2&#x27;,&#x27;3&#x27;,&#x27;4&#x27;,&#x27;5&#x27;,&#x27;W36&#x27;,&#x27;6&#x27;,&#x27;7&#x27;,&#x27;8&#x27;,&#x27;9&#x27;,&#x27;10&#x27;,&#x27;11&#x27;,&#x27;12&#x27;];grid.innerHTML=dates.map((d,i)=&gt;i%8===0?`&lt;div class=&quot;oh-week&quot;&gt;${d}&lt;/div&gt;`:`&lt;div class=&quot;oh-day&quot;&gt;&lt;strong&gt;${d}&lt;/strong&gt;${[3,5,11,13,22,29].includes(i)?`&lt;div class=&quot;oh-event&quot;&gt;${[&#x27;프로젝트 회의&#x27;,&#x27;자료 정리&#x27;,&#x27;개인 일정&#x27;,&#x27;디자인 검토&#x27;,&#x27;업무 보고&#x27;,&#x27;기념일&#x27;][[3,5,11,13,22,29].indexOf(i)]}&lt;/div&gt;`:&#x27;&#x27;}&lt;/div&gt;`).join(&#x27;&#x27;);root.querySelector(&#x27;.oh-logo&#x27;).innerHTML=[&#x27;#7C8EF5&#x27;,&#x27;#9E8CF3&#x27;,&#x27;#B5A8FA&#x27;,&#x27;#F07FA7&#x27;,&#x27;#FFB44A&#x27;,&#x27;#F9D65C&#x27;,&#x27;#4E8DF5&#x27;,&#x27;#42C99A&#x27;,&#x27;#3FBFAE&#x27;].map(c=&gt;`&lt;i style=&quot;background:${c}&quot;&gt;&lt;/i&gt;`).join(&#x27;&#x27;);root.querySelector(&#x27;.oh-palette&#x27;).innerHTML=[&#x27;업무일정&#x27;,&#x27;개인일정&#x27;,&#x27;야구&#x27;,&#x27;Juan Lee&#x27;,&#x27;품질관리팀&#x27;,&#x27;KBO&#x27;,&#x27;달의 위상&#x27;,&#x27;Tasks&#x27;,&#x27;휴일&#x27;,&#x27;D-Day&#x27;,&#x27;기념일&#x27;,&#x27;일기&#x27;].map(x=&gt;`&lt;span class=&quot;oh-color-card&quot;&gt;&lt;i&gt;&lt;/i&gt;${x}&lt;/span&gt;`).join(&#x27;&#x27;);const presetBox=root.querySelector(&#x27;.oh-preset-grid&#x27;);
+function apply(p,index){current={...p};const win=root.querySelector(&#x27;.oh-window&#x27;);win.style.background=p.window;win.style.color=p.text;root.querySelectorAll(&#x27;.oh-calendar,.oh-side,.oh-settings,.oh-setting-section&#x27;).forEach(x=&gt;{x.style.background=p.window;x.style.borderColor=p.neutral});root.querySelectorAll(&#x27;.oh-day,.oh-week&#x27;).forEach(x=&gt;x.style.borderColor=p.neutral);root.querySelectorAll(&#x27;.oh-event&#x27;).forEach((x,i)=&gt;{x.style.background=[p.card,p.inactive,p.google][i%3];x.style.color=[p.cardText,p.text,p.googleText][i%3]});root.querySelectorAll(&#x27;.oh-icon&#x27;).forEach(x=&gt;{x.style.background=p.icon;x.style.color=p.iconText;x.style.borderColor=p.neutral});root.querySelectorAll(&#x27;.oh-pill&#x27;).forEach(x=&gt;{x.style.background=p.inactive;x.style.color=p.text;x.style.borderColor=p.neutral});root.querySelectorAll(&#x27;.oh-today,.oh-tabs .active&#x27;).forEach(x=&gt;{x.style.background=p.action;x.style.color=p.actionText;x.style.borderColor=p.action});root.querySelectorAll(&#x27;.oh-split&#x27;).forEach(x=&gt;x.style.borderColor=p.neutral);root.querySelectorAll(&#x27;.oh-split span&#x27;).forEach(x=&gt;{x.style.background=p.inactive;x.style.color=p.text});root.querySelectorAll(&#x27;.oh-split .active&#x27;).forEach(x=&gt;{x.style.background=p.action;x.style.color=p.actionText});root.querySelector(&#x27;.oh-opacity&#x27;).style.background=p.neutral;root.querySelector(&#x27;.oh-opacity&#x27;).style.color=p.action;root.querySelector(&#x27;.oh-account&#x27;).style.background=p.google;root.querySelector(&#x27;.oh-account&#x27;).style.color=p.googleText;root.querySelectorAll(&#x27;.oh-check i&#x27;).forEach(x=&gt;x.style.background=p.action);root.querySelectorAll(&#x27;.oh-card&#x27;).forEach(x=&gt;{x.style.background=p.card;x.style.color=p.cardText;x.style.borderColor=p.neutral});root.querySelector(&#x27;.oh-scroll&#x27;).style.background=p.inactive;root.querySelector(&#x27;.oh-scroll i&#x27;).style.background=p.neutral;root.querySelectorAll(&#x27;.oh-radio i&#x27;).forEach(x=&gt;{x.style.color=p.action;x.style.borderColor=p.neutral});root.querySelectorAll(&#x27;.oh-color-card&#x27;).forEach((x,i)=&gt;{const holiday=x.textContent.trim()===&#x27;휴일&#x27;;x.style.background=holiday?&#x27;#FCE8EA&#x27;:[p.card,p.inactive,p.google][i%3];x.style.color=holiday?&#x27;#DC6B73&#x27;:[p.cardText,p.text,p.googleText][i%3];x.style.borderColor=holiday?&#x27;#DC6B73&#x27;:p.neutral});root.querySelector(&#x27;.oh-selected&#x27;).textContent=p.name;root.querySelectorAll(&#x27;input[type=color]&#x27;).forEach(x=&gt;x.value=p[x.dataset.key]);[...presetBox.children].forEach((b,i)=&gt;b.setAttribute(&#x27;aria-pressed&#x27;,String(i===index)))}
+palettes.forEach((p,i)=&gt;{const b=document.createElement(&#x27;button&#x27;);b.type=&#x27;button&#x27;;b.className=&#x27;oh-preset&#x27;;b.setAttribute(&#x27;aria-pressed&#x27;,&#x27;false&#x27;);b.innerHTML=`&lt;span&gt;${p.name}&lt;/span&gt;&lt;span class=&quot;oh-dots&quot;&gt;&lt;i style=&quot;background:${p.action}&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:${p.neutral}&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:${p.google}&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:${p.card}&quot;&gt;&lt;/i&gt;&lt;/span&gt;`;b.onclick=()=&gt;apply(p,i);presetBox.appendChild(b)});root.querySelectorAll(&#x27;input[type=color]&#x27;).forEach(x=&gt;x.oninput=()=&gt;{current[x.dataset.key]=x.value;apply(current,-1)});const settings=root.querySelector(&#x27;.oh-settings&#x27;);function view(name){settings.classList.toggle(&#x27;is-open&#x27;,name===&#x27;settings&#x27;);root.querySelector(&#x27;.oh-body&#x27;).style.display=name===&#x27;settings&#x27;?&#x27;none&#x27;:&#x27;grid&#x27;;root.querySelectorAll(&#x27;[data-view]&#x27;).forEach(b=&gt;b.setAttribute(&#x27;aria-pressed&#x27;,String(b.dataset.view===name)))}root.querySelectorAll(&#x27;[data-view]&#x27;).forEach(b=&gt;b.onclick=()=&gt;view(b.dataset.view));root.querySelector(&#x27;.oh-settings-open&#x27;).onclick=()=&gt;view(&#x27;settings&#x27;);root.querySelector(&#x27;.oh-settings-close&#x27;).onclick=()=&gt;view(&#x27;main&#x27;);apply(palettes[0],0)})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerdown&quot;, handlePointer);
+    document.removeEventListener(&quot;pointercancel&quot;, handlePointer);
+    document.removeEventListener(&quot;click&quot;, handleTouchClick);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerdown&quot;, handlePointer);
+  document.addEventListener(&quot;pointercancel&quot;, handlePointer);
+  document.addEventListener(&quot;click&quot;, handleTouchClick);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

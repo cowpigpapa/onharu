@@ -13,7 +13,6 @@ namespace FamilyPlanner
         const int DwmwaCloak = 13;
         int layerTransitionVersion;
         bool windowCloaked;
-        DispatcherTimer preparedWpfTimer;
 
         [DllImport("dwmapi.dll")]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
@@ -68,6 +67,14 @@ namespace FamilyPlanner
         void PublishAndCloak()
         {
             if (!positionLocked || Content == null) return;
+            // A native dialog such as PrintDialog must keep a visible WPF owner.
+            // Re-cloaking the owner leaves an invisible modal window that blocks
+            // only the calendar while the settings and preview windows still work.
+            if (HasBlockingDialog)
+            {
+                explorerFrame.Disable(); SetWindowCloaked(false);
+                return;
+            }
             if (calendarMinimized)
             {
                 explorerFrame.Disable();
@@ -141,37 +148,37 @@ namespace FamilyPlanner
             {
                 if (transition != layerTransitionVersion || (positionLocked && !allowWhileLocked)) return;
                 UpdateLayout();
-                SetWindowCloaked(false);
                 BeginPreparedWpfSettle(transition, intendedOpacity, afterShown, allowWhileLocked);
             }));
         }
 
         void BeginPreparedWpfSettle(int transition, double intendedOpacity, Action afterShown, bool allowWhileLocked)
         {
-            if (preparedWpfTimer != null) preparedWpfTimer.Stop();
             Rect target;
             var hasTarget = explorerFrame.TryGetPublishedScreenRectangle(out target);
-            var attempts = 0; var stableTicks = 0;
-            preparedWpfTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(20) };
-            preparedWpfTimer.Tick += delegate
+            if (transition != layerTransitionVersion || (positionLocked && !allowWhileLocked)) return;
+            if (hasTarget) MatchWindowToPhysicalFrame(target);
+            SavePhysicalPlacement();
+            // Prepare the visible layered surface while it is still cloaked.
+            // Uncloaking an opacity-zero HWND can expose a wallpaper-only frame.
+            Opacity = intendedOpacity;
+            UpdateLayout();
+            var contentElement = Content as UIElement;
+            if (contentElement != null) contentElement.InvalidateVisual();
+            Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(delegate
             {
-                if (transition != layerTransitionVersion || (positionLocked && !allowWhileLocked))
-                { preparedWpfTimer.Stop(); return; }
-                attempts++;
-                var ready = !hasTarget || MatchWindowToPhysicalFrame(target);
-                stableTicks = ready ? stableTicks + 1 : 0;
-                if (stableTicks < 2 && attempts < 25) return;
-                preparedWpfTimer.Stop();
-                if (hasTarget) MatchWindowToPhysicalFrame(target);
-                SavePhysicalPlacement();
-                Opacity = intendedOpacity;
-                explorerFrame.Disable();
-                PlacementTrace.Write("SHOW_WPF visible transition=" + transition + " attempts=" + attempts +
-                    " stable=" + stableTicks + " locked=" + positionLocked + " wpf=" + WpfRectText());
-                if (afterShown != null) afterShown();
-                SchedulePointerRefresh();
-            };
-            preparedWpfTimer.Start();
+                if (transition != layerTransitionVersion || (positionLocked && !allowWhileLocked)) return;
+                Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(delegate
+                {
+                    if (transition != layerTransitionVersion || (positionLocked && !allowWhileLocked)) return;
+                    SetWindowCloaked(false);
+                    explorerFrame.Disable();
+                    PlacementTrace.Write("SHOW_WPF visible transition=" + transition +
+                        " locked=" + positionLocked + " wpf=" + WpfRectText());
+                    if (afterShown != null) afterShown();
+                    SchedulePointerRefresh();
+                }));
+            }));
         }
 
         void SchedulePointerRefresh()

@@ -166,6 +166,7 @@ namespace FamilyPlanner
             var taggedAction = element != null && (element.Tag as string == "open_pending_sync" || googleSyncAction);
             var contentAction = element != null && (element.Tag is DateTime || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget);
             var closeButton = element != null && element.Tag as string == "close_button";
+            var positionModeAction = element is Button && HasAncestorTag(element, "position_mode");
             var detailScroller = element is ScrollViewer && element.Tag as string == "detail_scroll";
             if ((element is Button || element is CheckBox || element is Slider || taggedAction || contentAction || detailScroller) && element.Visibility == Visibility.Visible && element.IsEnabled && element.ActualWidth > 0 && element.ActualHeight > 0)
             {
@@ -175,12 +176,22 @@ namespace FamilyPlanner
                     var bounds = new NativeRect { Left = (int)Math.Floor(origin.X * toDevice.M11), Top = (int)Math.Floor(origin.Y * toDevice.M22),
                         Right = (int)Math.Ceiling((origin.X + element.ActualWidth) * toDevice.M11), Bottom = (int)Math.Ceiling((origin.Y + element.ActualHeight) * toDevice.M22) };
                     if (detailScroller) bounds.Left = Math.Max(bounds.Left, bounds.Right - (int)Math.Ceiling(18 * toDevice.M11));
-                    records.Add(new NativeHit { Bounds = bounds, Kind = sidebarToggle ? 6 : googleSyncAction ? 5 : closeButton ? 4 : element is Slider ? 2 : detailScroller ? 3 : 1 });
+                    records.Add(new NativeHit { Bounds = bounds, Kind = positionModeAction ? 7 : sidebarToggle ? 6 : googleSyncAction ? 5 : closeButton ? 4 : element is Slider ? 2 : detailScroller ? 3 : 1 });
                 }
                 catch { }
             }
             for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent) && records.Count < MaxHitRecords; index++)
                 CollectHitRecords(root, VisualTreeHelper.GetChild(parent, index), toDevice, records);
+        }
+
+        static bool HasAncestorTag(DependencyObject element, string tag)
+        {
+            for (var current = element; current != null; current = VisualTreeHelper.GetParent(current))
+            {
+                var framework = current as FrameworkElement;
+                if (framework != null && framework.Tag as string == tag) return true;
+            }
+            return false;
         }
 
         public void Disable()

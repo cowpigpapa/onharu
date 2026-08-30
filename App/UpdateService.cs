@@ -89,7 +89,11 @@ namespace FamilyPlanner
             return installerPath;
         }
 
-        public static void LaunchInstaller(string path) { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+        public static void LaunchInstaller(string path)
+        {
+            var command = "/d /c timeout /t 2 /nobreak >nul & start \"\" \"" + path.Replace("\"", "\"\"") + "\"";
+            Process.Start(new ProcessStartInfo("cmd.exe", command) { UseShellExecute = false, CreateNoWindow = true });
+        }
 
         static T Read<T>(Stream stream)
         { return (T)new DataContractJsonSerializer(typeof(T)).ReadObject(stream); }

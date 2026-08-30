@@ -15,4 +15,6 @@ $custom = Bounds 'custom' ([datetime]'2026-09-10') ([datetime]'2026-09-01')
 if ($custom[0] -ne [datetime]'2026-09-01' -or $custom[1] -ne [datetime]'2026-09-11') { throw "Custom range mismatch: $($custom[0]) / $($custom[1])" }
 $around = Bounds 'around' $today $today
 if ($around[0] -ne [datetime]'2025-08-16' -or $around[1] -ne [datetime]'2027-08-17') { throw "Around range mismatch: $($around[0]) / $($around[1])" }
+$source = Get-Content (Join-Path $PSScriptRoot 'SearchWindow.cs') -Raw -Encoding UTF8
+if (-not $source.Contains('Math.Abs((x.Start.Date - DateTime.Today).TotalDays)).Take(500).OrderBy(x => x.Start)')) { throw 'Search result limit must preserve nearby past and future items.' }
 Write-Host 'ONHARU search range checks passed.'

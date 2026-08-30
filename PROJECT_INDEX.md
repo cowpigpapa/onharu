@@ -1,5 +1,7 @@
 # ONHARU 2.2 프로젝트 인덱스
 
+> 현재 버전·검증·배포 상태는 루트 `CURRENT_STATUS.md`를 우선한다.
+
 ## 한눈에 보는 구조
 
 ```text
@@ -59,7 +61,7 @@ ONHARU의 핵심 특수 기술을 담당하는 C++ 소스다. App이 만든 달�
 - `Release/Installer/ONHARU-2.1.0-Setup.exe`: 정식 빌드 때 생성되는 일반 사용자용 설치 파일
 - `Release/Installer/SHA256SUMS.txt`: 정식 빌드 때 생성되는 무결성 확인값
 
-현재 2.1.0 정식 배포 스테이지와 설치판이 생성되어 있다. 일반 배포에는 `Release/Installer/ONHARU-2.1.0-Setup.exe`와 필요 시 같은 폴더의 `SHA256SUMS.txt`를 전달한다. `Release`에는 임시 시험본을 두지 않는다.
+현재 공개 정식 버전은 2.2.4이고, 2.2.5는 `Release/Test/ONHARU-2.2.5-Test`의 기능 시험본이다. 정식 배포와 기능 시험본을 섞지 않으며, 공개 파일은 사용자의 명시적 승인 후 생성·업로드한다.
 
 ## 4. 문제 해결과 기록
 
@@ -83,7 +85,7 @@ ONHARU의 핵심 특수 기술을 담당하는 C++ 소스다. App이 만든 달�
 - `DEVELOPMENT_HISTORY.md`: V1부터 이어진 제품 결정
 - `build-release.ps1`: App + ExplorerLayer + Installer를 한 번에 만드는 공식 빌드 명령
 - `build-local-test.ps1`: 최신 App + ExplorerLayer 로컬 시험본을 `Tests/LocalTest` 한 곳에 생성
-- `check-v22.ps1`: 빌드와 자동 검사 16종을 한 번에 실행
+- `check-v22.ps1`: 빌드와 자동 검사 17종을 한 번에 실행
 - `Docs/Architecture/THEME_SYSTEM_2.2.md`: 스킨 팔레트, 안정성 경계와 확장 규칙
 
 시험 산출물은 `Tests`, 사용자 배포물은 `Release`로 분리한다. 경로를 바꿀 때는 빌드·검사 스크립트도 함께 수정해야 한다.

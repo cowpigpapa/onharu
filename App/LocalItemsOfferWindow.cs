@@ -32,7 +32,7 @@ namespace FamilyPlanner
             later.Click += delegate { DialogResult = false; };
             review.Click += delegate { ReviewItems = true; DialogResult = true; };
             buttons.Children.Add(later); Grid.SetColumn(review, 1); buttons.Children.Add(review); panel.Children.Add(buttons);
-            Content = UiRound.EmphasizePopup(new Border { Background = Brush("#FFFAFCFF"), CornerRadius = new CornerRadius(18), Child = panel });
+            Content = OnharuPopupChrome.Shell(panel);
         }
 
         static Brush Brush(string hex) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); }

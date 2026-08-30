@@ -15,11 +15,14 @@ namespace FamilyPlanner
             if (positionLocked && IsVisible) PublishAndHide();
             if (accepted)
             {
+                var recurringCreation = !string.IsNullOrWhiteSpace(window.Result.RecurrenceFrequency);
                 items.Add(window.Result);
                 if (string.IsNullOrWhiteSpace(window.Result.GoogleCalendarId)) ExpandLocalRecurrence(window.Result);
                 Store.Save(items); RenderAll();
                 if (!string.IsNullOrWhiteSpace(window.Result.GoogleCalendarId) && GoogleCalendar.IsConnected)
                 { await SaveGoogleItem(window.Result); if (!string.IsNullOrWhiteSpace(window.Result.RecurrenceFrequency)) await SyncGoogle(false); }
+                if (recurringCreation) RegisterUnsupportedUndo("반복 일정 생성은 Ctrl+Z로 되돌릴 수 없습니다.");
+                else RegisterCreateUndo(window.Result);
             }
         }
 
@@ -57,6 +60,7 @@ namespace FamilyPlanner
                     item.Category == "국경일" ? "읽기 전용 일정입니다." : "설정에서 수정 가능을 선택해주세요.");
                 return;
             }
+            var originalItem = item.Clone();
             var oldRecurrence = item.RecurrenceFrequency; var oldMode = item.RecurrenceMode; var oldDays = item.RecurrenceDays; var oldUntil = item.RecurrenceUntil; var oldCount = item.RecurrenceCount;
             var originalSeriesStart = string.IsNullOrWhiteSpace(item.SeriesId) ? item.Start : items.Where(x => x.SeriesId == item.SeriesId).Min(x => x.Start);
             var window = new AddItemWindow(item.Start.Date, item, settings.GoogleCalendars, GoogleCalendar.IsConnected, settings);
@@ -75,6 +79,11 @@ namespace FamilyPlanner
                     deleteScope = deleteWindow.Scope;
                 }
                 var isGoogle = !string.IsNullOrWhiteSpace(item.GoogleCalendarId) || !string.IsNullOrWhiteSpace(item.GoogleEventId);
+                var deletedItems = (deleteScope == "all" && !string.IsNullOrWhiteSpace(item.SeriesId)) ? items.Where(x => x.SeriesId == item.SeriesId).ToList() :
+                    (deleteScope == "all" && !string.IsNullOrWhiteSpace(item.GoogleRecurringEventId)) ? items.Where(x => x.GoogleRecurringEventId == item.GoogleRecurringEventId).ToList() :
+                    (deleteScope == "future" && !string.IsNullOrWhiteSpace(item.SeriesId)) ? items.Where(x => x.SeriesId == item.SeriesId && x.Start >= item.Start).ToList() :
+                    (deleteScope == "future" && !string.IsNullOrWhiteSpace(item.GoogleRecurringEventId)) ? items.Where(x => x.GoogleRecurringEventId == item.GoogleRecurringEventId && x.Start >= item.Start).ToList() :
+                    items.Where(x => x.Id == item.Id).ToList();
                 if (isGoogle && GoogleCalendar.IsConnected)
                 {
                     try
@@ -90,6 +99,8 @@ namespace FamilyPlanner
                 else if (deleteScope == "future" && !string.IsNullOrWhiteSpace(item.SeriesId)) items.RemoveAll(x => x.SeriesId == item.SeriesId && x.Start >= item.Start);
                 else if (deleteScope == "future" && !string.IsNullOrWhiteSpace(item.GoogleRecurringEventId)) items.RemoveAll(x => x.GoogleRecurringEventId == item.GoogleRecurringEventId && x.Start >= item.Start);
                 else items.RemoveAll(x => x.Id == item.Id);
+                if (recurring) RegisterUnsupportedUndo("반복 일정 삭제는 Ctrl+Z로 되돌릴 수 없습니다.");
+                else RegisterDeleteUndo(deletedItems, isGoogle);
             }
             else
             {
@@ -139,6 +150,13 @@ namespace FamilyPlanner
                 }
             }
             Store.Save(items); RenderAll();
+            if (!window.DeleteRequested)
+            {
+                var recurringEdit = window.ApplyToSeries || !string.IsNullOrWhiteSpace(originalItem.SeriesId) ||
+                    !string.IsNullOrWhiteSpace(originalItem.GoogleRecurringEventId) || !string.IsNullOrWhiteSpace(originalItem.RecurrenceFrequency);
+                if (recurringEdit) RegisterUnsupportedUndo("반복 일정 수정은 Ctrl+Z로 되돌릴 수 없습니다.");
+                else RegisterEditUndo(originalItem);
+            }
         }
 
         void RebuildLocalSeries(PlannerItem edited, DateTime originalStart)

@@ -7,7 +7,7 @@ namespace FamilyPlanner
     [DataContract]
     public class PlannerSettings
     {
-        [DataMember] public int Version = 45;
+        [DataMember] public int Version = 48;
         [DataMember] public string ThemeId = "classic";
         [DataMember] public bool HasPosition;
         [DataMember] public double Left;
@@ -31,6 +31,11 @@ namespace FamilyPlanner
         [DataMember] public bool AnniversaryVisible = true;
         [DataMember] public bool DdayPanelVisible = true;
         [DataMember] public bool HolidayVisible = true;
+        [DataMember] public bool LocalBusinessEnabled = true;
+        [DataMember] public bool LocalPersonalEnabled = true;
+        [DataMember] public bool LocalBaseballEnabled = true;
+        [DataMember] public bool DdayEnabled = true;
+        [DataMember] public bool AnniversaryEnabled = true;
         [DataMember] public double FontSize = 12;
         [DataMember] public double Opacity = .95;
         [DataMember] public bool SidebarVisible = true;
@@ -57,7 +62,6 @@ namespace FamilyPlanner
         [DataMember] public bool DefaultAllDay = true;
         [DataMember] public int DefaultStartHour = 9;
         [DataMember] public int DefaultStartMinute;
-        [DataMember] public int DefaultDurationMinutes = 30;
         [DataMember] public int DefaultReminderMinutes = 10;
         [DataMember] public bool Use24HourTime = true;
         [DataMember] public bool ShowWeekNumbers = true;
@@ -82,8 +86,15 @@ namespace FamilyPlanner
         [DataMember] public bool UseTimetable;
         [DataMember] public bool UseDiary = true;
         [DataMember] public bool UseRollover = true;
+        [DataMember] public bool ShowIncompleteTodoButton = true;
+        [DataMember] public bool ShowOverflowPopupWithSidebar;
+        [DataMember] public int IncompleteTodoLookbackMonths = 1;
         [DataMember] public bool ShowGoogleTasks;
+        [DataMember] public bool AllowDragMove = true;
+        [DataMember] public bool AllowLocalDragMove = true;
         [DataMember] public bool AllowGoogleDragMove;
+        [DataMember] public bool AllowDetailCardDrag = true;
+        [DataMember] public bool AllowSpecialCardDrag = true;
         [DataMember] public bool UseProBaseball;
         [DataMember] public bool BaseballVisible = true;
         [DataMember] public string FavoriteBaseballTeam;
@@ -93,18 +104,39 @@ namespace FamilyPlanner
         [DataMember] public string LastDataFolder;
         [DataMember] public string CategoryOrderPreset = "business";
         [DataMember] public List<string> CategoryOrder = new List<string>();
-        [DataMember] public List<string> CustomPalette = new List<string>();
+        [DataMember] public List<string> CustomPalette = OnharuColorPresets.SoftWorkspacePalette();
         [DataMember] public bool CustomPalettePastelStyle;
         [DataMember] public bool AutomaticUpdateChecks = true;
         [DataMember] public DateTime LastUpdateCheckUtc = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         [DataMember] public List<string> PaletteNames = new List<string>();
         [DataMember] public List<string> SavedPalettes = new List<string>();
         [DataMember] public int SelectedPaletteIndex;
-        [DataMember] public bool LockPalettePlacement;
+        [DataMember] public int PaletteDefinitionVersion = 4;
+        [DataMember] public bool RandomizePaletteOnStartup;
         [DataMember] public bool ShowSearchIcon = true;
         [DataMember] public bool ShowRangeSwitch = true;
         [DataMember] public bool ShowThemeSwitch = true;
         [DataMember] public bool ShowPositionSwitch = true;
+        [DataMember] public bool EnableButtonColorTool = true;
+        [DataMember] public Dictionary<string, string> ButtonColorOverrides = DefaultButtonColors();
+
+        static Dictionary<string, string> DefaultButtonColors()
+        {
+            return new Dictionary<string, string> {
+                { "classic|palette_group:detail_period", "#FFF1E8|#C2410C" },
+                { "classic|automation:OnharuPositionMode", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.1.1.0.0.0.0.0.1", "#EEECFF|#4338CA" },
+                { "dark|visual:0.0.0.0.0.0.1.1.0.0.0.0.0.1", "#5F3DC4|#F3F0FF" },
+                { "classic|visual:0.0.0.0.0.0.1.1.0.0.0.0", "#EEECFF|#4338CA" },
+                { "classic|visual:0.0.0.0.0.0.0.1.2.0.0", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.0.1.2.0.1", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.1.1.0.0.5.0", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.0.1.1", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.0.1.2.1.0", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.0.1.2.1.1", "#4B5563|#FFFFFF" },
+                { "classic|visual:0.0.0.0.0.0.0.1.2.1.2", "#4B5563|#FFFFFF" }
+            };
+        }
     }
 
     [DataContract]

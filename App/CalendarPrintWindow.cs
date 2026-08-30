@@ -20,7 +20,7 @@ namespace FamilyPlanner
             WindowStartupLocation = WindowStartupLocation.CenterOwner; ShowActivated = true; ShowInTaskbar = false; Topmost = true;
             var root = new Grid(); root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); root.RowDefinitions.Add(new RowDefinition());
             var header = new DockPanel { Margin = new Thickness(18, 14, 14, 10) };
-            var close = OnharuPopupChrome.CloseButton(this); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
+            var close = OnharuPopupChrome.ToolCloseButton(this); DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
             var print = OnharuPopupChrome.Button("▣ 인쇄", 74, "#4F46E5", "#FFFFFF"); print.Margin = new Thickness(0, 0, 8, 0); print.Click += Print; DockPanel.SetDock(print, Dock.Right); header.Children.Add(print);
             marginOption = new ComboBox { Width = 132, Height = 30, Margin = new Thickness(0, 0, 8, 0), Background = Brushes.White,
                 BorderBrush = Brush("#CBD5E1"), Foreground = Brush("#475569"), VerticalContentAlignment = VerticalAlignment.Center, Cursor = Cursors.Hand };
@@ -49,7 +49,14 @@ namespace FamilyPlanner
         void Print(object sender, RoutedEventArgs e)
         {
             var dialog = new PrintDialog(); Topmost = false;
-            if (dialog.ShowDialog() != true || preview.Source == null) { Topmost = true; Activate(); return; }
+            // WPF PrintDialog has no owner overload and otherwise falls back to
+            // Application.MainWindow. In fixed mode that HWND is the cloaked relay,
+            // so the native print dialog becomes invisible while still blocking it.
+            var mainWindow = Application.Current.MainWindow;
+            bool? accepted;
+            try { Application.Current.MainWindow = this; Activate(); accepted = dialog.ShowDialog(); }
+            finally { Application.Current.MainWindow = mainWindow; }
+            if (accepted != true || preview.Source == null) { Topmost = true; Activate(); return; }
             var millimeters = marginOption.SelectedItem == null ? 15d : (double)((ComboBoxItem)marginOption.SelectedItem).Tag;
             var inset = millimeters * 96d / 25.4d;
             var width = Math.Max(1, dialog.PrintableAreaWidth - inset * 2); var height = Math.Max(1, dialog.PrintableAreaHeight - inset * 2);
@@ -58,7 +65,11 @@ namespace FamilyPlanner
             var page = new Canvas { Width = dialog.PrintableAreaWidth, Height = dialog.PrintableAreaHeight, Background = Brushes.White };
             page.Children.Add(image); Canvas.SetLeft(image, inset); Canvas.SetTop(image, inset);
             page.Measure(new Size(page.Width, page.Height)); page.Arrange(new Rect(new Size(page.Width, page.Height)));
-            try { dialog.PrintVisual(page, "ONHARU 달력"); printStatus.Text = "인쇄 작업이 종료되었습니다."; }
+            try
+            {
+                printStatus.Text = "인쇄 작업을 보내는 중입니다…";
+                dialog.PrintVisual(page, "ONHARU 달력"); printStatus.Text = "인쇄 작업이 종료되었습니다.";
+            }
             catch (Exception) { printStatus.Text = "인쇄를 완료하지 못했습니다."; }
             finally { Topmost = true; Activate(); }
         }
