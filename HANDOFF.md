@@ -1,5 +1,57 @@
 # ONHARU 2.2 HANDOFF
 
+## 2026-09-03 — 2.2.5 정식 배포 완료 (GitHub Latest + onharu.app)
+
+사용자 지시 `웹에도 올리고 깃에도 올리고 모든걸 마무리 해`에 따라 전 과정을 마쳤다.
+
+### 1. 릴리스 빌드
+
+- `build-release.ps1`로 `Release/ONHARU-2.2.5` 스테이징과 설치판을 만들었다. **네이티브 C++도 이 환경에서 함께 빌드된다**(오늘 PATH 문제를 푼 결과).
+- 자산 네 개를 준비했다.
+  - `ONHARU-2.2.5-Setup.exe` 2,416,799 bytes · `36F59E0AA9647933E39C49CC205D9EE89C8B8774BF4940FE4B041E0F859228F4`
+  - `ONHARU-2.2.5-Portable.zip` 489,436 bytes · `879A2BAE13475A41307AA26C0D6780DCA7064124DFEA6444BB00B7A80965215A`
+  - `ONHARU-2.2.5-Source.zip` 871,699 bytes · `E386AE6B877D36992C0F237C3FC35C2F4FBE35304795301AE4E85756AA9D5FBD`
+  - `SHA256SUMS.txt`
+- 실행 파일 메타데이터 `FileVersion 2.2.5.0`, `ProductVersion 2.2.5` 확인.
+
+### 2. 공개 소스 스테이지
+
+- `Publish/GitHubSource-2.2.5`에 공개용 구성만 담았다. `App`, `Distribution`, `Docs`, `ExplorerLayer`, `Installer`와 루트 문서·빌드 스크립트다.
+- **제외:** `App/OAuthCredentials.local.cs`, 빌드 산출물(exe·dll·obj·lib·exp·pdb), `App/ONHARU.exe.config`(`app.config`에서 생성되는 파일). 197개 파일.
+- 자격 증명 흔적을 정규식으로 검사했다. 실제 비밀값 없음. 걸린 것은 검사 스크립트의 예시 문자열과 파일명 언급뿐이다.
+
+### 3. GitHub
+
+- `cowpigpapa/onharu`를 임시로 복제해 스테이지 내용으로 맞추고 두 번 커밋해 push했다. `09fa14c → 2f29a50 → 933ac12`.
+- 지워진 파일: `App/CategoryOrderWindow.cs`, `App/PendingSyncWindow.cs`, `App/TemporarySegmentPaletteTool.cs`, `App/ONHARU.exe.config`. 새로 추가: `App/AlarmWindow.cs`, `App/OnharuIcons.cs`, `App/OnharuTimeInput.cs`, `App/moon-phase-check.ps1`, `Docs/Design/Mockups/ONHARU_SCREEN_OPTIONS.html`, `Distribution/RELEASE_NOTES_2.2.5.md`.
+- **Release `v2.2.5`를 Latest로 만들었다.** 자산 네 개를 올리고 공개 URL에서 다시 내려받아 로컬 해시와 일치하는 것을 확인했다.
+- 이제 **2.2.4 이하 사용자에게 자동 업데이트 안내가 뜬다.**
+
+### 4. 웹 게시
+
+- 게시 전 백업: `/home/ubuntu/onharu-web-backups/site-before-2.2.5-release-20260903-1643.tar.gz`(18,846,980 bytes).
+- 페이지 10개와 자산 2개를 올리고 시험판 4개를 서버에서 지웠다.
+- 다운로드 페이지를 2.2.5로 갱신했다. 파일명·크기·SHA-256·캐시 키(`v=20260903-2`)를 실제 값으로 맞췄다.
+- 릴리스 노트 페이지의 `2.2.6 출시 예정` 항목을 `2.2.5 현재 정식 버전`으로 다시 썼고 2.2.4는 `이전 버전` 배지로 내렸다.
+- 소개 두 페이지와 약관·방침의 버전 표기도 2.2.5로 맞췄다. **사이트에 2.2.6 표기가 남아 있지 않다.**
+- `Distribution`의 웹 사본 10개도 게시본과 같게 맞췄다.
+
+### 5. 확인
+
+- 서버 `sha256sum` = 로컬 해시. 공개 URL 재다운로드 해시도 일치.
+- 공개 10개 페이지 HTTP 200. 지운 시험판 4개 404.
+- `systemctl is-active nginx` = active.
+- **작업 메모: 이 사이트는 Cloudflare 뒤에 있다.** 파일을 지운 직후 `ONHARU-2.2.5-Test-Setup.exe`가 200을 돌려줬는데 캐시였다. 질의 문자열로 캐시를 우회하니 404였다. 앞으로 게시 확인은 캐시를 우회해서 한다. 이 사실을 `WEB_OPERATIONS_HANDOFF.md`와 `Claude-Web-Handoff.md`에 적었다.
+
+- **변경 파일:** `Distribution/RELEASE_NOTES_2.2.5.md`(신규), `Distribution`의 웹 사본 10개, `CURRENT_STATUS.md`, `WEB_OPERATIONS_HANDOFF.md`, `Claude-Web-Handoff.md`, `HANDOFF.md`. Git 제외 영역: `Publish/ONHARU-Web`의 페이지 10개와 `downloads`, `Publish/GitHubSource-2.2.5`, `Release/`.
+- **검증:** `check-v22.ps1` 18개 전부 PASS(게시 전). 위 5장의 게시 확인 항목 전부 통과.
+- **미해결·다음 작업:**
+  - **2.2.5 정식본의 실기기 확인이 아직 없다.** 자동 업데이트가 이미 열려 있으므로 설치·실행·제거 왕복을 우선 확인하는 것이 좋다.
+  - 남은 리팩토링 둘: `ui-construction-check.ps1`이 저장 같은 실행 경로까지 확인하게 하기, 검사 스크립트 인코딩·BOM 통일.
+  - 웹 시험판을 다시 올릴 때 다운로드 페이지의 시험판 절을 되살린다. 지운 절의 구조는 이 기록 위쪽 2026-09-03 웹 검토 항목에 있다.
+  - 사용설명서 PDF는 여전히 없다. 만들면 설명서 페이지의 버튼을 되살린다.
+
+
 ## 2026-09-03 — 웹 검토와 수정 (로컬만, 서버 게시 안 함)
 
 `Publish/`는 Git 제외 영역이라 `git status`에 나타나지 않는다. 아래에 파일명과 크기·해시 앞자리를 남긴다. **서버에는 올리지 않았다.**

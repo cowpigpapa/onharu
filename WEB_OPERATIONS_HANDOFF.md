@@ -50,10 +50,19 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 
 헤더는 `소개 · 다운로드 · 설명서 · FAQ · 릴리스 노트 · 지원·문의`로 통일한다. Free · Plus 비교는 소개 페이지의 `#free-plus` 구역에 통합되어 있다. 푸터는 `이용약관 · 개인정보처리방침`과 저작권만 유지한다. 모바일 헤더 메뉴는 가로 스크롤 방식이다.
 
+## 게시 기록
+
+- 2026-09-03 **정식 2.2.5를 게시했다.** 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.5-release-20260903-1643.tar.gz`(18,846,980 bytes)다.
+  - 올린 페이지: `index.html`, `ONHARU-FEATURES.html`, `ONHARU-DOWNLOAD.html`, `ONHARU-GUIDE.html`, `ONHARU-FAQ.html`, `ONHARU-RELEASES.html`, `ONHARU-SUPPORT.html`, `ONHARU-TERMS.html`, `ONHARU-PRIVACY.html`, `ONHARU-SITE.css`.
+  - 올린 자산: `ONHARU-2.2.5-Setup.exe`(2,416,799 bytes, SHA-256 `36F59E0AA9647933E39C49CC205D9EE89C8B8774BF4940FE4B041E0F859228F4`), `ONHARU-2.2.5-Portable.zip`(489,436 bytes, SHA-256 `879A2BAE13475A41307AA26C0D6780DCA7064124DFEA6444BB00B7A80965215A`).
+  - 지운 자산: `ONHARU-2.2.5-Test-Setup.exe`, `ONHARU-2.2.5-Test-Portable.zip`, `ONHARU-2.2.6-Test-Setup.exe`, `ONHARU-2.2.6-Test-Portable.zip`.
+  - 확인: 서버 `sha256sum` 일치, 공개 URL 재다운로드 해시 일치, 10개 페이지 HTTP 200, 지운 네 파일 404, `systemctl is-active nginx` = active.
+
 ## 현재 릴리스
 
-- 확정 정식 버전: `2.2.5`(2026-09-03). 아직 게시하지 않았다. 홈페이지의 시험판 파일과 GitHub Latest·정식 다운로드는 게시 전까지 2.2.4와 옛 시험판 그대로다.
-- 정식 2.2.5를 게시할 때 `ONHARU-2.2.5-Test-*`와 `ONHARU-2.2.6-Test-*` 시험판 파일을 함께 정리한다. 같은 번호의 다른 파일이 남으면 사용자가 혼동한다.
+- 공개 정식 버전: `2.2.5`(2026-09-03 게시 완료). GitHub Latest는 `v2.2.5`, 홈페이지 다운로드도 2.2.5다.
+- 게시와 함께 `ONHARU-2.2.5-Test-*`와 `ONHARU-2.2.6-Test-*` 네 파일을 서버에서 지웠다. 앞으로 웹 시험판은 2.2.6으로 다시 올린다.
+- **이 사이트는 Cloudflare 뒤에 있다.** 파일을 지워도 캐시가 남아 한동안 200을 돌려줄 수 있다. 확인은 질의 문자열을 붙여 캐시를 우회한다.
 
 - 공개 버전: `2.2.4`
 - 공식 릴리스: `https://github.com/cowpigpapa/onharu/releases/tag/v2.2.4`

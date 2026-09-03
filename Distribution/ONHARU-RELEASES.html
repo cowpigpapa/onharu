@@ -8,7 +8,7 @@
     <style>
       :root {
         --ink: #17213a;
-        --muted: #667085;
+        --muted: #616a7e;
         --line: #dfe5f1;
         --indigo: #5146d9;
         --paper: #f7f9fd;
@@ -152,25 +152,44 @@
           <div class="release-head">
             <div>
               <h2>ONHARU 2.2.5</h2>
-              <p>KBO·Google Tasks·고정 화면과 업데이트 안정성을 다듬은 다음 버전</p>
+              <p>고정 화면 입력과 블랙 스킨 가독성을 바로잡은 안정화 업데이트</p>
             </div>
-            <span class="badge">출시 예정</span>
+            <span class="badge">현재 정식 버전</span>
           </div>
-          <h3>주요 변경</h3>
+          <h3>고정 화면에서 동작하지 않던 조작</h3>
           <ul>
-            <li>KBO 경기를 ONHARU 로컬 일정 또는 수정 가능한 Google 캘린더에 선택 등록</li>
-            <li>날짜와 대진 기준 경기 ID로 재등록·동기화 과정의 KBO 중복 방지</li>
-            <li>Google Calendar와 분리된 선택형 Google Tasks 표시·완료 상태 동기화</li>
-            <li>고정 상태에서 1~6주 선택 입력과 실제 인쇄 흐름 안정화</li>
-            <li>업데이트 후 다중 모니터 위치 복원과 설치 전 LayerHost 자동 종료</li>
-            <li>일반 일정·D-Day·기념일 카드 정렬 및 중요 일정 사용자 색상 보존</li>
+            <li>오른쪽 패널의 <strong>온하루 일정</strong>·<strong>Google</strong> 그룹 접기·펼치기가 동작하지 않던 문제 수정</li>
+            <li>미완료 To-Do 카드의 일정 이름을 두 번 눌러 수정 창을 여는 동작 복구</li>
+            <li>알람 창이 고정 상태에서 나타나지 않던 문제 수정</li>
+            <li>기간 스위치를 빠르게 두 번 누르면 목록이 닫히지 않던 문제 수정</li>
+            <li>접기·펼치기 화살표의 누를 수 있는 범위를 넓혀 잡기 쉽게 조정</li>
           </ul>
-          <h3>현재 상태</h3>
+          <h3>블랙 스킨 가독성</h3>
           <ul>
-            <li>기능 시험판으로 최종 확인 중이며 정식 GitHub 릴리스와 자동 업데이트는 아직 2.2.4</li>
-            <li>기존 일정·설정·Google 연결·일기·시간표 데이터 유지</li>
+            <li>달력의 <strong>+N개 더보기</strong> 팝업에서 일정 글자가 보이지 않던 문제 수정</li>
+            <li>시간순·미완료 보기에서 카드 배경이 과하게 강조되던 문제 수정</li>
+            <li>메인 달력 배경을 카드 색과 맞춰 정돈</li>
           </ul>
-          <div class="actions"><a href="ONHARU-DOWNLOAD.html">2.2.5 시험판 확인</a></div>
+          <h3>상세 패널과 헤더</h3>
+          <ul>
+            <li>카테고리순·시간순·미완료를 오갈 때 날짜 제목과 도구 아이콘이 흔들리던 문제 수정</li>
+            <li>기념일 카드를 접고 펼 때 추가 버튼이 움직이던 문제 수정</li>
+            <li>오늘·이번 주·다음 주와 세 보기의 날짜 표기를 하나의 양식으로 통일</li>
+            <li>상단 기능 아이콘 줄을 창 조작 버튼 왼쪽에 고정하고 아이콘 수에 따라 왼쪽으로 확장</li>
+          </ul>
+          <h3>입력 편의와 접근성</h3>
+          <ul>
+            <li>알람의 시각·타이머, 시간표의 시작 시각을 가운데 정렬</li>
+            <li>수기 입력칸은 누르는 즉시 기존 값이 선택되어 바로 새 값을 입력. 메모와 일기 본문은 제외</li>
+            <li>미완료 목록 제목에 연도 표시</li>
+            <li>상단 아이콘 버튼과 창 조작 버튼에 이름을 부여해 화면 낭독기에서 읽히도록 보완</li>
+          </ul>
+          <h3>이전 버전 이용자</h3>
+          <ul>
+            <li>기존 ONHARU 위에 덮어쓰면 일정·설정·Google 연결·일기·시간표 데이터가 유지됩니다</li>
+            <li>자동 품질 검사 18개 전부 통과</li>
+          </ul>
+          <div class="actions"><a href="ONHARU-DOWNLOAD.html">2.2.5 다운로드</a></div>
         </article>
         <article class="release">
           <div class="release-head">
@@ -178,7 +197,7 @@
               <h2>ONHARU 2.2.4</h2>
               <p>일정 카드 조작과 색상 가독성을 보완한 안정화 업데이트</p>
             </div>
-            <span class="badge">현재 정식 버전</span>
+            <span class="badge">이전 버전</span>
           </div>
           <h3>주요 변경</h3>
           <ul>
@@ -326,11 +345,11 @@
         }
         .release + .release .release-head p,
         .release + .release ul {
-          color: #7e8796;
+          color: #656c78;
         }
         .release + .release .badge {
           background: #e6e9ee;
-          color: #7b8390;
+          color: #5f656f;
         }
         .release.previous:not(.open) > :not(.release-head) {
           display: none;
