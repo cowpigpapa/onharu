@@ -73,9 +73,8 @@ namespace FamilyPlanner
             if (GoogleTasks.IsTask(item) && !settings.ShowGoogleTasks) return false;
             if (!string.IsNullOrWhiteSpace(item.GoogleCalendarId))
             {
-                if (settings.GoogleCalendars == null || !settings.GoogleCalendars.Any(x => x.Id == item.GoogleCalendarId)) return false;
-                var key = "google:" + item.GoogleCalendarId;
-                return !filters.ContainsKey(key) || filters[key].IsChecked == true;
+                var source = settings.GoogleCalendars == null ? null : settings.GoogleCalendars.FirstOrDefault(x => x.Id == item.GoogleCalendarId);
+                return source != null && source.Visible;
             }
             return !filters.ContainsKey(item.Category) || filters[item.Category].IsChecked == true;
         }

@@ -81,9 +81,9 @@ namespace FamilyPlanner
             if (existing != null)
             {
                 var convert = Btn("일정으로 변경", 104, "#ECFDF5", "#047857"); convert.Margin = new Thickness(0,0,8,0); convert.Click += ConvertToSchedule; buttons.Children.Add(convert);
-                var delete = Btn("삭제", 72, "#FFF1F2", "#E11D48"); delete.Margin = new Thickness(0,0,8,0); delete.Click += delegate { DeleteRequested = true; DialogResult = true; }; buttons.Children.Add(delete);
+                var delete = Btn("삭제", 72, "#FFF1F2", "#BE123C"); delete.Margin = new Thickness(0,0,8,0); delete.Click += delegate { DeleteRequested = true; DialogResult = true; }; buttons.Children.Add(delete);
             }
-            var save = Btn("✓  저장", 96, "#4F46E5", "#FFFFFF"); save.Margin = new Thickness(8, 0, 0, 0); save.Click += Save; buttons.Children.Add(cancel); buttons.Children.Add(save); panel.Children.Add(buttons);
+            var save = Btn("✓  저장", 96, "#4338CA", "#FFFFFF"); save.Margin = new Thickness(8, 0, 0, 0); save.Click += Save; buttons.Children.Add(cancel); buttons.Children.Add(save); panel.Children.Add(buttons);
             Content = OnharuPopupChrome.Shell(panel);
         }
 

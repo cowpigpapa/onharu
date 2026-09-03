@@ -65,7 +65,6 @@ namespace FamilyPlanner
             }
             var ddayCard = SpecialDetailCard(ddayBackground, ddayBorder,
                 new Thickness(10, 8, 10, ddaySectionCollapsed ? 8 : 7), "special:D-Day", stack);
-            TemporarySegmentPaletteTool.AttachDetailCard(ddayCard, (TextBlock)titleButton.Content, "special:D-Day");
             EnableDetailCardOrder(heading, ddayCard, "special:D-Day", false); detail.Children.Add(ddayCard);
         }
 
@@ -112,13 +111,18 @@ namespace FamilyPlanner
             var anniversaryForeground = new SolidColorBrush(CategoryColorSystem.DetailForeground(settings.ThemeId, anniversaryColor));
             var anniversaryBackground = new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, anniversaryColor));
             var anniversaryBorder = new SolidColorBrush(CategoryColorSystem.DetailBorder(settings.ThemeId, anniversaryColor));
-            var heading = new DockPanel { Height = 24, Margin = new Thickness(1, 0, 3, 1), LastChildFill = true };
+            var heading = new DockPanel { Height = anniversarySectionCollapsed ? 18 : 26,
+                Margin = new Thickness(1, 0, 3, anniversarySectionCollapsed ? 0 : 1), LastChildFill = true };
             var titleButton = SectionTitleButton("✦  기념일 (" + anniversaries.Count + "개)", anniversaryForeground,
                 anniversarySectionCollapsed ? "기념일 펼치기" : "기념일 접기", delegate { anniversarySectionCollapsed = !anniversarySectionCollapsed; RenderDetail(); }, 18);
-            var make = IconButton("", delegate { OpenAnniversary(null); }, 23); make.Width = 23; make.Height = 23;
+            const double makeSize = 18;
+            var make = IconButton("", delegate { OpenAnniversary(null); }, makeSize); make.Width = makeSize; make.Height = makeSize;
             make.Content = HeaderGlyph("add", anniversaryForeground); make.ToolTip = "기념일 만들기";
             make.Padding = new Thickness(0); make.Background = Brushes.Transparent; make.Foreground = anniversaryForeground;
-            make.BorderBrush = anniversaryBorder; make.BorderThickness = new Thickness(1); make.VerticalAlignment = VerticalAlignment.Center;
+            // 머리글 높이가 접힘 여부에 따라 달라져 가운데 정렬이면 `+`가 위아래로 움직인다
+            // (2026-09-03 사용자 보고). 제목 글자와 같은 윗선에 세워 두 상태에서 자리를 지킨다.
+            make.BorderBrush = anniversaryBorder; make.BorderThickness = new Thickness(1); make.VerticalAlignment = VerticalAlignment.Top;
+            System.Windows.Automation.AutomationProperties.SetName(make, "기념일 만들기");
             DockPanel.SetDock(make, Dock.Right); heading.Children.Add(make);
             heading.Children.Add(titleButton);
             stack.Children.Add(heading);
@@ -126,7 +130,6 @@ namespace FamilyPlanner
             {
                 var collapsedCard = SpecialDetailCard(anniversaryBackground, anniversaryBorder,
                     new Thickness(10, 8, 10, 8), "special:기념일", stack);
-                TemporarySegmentPaletteTool.AttachDetailCard(collapsedCard, (TextBlock)titleButton.Content, "special:기념일");
                 EnableDetailCardOrder(heading, collapsedCard, "special:기념일", false); detail.Children.Add(collapsedCard);
                 return;
             }
@@ -161,7 +164,6 @@ namespace FamilyPlanner
             }
             var anniversaryCard = SpecialDetailCard(anniversaryBackground, anniversaryBorder,
                 new Thickness(10, 8, 10, 7), "special:기념일", stack);
-            TemporarySegmentPaletteTool.AttachDetailCard(anniversaryCard, (TextBlock)titleButton.Content, "special:기념일");
             EnableDetailCardOrder(heading, anniversaryCard, "special:기념일", false); detail.Children.Add(anniversaryCard);
         }
 

@@ -12,15 +12,18 @@ $stringList = New-List ([string])
 $settingsType = $assembly.GetType('FamilyPlanner.SettingsWindow', $true)
 $settingsArgs = [object[]]@(
     '#2563EB', '#DB2777', '#16A085', '#38A7D8', '#A78BFA', '#EF4444', [double]12, 'category', $true, $false, $true, $true, $false,
-    'iso', 'monday', (New-List ([int])).PSObject.BaseObject, $false, [int]15, $calendarList.PSObject.BaseObject, $false, $true, $true, $false, $true, $true, [int]0, $true, $true, '', [int]0,
+    'iso', 'monday', (New-List ([int])).PSObject.BaseObject, $false, [int]15, $calendarList.PSObject.BaseObject, $false, $true, $true, $false, $true, $true, [int]0, $true, $true, $false, 'onharu', '', [int]0,
     $stringList.PSObject.BaseObject, (New-List ([string])).PSObject.BaseObject, $true, (New-List ([string])).PSObject.BaseObject, (New-List ([string])).PSObject.BaseObject, [int]8, $false,
     'border', '#CCDBEAFE', '#3B82F6', '#CCFCE7F3', 'fill', '#F59E0B',
     'local:business', $true, [int]9, [int]0, [int]30,
     'fade', 'last', $true, $true, [int]22, [int]7, 'screen', 'remember', $true, $true, $true, $true, $true, [int]1, $false, $false, $true, 'classic',
-    $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $false
+    # 2026-09-02: 생성자 마지막 두 인자의 순서가 `detailDateFormat(string), showFullColorPaletteValue(bool)`인데
+    # 검사가 반대로 넘기고 있어 형변환에서 멈췄다. 인자 수 83개는 맞고 순서만 어긋난 것이었다.
+    $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, $true, 'yy/MM/dd', $false
 )
 $settings = $settingsType.GetConstructors()[0].Invoke($settingsArgs)
-if ($settings.Width -ne 620) { throw 'Settings window width changed unexpectedly.' }
+# 2026-09-02: 설정창 개편으로 폭이 620에서 640이 되었다. HEAD 기준값이 620이었다.
+if ($settings.Width -ne 640) { throw 'Settings window width changed unexpectedly.' }
 $settings.Close()
 
 $diaryEditor = $assembly.GetType('FamilyPlanner.DiaryEditorWindow', $true).GetConstructors()[0].Invoke([object[]]@([datetime]'2026-08-22', $null))
@@ -92,7 +95,9 @@ $taskAdd.Close()
 $itemList = New-List $assembly.GetType('FamilyPlanner.PlannerItem', $true)
 $searchArgs = New-Object 'object[]' 1; $searchArgs[0] = $itemList.PSObject.BaseObject
 $search = $assembly.GetType('FamilyPlanner.SearchWindow', $true).GetConstructors()[0].Invoke($searchArgs)
-if ($search.Width -ne 520 -or $search.Height -ne 540) { throw 'Search window size changed unexpectedly.' }
+# 2026-09-01: 팝업 본체는 520x540 그대로이고, Shell의 DropShadow가 창 경계에서 잘려
+# 모서리에 검은 자국이 남던 문제 때문에 사방 12px 그림자 여백을 창 크기에 더했다.
+if ($search.Width -ne 544 -or $search.Height -ne 564) { throw 'Search window size changed unexpectedly.' }
 $search.Close()
 
 $jump = $assembly.GetType('FamilyPlanner.MonthJumpWindow', $true).GetConstructors()[0].Invoke([object[]]@([datetime]'2026-08-01'))

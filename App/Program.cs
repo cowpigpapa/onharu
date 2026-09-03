@@ -58,8 +58,9 @@ namespace FamilyPlanner
         [STAThread]
         public static void Main()
         {
-            var localTest = Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetExecutingAssembly().Location)
-                .IndexOf("local-test", StringComparison.OrdinalIgnoreCase) >= 0;
+            var executable = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var localTest = Path.GetFileNameWithoutExtension(executable).IndexOf("local-test", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                File.Exists(Path.Combine(Path.GetDirectoryName(executable), "ONHARU-TEST-MODE"));
             var instanceName = localTest ? "Local\\Onharu.LocalTest.SingleInstance" : "Local\\Onharu.SingleInstance";
             var showEventName = localTest ? "Local\\Onharu.LocalTest.ShowOnLaunch" : ShowEventName;
             bool first;

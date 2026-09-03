@@ -71,6 +71,26 @@ namespace FamilyPlanner
             // half of a double-click intentionally adds no further month.
         }
 
+        void BindCalendarEdgeNavigation(Button button, int direction)
+        {
+            button.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                HandleCalendarEdgeNavigationClick(direction, e.ClickCount > 1); e.Handled = true;
+            };
+        }
+
+        void HandleCalendarEdgeNavigationClick(int direction, bool doubleClick)
+        {
+            DateTime candidate;
+            try
+            {
+                candidate = doubleClick ? shownMonth.AddDays(-direction * 7).AddMonths(direction) : shownMonth.AddDays(direction * 7);
+            }
+            catch (ArgumentOutOfRangeException) { return; }
+            if (candidate.Year < 1900 || candidate.Year > 9998) return;
+            shownMonth = candidate; RenderAll();
+        }
+
         void UpdatePeriodNavigationButtons()
         {
             if (calendarRangeSwitch != null) { calendarRangeSwitch.SetLabel(0, Math.Max(1, Math.Min(6, settings.VisibleWeekCount)) + "주"); calendarRangeSwitch.SetSelected(temporaryMonthView ? 1 : 0, false); }
@@ -167,31 +187,10 @@ namespace FamilyPlanner
             return Tuple.Create(monthFirst, monthFirst.AddDays(rowsInMonth * 7 - 1));
         }
 
-        static int ResizeEdgeAt(Point point, FrameworkElement surface)
-        {
-            const double corner = 18, edge = 10;
-            var leftCorner = point.X <= corner; var rightCorner = point.X >= surface.ActualWidth - corner;
-            var topCorner = point.Y <= corner; var bottomCorner = point.Y >= surface.ActualHeight - corner;
-            if (leftCorner && topCorner) return 1;
-            if (rightCorner && topCorner) return 2;
-            if (leftCorner && bottomCorner) return 3;
-            if (rightCorner && bottomCorner) return 4;
-            if (point.X <= edge) return 5;
-            if (point.X >= surface.ActualWidth - edge) return 6;
-            if (point.Y <= edge) return 7;
-            if (point.Y >= surface.ActualHeight - edge) return 8;
-            return 0;
-        }
-
-        static Cursor ResizeCursor(int edge)
-        {
-            return edge == 1 || edge == 4 ? UiCursor.ResizeNwSe : edge == 2 || edge == 3 ? UiCursor.ResizeNeSw
-                : edge == 5 || edge == 6 ? UiCursor.ResizeHorizontal : edge == 7 || edge == 8 ? UiCursor.ResizeVertical : Cursors.Arrow;
-        }
-
+        // 크기 조절 판정과 커서는 팝업과 공통이다. `OnharuPopupChrome`가 단일 기준이다.
         void BeginResize(FrameworkElement surface, int edge)
         {
-            surface.Cursor = ResizeCursor(edge);
+            surface.Cursor = OnharuPopupChrome.ResizeCursor(edge);
             DesktopLayer.BeginResize(this, edge);
         }
 
@@ -199,7 +198,7 @@ namespace FamilyPlanner
         {
             var surface = (FrameworkElement)sender;
             if (positionLocked) { surface.Cursor = Cursors.Arrow; return; }
-            surface.Cursor = ResizeCursor(ResizeEdgeAt(e.GetPosition(surface), surface));
+            surface.Cursor = OnharuPopupChrome.ResizeCursor(OnharuPopupChrome.ResizeEdgeAt(e.GetPosition(surface), surface));
         }
 
         void GoToday()
@@ -261,6 +260,20 @@ namespace FamilyPlanner
             for (var i = 0; i < names.Length; i++)
                 if (origin.AddMilliseconds(31556925974.7 * (date.Year - 1900) + (minutes[i] + correctionMinutes[i]) * 60000.0).Date == date.Date) return names[i];
             return null;
+        }
+
+        static Tuple<string, string> MoonPhase(DateTime date)
+        {
+            var epoch = new DateTime(2000, 1, 6, 18, 14, 0, DateTimeKind.Utc);
+            const double quarterDays = 29.530588853 / 4.0;
+            var noonUtc = DateTime.SpecifyKind(date.Date.AddHours(12), DateTimeKind.Local).ToUniversalTime();
+            var quarter = (long)Math.Round((noonUtc - epoch).TotalDays / quarterDays);
+            var phaseLocal = epoch.AddDays(quarter * quarterDays).ToLocalTime();
+            if (phaseLocal.Date != date.Date) return null;
+            var index = (int)((quarter % 4 + 4) % 4);
+            var glyphs = new[] { "●", "◐", "○", "◑" };
+            var names = new[] { "삭·그믐", "상현", "보름", "하현" };
+            return Tuple.Create(glyphs[index], names[index] + " · " + phaseLocal.ToString("HH:mm"));
         }
 
         IEnumerable<PlannerItem> VisibleItems(DateTime date)

@@ -42,7 +42,7 @@ namespace FamilyPlanner
         readonly UniformGrid minuteGrid = new UniformGrid { Columns = 6, Margin = new Thickness(0, 1, 0, 3), IsEnabled = false };
         readonly Grid minuteRow = new Grid { Margin = new Thickness(0, 3, 0, 3), Visibility = Visibility.Collapsed };
         readonly CheckBox multiDay = new CheckBox { Content = "여러 날 일정", Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
-        readonly Button endDateButton = new Button { Height = 32, Width = 96, IsEnabled = false, Background = Brushes.White,
+        readonly Button endDateButton = new Button { Height = 34, Width = 96, IsEnabled = false, Background = Brushes.White,
             Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235)), BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
         readonly RadioButton noRollover = new RadioButton { Content = "없음", GroupName = "Rollover", IsChecked = true, Margin = new Thickness(0, 0, 10, 0), FontSize = 12 };
         readonly RadioButton nextDayRollover = new RadioButton { Content = "다음날", Tag = "next_day", GroupName = "Rollover", Margin = new Thickness(0, 0, 10, 0), FontSize = 12 };
@@ -53,9 +53,9 @@ namespace FamilyPlanner
         readonly List<RadioButton> categoryOptions = new List<RadioButton>();
         readonly WrapPanel reminderOptions = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
         readonly RadioButton customReminder = new RadioButton { Content = "직접 선택", Tag = "custom", GroupName = "Reminder", Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-        readonly TextBox customReminderValue = new TextBox { Text = "15", Width = 48, Height = 27, Padding = new Thickness(4, 0, 4, 0), TextAlignment = TextAlignment.Center,
+        readonly TextBox customReminderValue = new TextBox { Text = "15", Width = 48, Height = 28, Padding = new Thickness(4, 0, 4, 0), TextAlignment = TextAlignment.Center,
             IsEnabled = false, MaxLength = 3, VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        readonly ComboBox customReminderUnit = new ComboBox { Width = 80, Height = 27, IsEnabled = false, Margin = new Thickness(6, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        readonly ComboBox customReminderUnit = new ComboBox { Width = 80, Height = 28, IsEnabled = false, Margin = new Thickness(6, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly CheckBox important = new CheckBox { Content = new TextBlock { Text = "★ 중요 일정", LineHeight = 16, Margin = new Thickness(4, -1, 0, 1), VerticalAlignment = VerticalAlignment.Center },
             Foreground = new SolidColorBrush(Color.FromRgb(242, 13, 122)), Background = new SolidColorBrush(Color.FromRgb(255, 241, 247)),
             Padding = new Thickness(0), FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
@@ -82,16 +82,16 @@ namespace FamilyPlanner
         DateTime recurrenceUntilDate;
         readonly CheckBox recurrenceEnabled = new CheckBox { Content = "반복 일정", FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
         readonly StackPanel recurrenceBody = new StackPanel { Visibility = Visibility.Collapsed };
-        readonly Border timeCard = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)), BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
+        readonly Border timeCard = new Border { Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12, 8, 12, 4), Margin = new Thickness(0, 2, 0, 8) };
-        readonly Border recurrenceCard = new Border { Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)), BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
+        readonly Border recurrenceCard = new Border { Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12, 9, 12, 5), Margin = new Thickness(0, 0, 0, 8) };
         readonly TextBlock googleTaskHint = new TextBlock { Text = "Google Task는 하루 종일 할 일로 저장되며 반복·시간·알림을 지원하지 않습니다.",
-            Foreground = new SolidColorBrush(Color.FromRgb(194, 65, 12)), FontSize = 11, TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.FromRgb(220, 38, 38)), FontSize = 11, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 2, 0, 6), Visibility = Visibility.Collapsed };
         readonly RadioButton recurrenceCountMode = new RadioButton { Content = "횟수", GroupName = "RecurrenceEnd", Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139)), FontSize = 11, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center };
         readonly RadioButton recurrenceUntilMode = new RadioButton { Content = "종료날짜", GroupName = "RecurrenceEnd", Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139)), FontSize = 11, IsChecked = true, Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
-        readonly TextBox recurrenceCountValue = new TextBox { Text = "10", Width = 42, Height = 27, Padding = new Thickness(4, 0, 4, 0), TextAlignment = TextAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, IsEnabled = false, MaxLength = 3 };
+        readonly TextBox recurrenceCountValue = new TextBox { Text = "10", Width = 42, Height = 28, Padding = new Thickness(4, 0, 4, 0), TextAlignment = TextAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, IsEnabled = false, MaxLength = 3 };
         readonly List<GoogleCalendarSetting> googleSources;
         readonly TextBox notes = new TextBox { Margin = new Thickness(0, 3, 0, 8), Height = 58,
             AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -153,21 +153,31 @@ namespace FamilyPlanner
             }
 
             StyleInput(title); StyleInput(notes); StyleInput(customReminderValue); StyleInput(recurrenceCountValue);
+            notes.Background = Brush("#FFFDF3"); notes.BorderBrush = Brush("#EDE4C8");
             customReminderValue.Padding = new Thickness(4, 0, 4, 0);
             recurrenceCountValue.Padding = new Thickness(4, 0, 4, 0);
-            var panel = new StackPanel { Margin = new Thickness(22, 8, 14, 12) };
+            // 좌우 여백은 같게 둔다. 이전에는 왼쪽 22 오른쪽 14라 스크롤바가 없을 때
+            // 오른쪽이 8px 좁아 보였다(2026-09-03 사용자 확인).
+            var panel = new StackPanel { Margin = new Thickness(22, 8, 22, 12) };
             var header = new DockPanel { Margin = new Thickness(22, 10, 10, 8) };
             OnharuPopupChrome.StyleHeader(header);
-            var close = OnharuPopupChrome.CloseButton(this); close.Margin = new Thickness(0, 4, 6, 4); close.Padding = new Thickness(0);
+            var close = OnharuPopupChrome.ToolCloseButton(this); close.Margin = new Thickness(0, 4, 6, 4); close.Padding = new Thickness(0);
             DockPanel.SetDock(close, Dock.Right); header.Children.Add(close);
+            // 팝업 제목은 검색·설정·시간표·KBO와 같은 OnharuPopupChrome.FeatureHeading을 쓴다.
+            // 이전에는 이 창만 22px 자체 TextBlock에 글꼴 기호 `✦`·`✎`를 얹어 그림과 크기가 혼자 달랐다.
+            // 새 일정은 `add`(＋), 수정은 `✎`(펜) 도형이다.
             var headerTitle = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            headerTitle.Children.Add(new TextBlock { Text = existing == null ? "✦  새 일정" : "✎  일정 수정", FontSize = 22, FontWeight = FontWeights.Bold,
-                VerticalAlignment = VerticalAlignment.Center });
+            headerTitle.Children.Add(OnharuPopupChrome.FeatureHeading(existing == null ? "add" : "✎", existing == null ? "새 일정" : "일정 수정"));
             if (existing != null)
-                headerTitle.Children.Add(new Border { Background = string.IsNullOrWhiteSpace(existing.GoogleCalendarId) ? Brush("#EEF2FF") : Brush("#F0FDF4"),
+            {
+                // 출처 배지. 온하루 일정은 중립, Google 일정은 연결 완료를 뜻하는 초록을 쓴다.
+                // 이전에는 온하루 쪽이 평면 인디고 `#4338CA`였는데 이는 대표 실행 버튼 면에서 걷어낸 계열이다.
+                var localSource = string.IsNullOrWhiteSpace(existing.GoogleCalendarId);
+                headerTitle.Children.Add(new Border { Background = localSource ? Brush("#F1F5F9") : Brush("#F0FDF4"),
                     CornerRadius = new CornerRadius(9), Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(12, 2, 0, 0),
-                    Child = new TextBlock { Text = string.IsNullOrWhiteSpace(existing.GoogleCalendarId) ? "온하루 등록" : GoogleTasks.IsTask(existing) ? "Google Task" : "Google Calendar",
-                        Foreground = string.IsNullOrWhiteSpace(existing.GoogleCalendarId) ? Brush("#4338CA") : Brush("#15803D"), FontSize = 11, FontWeight = FontWeights.SemiBold } });
+                    Child = new TextBlock { Text = localSource ? "온하루 일정" : GoogleTasks.IsTask(existing) ? "Google Task" : "Google Calendar",
+                        Foreground = localSource ? Brush("#475569") : Brush("#15803D"), FontSize = 11, FontWeight = FontWeights.SemiBold } });
+            }
             header.Children.Add(headerTitle);
             var dateCard = new Border { Background = Brush("#EFF6FF"), CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 0, 10) };
@@ -177,8 +187,8 @@ namespace FamilyPlanner
             Button changeDateButton = null;
             var pendingDate = selectedDate;
             if (existing == null)
-                dateCard.Child = new TextBlock { Text = "날짜  ·  " + selectedDate.ToString("yyyy년 M월 d일 dddd", new CultureInfo("ko-KR")),
-                    Foreground = Brush("#1D4ED8"), FontWeight = FontWeights.SemiBold, FontSize = 14 };
+                dateCard.Child = new TextBlock { Text = selectedDate.ToString("yyyy년 M월 d일 dddd", new CultureInfo("ko-KR")),
+                    Foreground = Brush("#1D4ED8"), FontWeight = FontWeights.Bold, FontSize = 15 };
             else
             {
                 var dateRow = new Grid(); dateRow.ColumnDefinitions.Add(new ColumnDefinition());
@@ -186,8 +196,17 @@ namespace FamilyPlanner
                 editableDateText = new TextBlock { Text = selectedDate.ToString("yyyy년 M월 d일 dddd", new CultureInfo("ko-KR")),
                     Foreground = Brush("#1D4ED8"), FontWeight = FontWeights.Bold, FontSize = 15, VerticalAlignment = VerticalAlignment.Center };
                 dateRow.Children.Add(editableDateText);
-                changeDateButton = new Button { Content = "📅 날짜 변경", Height = 34, Background = Brushes.White,
-                    Foreground = Brush("#2563EB"), BorderBrush = Brush("#BFDBFE"), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
+                // 이모지 대신 OnharuIcons의 `calendar` 도형을 쓴다. 파괴적이지 않은 변경 동작이므로
+                // design-onharu 3.4의 중립 역할색을 쓴다. 이전에는 파랑 의미색이었다.
+                var changeDateContent = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+                changeDateContent.Children.Add(OnharuIcons.Draw("calendar", Brush("#475569"), 17));
+                changeDateContent.Children.Add(new TextBlock { Text = "날짜 변경", Margin = new Thickness(6, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center });
+                changeDateButton = new Button { Content = changeDateContent, Height = 34, Background = Brush("#F1F5F9"),
+                    Foreground = Brush("#475569"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
+                    Padding = new Thickness(10, 0, 10, 0), Cursor = Cursors.Hand };
+                // Content가 문자열이 아니라 패널이면 자동화 이름이 비어 화면 낭독기와 자동 검사가 버튼을 못 찾는다.
+                System.Windows.Automation.AutomationProperties.SetName(changeDateButton, "날짜 변경");
                 Round(changeDateButton, 9);
                 inlineCalendar = new System.Windows.Controls.Calendar { SelectedDate = selectedDate, DisplayDate = selectedDate,
                     SelectionMode = CalendarSelectionMode.SingleDate };
@@ -232,17 +251,20 @@ namespace FamilyPlanner
             titleOptions.Children.Add(showDday); titleOptions.Children.Add(important); titleOptions.Children.Add(importantColors);
             Grid.SetColumn(titleOptions, 1); titleLabelRow.Children.Add(titleOptions);
             panel.Children.Add(titleLabelRow); panel.Children.Add(title); panel.Children.Add(validationMessage);
+            // 카드 좌우 안여백은 12로 통일한다. 이 카드만 14라 안쪽 항목이 다른 카드보다 2px 밀려
+            // 왼쪽 기준선이 46과 49 두 갈래로 갈렸다. 시간 카드·반복 카드·날짜 카드가 모두 12다.
             panel.Children.Add(new Border { Background = Brush(OnharuPopupChrome.ContentSurfaceColor), BorderBrush = Brush("#CBD5E1"),
-                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 7, 14, 2),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12, 7, 12, 2),
                 Margin = new Thickness(0, 6, 0, 8), Child = categories });
             var timeCardContent = new StackPanel();
             timeCardContent.Children.Add(new TextBlock { Text = "로컬 일정은 시간 유무와 관계없이 완료 체크할 수 있습니다.", FontSize = 11,
                 Foreground = Brush("#64748B"), Margin = new Thickness(0, 0, 0, 8) });
             var durationRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 7, 0, 4) };
             endDateButton.Content = endDateInclusive.ToString("yyyy.MM.dd"); Round(endDateButton, 9);
-            multiDay.IsEnabled = true; multiDay.IsChecked = endDateInclusive > selectedDate; endDateButton.IsEnabled = multiDay.IsChecked == true;
-            multiDay.Checked += delegate { if (endDateInclusive <= selectedDate) endDateInclusive = selectedDate.AddDays(1); UpdateEndDateButton(); endDateButton.IsEnabled = true; UpdateRecurrenceAvailability(); };
-            multiDay.Unchecked += delegate { endDateInclusive = selectedDate; UpdateEndDateButton(); endDateButton.IsEnabled = false; UpdateRecurrenceAvailability(); };
+            multiDay.IsEnabled = true; multiDay.IsChecked = endDateInclusive > selectedDate;
+            OnharuPopupChrome.SetOptionsEnabled(multiDay.IsChecked == true, endDateButton);
+            multiDay.Checked += delegate { if (endDateInclusive <= selectedDate) endDateInclusive = selectedDate.AddDays(1); UpdateEndDateButton(); OnharuPopupChrome.SetOptionsEnabled(true, endDateButton); UpdateRecurrenceAvailability(); };
+            multiDay.Unchecked += delegate { endDateInclusive = selectedDate; UpdateEndDateButton(); OnharuPopupChrome.SetOptionsEnabled(false, endDateButton); UpdateRecurrenceAvailability(); };
             durationRow.Children.Add(allDay); durationRow.Children.Add(multiDay); durationRow.Children.Add(new TextBlock { Text = "종료날짜", FontSize = 11, Foreground = Brush("#64748B"),
                 VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) }); durationRow.Children.Add(endDateButton);
             timeCardContent.Children.Add(durationRow);
@@ -255,7 +277,7 @@ namespace FamilyPlanner
             rolloverOptions.Children.Add(noRollover); rolloverOptions.Children.Add(nextDayRollover);
             rolloverOptions.Children.Add(nextWeekRollover); rolloverOptions.Children.Add(nextWeekdayRollover);
             var rolloverLine = new Grid { Margin = new Thickness(0, 3, 0, 3) }; rolloverLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34) }); rolloverLine.ColumnDefinitions.Add(new ColumnDefinition());
-            rolloverLine.Visibility = defaults == null || defaults.UseRollover ? Visibility.Visible : Visibility.Collapsed;
+            rolloverLine.Visibility = Visibility.Collapsed;
             rolloverLine.Children.Add(new TextBlock { Text = "이월", FontSize = 11, Foreground = Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center });
             Grid.SetColumn(rolloverOptions, 1); rolloverLine.Children.Add(rolloverOptions); timeCardContent.Children.Add(rolloverLine);
             var reminderLine = new Grid { Margin = new Thickness(0, 3, 0, 3) }; reminderLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34) }); reminderLine.ColumnDefinitions.Add(new ColumnDefinition());
@@ -272,8 +294,8 @@ namespace FamilyPlanner
             SettingsWindow.StyleComboBox(customReminderUnit);
             customReminderValue.PreviewTextInput += DigitsOnly;
             recurrenceCountValue.PreviewTextInput += DigitsOnly;
-            customReminder.Checked += delegate { customReminderValue.IsEnabled = true; customReminderUnit.IsEnabled = true; };
-            customReminder.Unchecked += delegate { customReminderValue.IsEnabled = false; customReminderUnit.IsEnabled = false; };
+            customReminder.Checked += delegate { OnharuPopupChrome.SetOptionsEnabled(true, customReminderValue, customReminderUnit); };
+            customReminder.Unchecked += delegate { OnharuPopupChrome.SetOptionsEnabled(false, customReminderValue, customReminderUnit); };
             reminderOptions.Children.Add(customReminder); reminderOptions.Children.Add(customReminderValue); reminderOptions.Children.Add(customReminderUnit);
             Grid.SetColumn(reminderOptions, 1); reminderLine.Children.Add(reminderOptions); timeCardContent.Children.Add(reminderLine);
             timeCard.Child = timeCardContent; panel.Children.Add(timeCard);
@@ -311,8 +333,8 @@ namespace FamilyPlanner
             recurrenceUntilButton.Background = Brushes.White; recurrenceUntilButton.BorderBrush = Brush("#A5B4FC"); recurrenceUntilButton.BorderThickness = new Thickness(1);
             Round(recurrenceUntilButton, 9); recurrenceRight.Children.Add(recurrenceUntilButton);
             Grid.SetColumn(recurrenceRight, 1); recurrenceHeader.Children.Add(recurrenceRight); recurrenceLine.Children.Add(recurrenceHeader);
-            recurrenceCountMode.Checked += delegate { recurrenceCountValue.IsEnabled = recurrenceEnabled.IsChecked == true; recurrenceUntilButton.IsEnabled = false; };
-            recurrenceUntilMode.Checked += delegate { recurrenceCountValue.IsEnabled = false; recurrenceUntilButton.IsEnabled = recurrenceEnabled.IsChecked == true; };
+            recurrenceCountMode.Checked += delegate { OnharuPopupChrome.SetOptionsEnabled(recurrenceEnabled.IsChecked == true, recurrenceCountValue); OnharuPopupChrome.SetOptionsEnabled(false, recurrenceUntilButton); };
+            recurrenceUntilMode.Checked += delegate { OnharuPopupChrome.SetOptionsEnabled(false, recurrenceCountValue); OnharuPopupChrome.SetOptionsEnabled(recurrenceEnabled.IsChecked == true, recurrenceUntilButton); };
             foreach (var option in new[] { new { Name = "없음", Value = "" }, new { Name = "매일", Value = "daily" }, new { Name = "매주", Value = "weekly" }, new { Name = "매월", Value = "monthly" }, new { Name = "매년", Value = "yearly" } })
             {
                 var radio = new RadioButton { Content = option.Name, Tag = option.Value, GroupName = "Recurrence", IsChecked = option.Value == "", Margin = new Thickness(0, 0, 9, 5), FontSize = 12 };
@@ -335,7 +357,8 @@ namespace FamilyPlanner
             };
             recurrenceEnabled.Unchecked += delegate
             {
-                recurrenceOptions.Children.OfType<RadioButton>().First(x => string.IsNullOrWhiteSpace((x.Tag ?? "").ToString())).IsChecked = true;
+                var none = OnharuPopupChrome.RadioByTag(recurrenceOptions, "");
+                if (none != null) none.IsChecked = true;
                 recurrenceBody.Visibility = Visibility.Collapsed; UpdateRecurrenceOptions();
             };
             recurrenceCard.Child = recurrenceLine; panel.Children.Add(recurrenceCard);
@@ -368,22 +391,29 @@ namespace FamilyPlanner
                 panel.Children.Add(new TextBlock { Text = "Google 로그아웃 상태입니다. 이 일정은 이 PC에만 저장됩니다.",
                     Foreground = Brush("#DC2626"), FontSize = 12, FontWeight = FontWeights.SemiBold,
                     TextAlignment = TextAlignment.Center, Margin = new Thickness(0, -5, 0, 9) });
-            var save = OnharuPopupChrome.ActionButton("✓  일정 저장", double.NaN); save.Height = 40; save.FontSize = 14;
+            // 이 창의 대표 실행 버튼이다. 알람 `시작`, 시간표 `저장`, KBO `선택 경기 등록`,
+            // 검색 `오늘`과 같은 브랜드 그라데이션을 쓴다. 창마다 다른 대표색을 만들지 않는다.
+            var save = OnharuPopupChrome.Button("✓  일정 저장", double.NaN, "#4338CA", "#FFFFFF");
+            save.Background = OnharuPopupChrome.BrandGradientBrush(); save.Foreground = Brushes.White;
+            save.BorderBrush = Brushes.Transparent;
+            save.Height = 44; save.FontSize = 14; save.FontWeight = FontWeights.Bold;
             Round(save, 13);
             save.Click += Save;
-            if (existing == null) panel.Children.Add(save);
-            else
+            FrameworkElement footerContent = save;
+            if (existing != null)
             {
                 var footer = new Grid(); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) }); footer.ColumnDefinitions.Add(new ColumnDefinition());
-                var delete = new Button { Content = "삭제", Height = 40, Background = Brush("#FEE2E2"), Foreground = Brush("#DC2626"),
-                    BorderThickness = new Thickness(0), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 10, 0) };
+                var delete = new Button { Content = "삭제", Height = 44, Background = Brush("#FFF1F2"), Foreground = Brush("#BE123C"),
+                    BorderBrush = Brush("#FECDD3"), BorderThickness = new Thickness(1), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 10, 0) };
                 Round(delete, 13); delete.Click += delegate { DeleteRequested = true; DialogResult = true; }; footer.Children.Add(delete);
-                Grid.SetColumn(save, 1); footer.Children.Add(save); panel.Children.Add(footer);
+                Grid.SetColumn(save, 1); footer.Children.Add(save); footerContent = footer;
             }
             var contentScroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = CompactScrollHeight(SystemParameters.WorkArea.Height) };
-            var popupLayout = new Grid(); popupLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); popupLayout.RowDefinitions.Add(new RowDefinition());
+            var fixedFooter = new Border { Background = Brush(OnharuPopupChrome.SurfaceColor), Padding = new Thickness(22, 8, 22, 12), Child = footerContent };
+            var popupLayout = new Grid(); popupLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); popupLayout.RowDefinitions.Add(new RowDefinition()); popupLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             popupLayout.Children.Add(header); Grid.SetRow(contentScroll, 1); popupLayout.Children.Add(contentScroll);
+            Grid.SetRow(fixedFooter, 2); popupLayout.Children.Add(fixedFooter);
             Loaded += delegate
             {
                 contentScroll.MaxHeight = CompactScrollHeight(Forms.Screen.FromHandle(new WindowInteropHelper(this).Handle).WorkingArea.Height);
@@ -414,8 +444,7 @@ namespace FamilyPlanner
 
             var isAllDay = selected == allDay;
             if (!isAllDay) UpdateHourOptions(selected == afternoon);
-            hourGrid.IsEnabled = !isAllDay;
-            minuteGrid.IsEnabled = !isAllDay;
+            OnharuPopupChrome.SetOptionsEnabled(!isAllDay, hourGrid, minuteGrid);
             hourGrid.Visibility = isAllDay ? Visibility.Collapsed : Visibility.Visible;
             minuteRow.Visibility = isAllDay ? Visibility.Collapsed : Visibility.Visible;
             rolloverOptions.IsEnabled = !isAllDay;
@@ -523,7 +552,8 @@ namespace FamilyPlanner
             var selected = radios.FirstOrDefault(x => x.IsChecked == true);
             if (multi && selected != null && !selected.IsEnabled)
             {
-                radios.First(x => string.IsNullOrWhiteSpace(x.Tag.ToString())).IsChecked = true;
+                var noneOption = radios.FirstOrDefault(x => string.IsNullOrWhiteSpace(Convert.ToString(x.Tag)));
+                if (noneOption != null) noneOption.IsChecked = true;
                 var replacement = radios.FirstOrDefault(x => x.IsEnabled && !string.IsNullOrWhiteSpace(x.Tag.ToString()));
                 if (recurrenceEnabled.IsChecked == true && replacement != null) replacement.IsChecked = true;
             }
@@ -546,16 +576,18 @@ namespace FamilyPlanner
             var start = selectedDate;
             if (allDay.IsChecked != true)
             {
-                var hour = (int)hourGrid.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
-                var minute = (int)minuteGrid.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag;
+                // 격자를 한 단계라도 감싸면 직접 자식 조회가 비고 First가 예외를 던져 저장 중 창이 닫힌다.
+                // 2026-09-03 설정 저장 크래시와 같은 경로라 공통 재귀 조회를 쓴다.
+                var hour = Convert.ToInt32(OnharuPopupChrome.CheckedRadioTag(hourGrid, "0"));
+                var minute = Convert.ToInt32(OnharuPopupChrome.CheckedRadioTag(minuteGrid, "0"));
                 start = start.AddHours(hour).AddMinutes(minute);
             }
-            var selectedOption = categoryOptions.First(x => x.IsChecked == true);
+            var selectedOption = categoryOptions.FirstOrDefault(x => x.IsChecked == true) ?? categoryOptions.First();
             var target = selectedOption.Tag.ToString();
             var selectedSource = target.StartsWith("google:") ? googleSources.FirstOrDefault(x => "google:" + x.Id == target) : null;
             var taskTarget = selectedSource != null && GoogleTasks.IsSource(selectedSource.Id);
             var selectedCategory = target == "local:business" ? "업무일정" : target == "local:baseball" ? "야구" : "개인일정";
-            var recurrenceFrequency = taskTarget ? "" : recurrenceOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true).Tag.ToString();
+            var recurrenceFrequency = taskTarget ? "" : OnharuPopupChrome.CheckedRadioTag(recurrenceOptions, "");
             var recurrenceMode = recurrenceFrequency == "daily" ? (dailyWeekdays.IsChecked == true ? "weekdays" : "daily") :
                 recurrenceFrequency == "monthly" ? (monthlyLast.IsChecked == true ? "monthly_last" : monthlyNth.IsChecked == true ? "monthly_nth" : "monthly_date") :
                 recurrenceFrequency == "yearly" ? (yearlyNth.IsChecked == true ? "yearly_nth" : "yearly_date") : recurrenceFrequency;
@@ -705,8 +737,10 @@ namespace FamilyPlanner
 
         int SelectedReminderMinutes()
         {
-            var selected = reminderOptions.Children.OfType<RadioButton>().First(x => x.IsChecked == true);
-            if (selected != customReminder) return (int)selected.Tag;
+            // 선택이 하나도 없으면 `없음`과 같은 -1을 돌려준다. 예외를 던지면 저장 도중 창이 닫힌다.
+            var selected = OnharuPopupChrome.CheckedRadio(reminderOptions);
+            if (selected == null) return -1;
+            if (selected != customReminder) return Convert.ToInt32(selected.Tag);
             int value;
             if (!int.TryParse(customReminderValue.Text, out value)) value = 15;
             value = Math.Max(1, Math.Min(999, value));

@@ -1,6 +1,6 @@
 # ONHARU 빌드 및 배포 과정
 
-> 현재 개발판은 `2.2.6-test`, 기존 배포 시험판은 `2.2.5-test`, 공개 정식판은 `2.2.4`다. 현재 상태는 `CURRENT_STATUS.md`, 작업 시작과 문서 갱신 규칙은 `START_HERE.md`를 우선한다. 아래 과거 버전 예시는 절차 설명용이며 새 배포에서는 실제 확정 버전으로 한 번에 치환한다.
+> 현재 확정 정식판은 `2.2.5`, 직전 공개 정식판은 `2.2.4`다. 현재 상태는 `CURRENT_STATUS.md`, 작업 시작과 문서 갱신 규칙은 `START_HERE.md`를 우선한다. 아래 과거 버전 예시는 절차 설명용이며 새 배포에서는 실제 확정 버전으로 한 번에 치환한다.
 
 ## 버전 정책
 
@@ -53,7 +53,7 @@ WPF를 `Opacity=0`으로 미리 uncloak한 후 다음 Render turn에 정상 Opac
 
 고정 Explorer frame과 이동 WPF 창은 하나의 물리 픽셀 RECT를 기준으로 한다. App은 manifest에서 PerMonitorV2를 선언하고 `ONHARU.exe.config`로 WPF DPI 변경을 활성화한다. 최소 창 크기도 DIP가 아니라 820×560 물리 px가 되도록 현재 DPI로 역산하며, `WM_DPICHANGED` 뒤 OS suggested RECT가 현재 frame을 바꾸면 다음 Render turn에 직전 물리 RECT를 복원한다.
 
-따라서 `ONHARU.exe.config`는 선택 파일이 아니라 실행 파일과 함께 배포해야 하는 필수 구성요소다. 상세 실험은 `Tests/LocalTest/PlacementCandidates/03-pmv2-physical-rect-authority/CANDIDATE_03_RESULT.md`에 기록했다.
+따라서 `ONHARU.exe.config`는 선택 파일이 아니라 실행 파일과 함께 배포해야 하는 필수 구성요소다. 상세 실험 기록은 `HANDOFF.md`의 2026-08-25 DPI 항목에 남아 있다. 시험 폴더는 2026-09-03 정리에서 지웠다.
 
 ## 2. 필요한 도구
 
@@ -87,7 +87,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-local-test.ps1
 
 ## 4. 핵심 회귀 검사
 
-프로젝트 루트에서 빌드와 자동 검사 17종을 한 번에 실행한다.
+프로젝트 루트에서 빌드와 자동 검사 18종을 한 번에 실행한다.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\check-v22.ps1 -Build

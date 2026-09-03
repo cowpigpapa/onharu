@@ -23,11 +23,16 @@ namespace FamilyPlanner
         public static Brush BrandGradient() { return Gradient("#0EA5E9", "#7C3AED"); }
         public static Brush GoogleSurfaceBrush(string theme) { return BrandGradient(); }
         public static string ScrollThumb(string theme) { return theme == "dark" ? "#8C8C96" : "#B0B0B8"; }
-        public static string OpacityControl(string theme) { return theme == "dark" ? "#E5E7EB" : "#303744"; }
         public static string HeaderSurface(string theme) { return theme == "dark" ? "#2A2E36" : "#303744"; }
         public static string HeaderText(string theme) { return "#FFFFFF"; }
         public static string HeaderBorder(string theme) { return theme == "dark" ? "#4A505B" : "#555E6D"; }
-        public static string CalendarCell(string theme) { return theme == "dark" ? "#45454D" : OnharuThemePalette.For(theme)["CardBorder"]; }
+        // 2026-09-03: 블랙 날짜 칸이 `#45454D`이라 달력 바탕 `#1A1A1A`보다 훨씬 밝아 칸만 떠 보였다.
+        // 상세 카드와 같은 `Card` 역할색을 써서 한 단계만 밝게 한다. 파스텔은 기존 값을 그대로 둔다.
+        public static string CalendarCell(string theme)
+        {
+            var palette = OnharuThemePalette.For(theme);
+            return theme == "dark" ? palette["Card"] : palette["CardBorder"];
+        }
 
         public static OnharuStateColorSet MoreButton(string theme)
         {
@@ -39,11 +44,16 @@ namespace FamilyPlanner
             return DetailTab(theme, selected, ActionAccent(theme));
         }
 
+        // 상세 범위 탭. 2026-09-03에 두 스킨 모두 밝은 블루로 통일했다.
+        // `#3B82F6`은 선택일 테두리 기본값과 같은 값이라 이 제품에서 파랑은 이미 `현재 선택`을 뜻한다.
+        // 후보를 실제 상세 카드 색과 함께 렌더해 고른 결과다. 파스텔의 보라는 회보라 카드와,
+        // 블랙의 피치는 KBO 갈색과 계열이 겹쳤고, 중립 회색은 선택이 아니라 비활성으로 읽혔다.
+        // 청록은 design-onharu 3.4가 성공·연결 의미색으로 제한해 쓰지 않는다.
         public static OnharuStateColorSet DetailPeriodTab(string theme, bool selected)
         {
             var palette = OnharuThemePalette.For(theme);
-            return selected ? Set("#C2410C", "#FFFFFF", "#FB923C")
-                : Set(palette["Button"], palette["Muted"], palette["Grid"]);
+            if (!selected) return Set(palette["Button"], palette["Muted"], palette["Grid"]);
+            return Set("#3B82F6", "#FFFFFF", "#60A5FA");
         }
 
         public static OnharuStateColorSet DetailTab(string theme, bool selected, string accent)

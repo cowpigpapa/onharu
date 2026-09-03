@@ -23,16 +23,16 @@ namespace FamilyPlanner
             DockPanel.SetDock(close, Dock.Right);
             header.Children.Add(close);
             header.Children.Add(new TextBlock { Text = "!  Google Tasks 사용 전 확인", FontSize = 20,
-                FontWeight = FontWeights.Bold, Foreground = OnharuPopupChrome.Brush("#C2410C"),
+                FontWeight = FontWeights.Bold, Foreground = OnharuPopupChrome.Brush("#DC2626"),
                 VerticalAlignment = VerticalAlignment.Center });
             OnharuPopupChrome.EnableDrag(this, header);
             root.Children.Add(header);
 
-            root.Children.Add(new Border { Background = OnharuPopupChrome.Brush("#FFF7ED"),
-                BorderBrush = OnharuPopupChrome.Brush("#FED7AA"), BorderThickness = new Thickness(1),
+            root.Children.Add(new Border { Background = OnharuPopupChrome.Brush("#FFF1F2"),
+                BorderBrush = OnharuPopupChrome.Brush("#FECDD3"), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 11, 14, 11),
                 Child = new TextBlock { Text = "Google Tasks는 간단한 할 일 확인용으로만 권장합니다.",
-                    Foreground = OnharuPopupChrome.Brush("#9A3412"), FontWeight = FontWeights.Bold,
+                    Foreground = OnharuPopupChrome.Brush("#BE123C"), FontWeight = FontWeights.Bold,
                     TextWrapping = TextWrapping.Wrap } });
 
             var details = new TextBlock { Margin = new Thickness(2, 13, 2, 16), FontSize = 13,
@@ -52,7 +52,7 @@ namespace FamilyPlanner
             cancel.Width = double.NaN; cancel.Height = 40; cancel.Margin = new Thickness(0, 0, 5, 0);
             cancel.Click += delegate { DialogResult = false; };
             actions.Children.Add(cancel);
-            var accept = OnharuPopupChrome.Button("내용을 이해하고 사용", 0, "#4F46E5", "#FFFFFF");
+            var accept = OnharuPopupChrome.Button("내용을 이해하고 사용", 0, "#4338CA", "#FFFFFF");
             accept.Width = double.NaN; accept.Height = 40; accept.Margin = new Thickness(5, 0, 0, 0);
             accept.FontWeight = FontWeights.Bold;
             accept.Click += delegate { DialogResult = true; };

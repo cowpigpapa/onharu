@@ -119,6 +119,7 @@ namespace FamilyPlanner
                 Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplaySettingsChanged;
                 CreateTrayIcon(); UpdateModeButtons(); UpdateGoogleButton();
                 UpdateLayout(); RenderAll(); UpdateLayout();
+                EnsureSidebarTogglePlacement();
                 if (positionLocked) SchedulePublish();
                 else ShowPositionEditor();
                 StartAutoSync();
@@ -135,8 +136,6 @@ namespace FamilyPlanner
                 explorerFrame.Dispose(); desktopActions.Dispose();
                 if (trayIcon != null) { trayIcon.Visible = false; trayIcon.Dispose(); }
             };
-            new DispatcherTimer(TimeSpan.FromMinutes(1), DispatcherPriority.Normal,
-                delegate { Rollover(); }, Dispatcher);
             reminderTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
             reminderTimer.Tick += delegate { SafeCheckReminders(); }; reminderTimer.Start();
             syncRetryTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };

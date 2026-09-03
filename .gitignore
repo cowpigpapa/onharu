@@ -20,6 +20,8 @@ settings.json
 *.dll
 *.pdb
 *.obj
+*.exp
+*.lib
 *.tmp
 *.pyc
 __pycache__/

@@ -121,7 +121,7 @@ namespace FamilyPlanner
             var entries = await ReadCalendarListAsync();
             var calendars = new List<GoogleCalendarSetting>();
             var calendarReads = new List<Tuple<GoogleCalendarEntry, GoogleCalendarSetting, Task<List<GoogleEvent>>>>();
-            foreach (var entry in entries.Where(x => !x.Hidden))
+            foreach (var entry in entries.Where(x => x.Primary || x.Selected || (!x.Hidden && !IsSubscriptionCalendar(x))))
             {
                 var old = saved == null ? null : saved.FirstOrDefault(x => x.Id == entry.Id);
                 var holidaySource = (entry.Summary ?? "").Contains("휴일") || (entry.Id ?? "").IndexOf("holiday", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -155,6 +155,16 @@ namespace FamilyPlanner
                     !remoteIds.Contains(x.GoogleEventId));
             }
             return calendars;
+        }
+
+        static bool IsSubscriptionCalendar(GoogleCalendarEntry entry)
+        {
+            var name = entry == null ? "" : entry.Summary ?? "";
+            var id = entry == null ? "" : entry.Id ?? "";
+            return name.IndexOf("달의 위상", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("phases of the moon", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("휴일", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                id.IndexOf("holiday", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public static async Task UpsertAsync(PlannerItem item)

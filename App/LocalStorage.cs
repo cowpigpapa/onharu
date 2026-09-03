@@ -347,11 +347,6 @@ namespace FamilyPlanner
                     if (settings.Version < 47) { settings.IncompleteTodoLookbackMonths = 1; settings.Version = 47; }
                     if (settings.Version < 48)
                     {
-                        if (settings.ButtonColorOverrides != null)
-                        {
-                            settings.ButtonColorOverrides.Remove("classic|automation:OnharuDetailScroll");
-                            settings.ButtonColorOverrides.Remove("dark|automation:OnharuDetailScroll");
-                        }
                         settings.Version = 48;
                     }
                     if (settings.LastUpdateCheckUtc.Year < 1900) settings.LastUpdateCheckUtc = SafeUpdateEpoch();

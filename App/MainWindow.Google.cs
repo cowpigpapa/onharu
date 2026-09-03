@@ -297,7 +297,6 @@ namespace FamilyPlanner
                 accountStatus.Foreground = Brushes.White;
             }
             accountStatus.ToolTip = accountStatus.Text;
-            if (googleLoginButton != null) TemporarySegmentPaletteTool.ApplyOverride(googleLoginButton);
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(StartAccountMarquee));
         }
 
@@ -329,13 +328,6 @@ namespace FamilyPlanner
                 RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
                 BeginTime = TimeSpan.FromSeconds(1) };
             accountStatusShift.BeginAnimation(TranslateTransform.XProperty, animation);
-        }
-
-        void OpenPendingSync(object sender, MouseButtonEventArgs e)
-        {
-            var pending = items.Where(x => x.PendingGoogleSync && !string.IsNullOrWhiteSpace(x.GoogleCalendarId)).OrderBy(x => x.Start).ToList();
-            if (pending.Count == 0) { ShowGoogleStatus("모든 일정이 동기화되었습니다", 1200); return; }
-            var window = new PendingSyncWindow(pending); PlaceCalendarDialog(window); ShowBlockingDialog(window);
         }
     }
 }

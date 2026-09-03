@@ -38,7 +38,7 @@ namespace FamilyPlanner
             panel.Children.Add(new TextBlock { Text = "‘" + item.Title + "’의 삭제 범위를 선택해 주세요.", FontSize = 12, Foreground = B("#64748B"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 0, 17) });
             AddChoice(panel, "이번 일정만", "선택한 하루만 삭제합니다.", "single", "#EFF6FF", "#2563EB");
             AddChoice(panel, "이번 일정부터 미래", "지난 기록은 남기고 이후 반복을 종료합니다.", "future", "#FFF7ED", "#EA580C");
-            AddChoice(panel, "과거 포함 전체", "이 반복 일정의 모든 기록을 삭제합니다.", "all", "#FFF1F2", "#E11D48");
+            AddChoice(panel, "과거 포함 전체", "이 반복 일정의 모든 기록을 삭제합니다.", "all", "#FFF1F2", "#BE123C");
             var cancel = new Button { Content = "취소", Height = 38, Margin = new Thickness(0, 8, 0, 0), Background = B("#F1F5F9"), Foreground = B("#475569"), BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
             cancel.Click += delegate { DialogResult = false; }; panel.Children.Add(cancel);
             Content = OnharuPopupChrome.Shell(panel);

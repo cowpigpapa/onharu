@@ -1,25 +1,25 @@
 #define AppName "ONHARU"
 #ifdef CandidateBuild
-#define AppVersion "2.2.6"
+#define AppVersion "2.2.5"
 #define SetupAppId "{{C43E8BF2-2B16-4CC7-A85B-D18C2AA7D706}"
 #define SetupDir "{localappdata}\Programs\ONHARU"
 #define SetupOutputDir "..\Release\Test"
-#define SetupOutputName "ONHARU-2.2.6-Test-Setup"
-#define StageDir "..\Release\Test\ONHARU-2.2.6-Test"
+#define SetupOutputName "ONHARU-2.2.5-Test-Setup"
+#define StageDir "..\Release\Test\ONHARU-2.2.5-Test"
 #else
-#define AppVersion "2.2.4"
+#define AppVersion "2.2.5"
 #ifdef TestBuild
 #define SetupAppId "{{D61EF3C4-0B0D-44A9-B6CD-79F785C74E54}"
 #define SetupDir "{localappdata}\Programs\ONHARU-InstallTest"
 #define SetupOutputDir "..\Release\InstallTestInstaller"
-#define SetupOutputName "ONHARU-2.2.4-InstallTest"
-#define StageDir "..\Release\ONHARU-2.2.4"
+#define SetupOutputName "ONHARU-2.2.5-InstallTest"
+#define StageDir "..\Release\ONHARU-2.2.5"
 #else
 #define SetupAppId "{{C43E8BF2-2B16-4CC7-A85B-D18C2AA7D706}"
 #define SetupDir "{localappdata}\Programs\ONHARU"
 #define SetupOutputDir "..\Release\Installer"
-#define SetupOutputName "ONHARU-2.2.4-Setup"
-#define StageDir "..\Release\ONHARU-2.2.4"
+#define SetupOutputName "ONHARU-2.2.5-Setup"
+#define StageDir "..\Release\ONHARU-2.2.5"
 #endif
 #endif
 

@@ -18,14 +18,6 @@ namespace FamilyPlanner
         void RenderAll()
         {
             UpdatePeriodNavigationButtons();
-            if (!settings.UseDiary)
-            {
-                diaryDates.Clear(); diaryDatesLoaded = false;
-            }
-            else if (!diaryDatesLoaded)
-            {
-                diaryDates.Clear(); foreach (var entry in DiaryStore.Load()) diaryDates.Add(entry.Date.Date); diaryDatesLoaded = true;
-            }
             var firstDayOfWeek = ConfiguredFirstDay();
             var monthStart = new DateTime(shownMonth.Year, shownMonth.Month, 1);
             var monthOffset = (7 + (int)monthStart.DayOfWeek - (int)firstDayOfWeek) % 7;
@@ -39,24 +31,21 @@ namespace FamilyPlanner
                 var todayRow = rowCount <= 2 ? 1 : 2;
                 first = shownMonth.Date.AddDays(-anchorOffset - (todayRow - 1) * 7);
                 var last = first.AddDays(rowCount * 7 - 1);
-                monthTitle.Content = first.Year == last.Year
-                    ? first.ToString("yyyy년 M월 d일") + " – " + last.ToString("M월 d일")
-                    : first.ToString("yyyy년 M월 d일") + " – " + last.ToString("yyyy년 M월 d일");
+                monthTitle.Content = DetailDateValue(first) + " – " + DetailDateValue(last);
             }
             else
             {
                 first = monthStart.AddDays(-monthOffset);
                 if (rangeMode == "monthAuto")
                     rowCount = Math.Max(4, Math.Min(6, (int)Math.Ceiling((monthOffset + DateTime.DaysInMonth(monthStart.Year, monthStart.Month)) / 7.0)));
-                monthTitle.Content = monthStart.ToString("yyyy년 M월");
+                monthTitle.Content = monthStart.ToString(settings.DetailDateFormat == "MM/dd/yy" ? "MM/yy" : "yy/MM", CultureInfo.InvariantCulture);
             }
             UpdateCompactHeaderTypography();
             ApplyCalendarMinimumHeight(rowCount);
             var availableCalendarHeight = calendar.ActualHeight > 100 ? calendar.ActualHeight : Math.Max(calendar.MinHeight, ActualHeight - 142);
             var dayCellHeight = Math.Max(55, (availableCalendarHeight - 34) / rowCount);
-            // Keep at least three lanes, then use every complete 20px event lane
-            // made available when the calendar grows. Overflow occupies the last lane.
-            visibleEventLanes = Math.Max(3, (int)Math.Floor((dayCellHeight - Ui(48)) / Ui(20)) + 1);
+            // Keep three total rows. When overflowing, the last row becomes "+N개 더보기".
+            visibleEventLanes = Math.Max(3, (int)Math.Floor((dayCellHeight - Ui(46)) / Ui(19)) + 1);
             lastRenderedCalendarHeight = calendar.ActualHeight;
             calendar.Children.Clear(); calendar.RowDefinitions.Clear(); calendar.ColumnDefinitions.Clear();
             dayCells.Clear();
@@ -75,10 +64,22 @@ namespace FamilyPlanner
             }
             for (var c = 0; c < 7; c++)
             {
+                var header = new Grid();
                 var day = new TextBlock { Text = weekdays[c], HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.Bold, FontSize = Ui(13),
                     Foreground = IsRestDay(first.AddDays(c)) ? Brush("#DC6B73") : T("Weekday") };
-                Grid.SetColumn(day, c + weekOffset); calendar.Children.Add(day);
+                header.Children.Add(day);
+                if (weekdays[c] == "일" || weekdays[c] == "토")
+                {
+                    var direction = weekdays[c] == "일" ? -1 : 1;
+                    var edge = IconButton(direction < 0 ? "‹" : "›", null, 28); edge.Height = 34;
+                    edge.Background = Brushes.Transparent; edge.BorderBrush = Brushes.Transparent; edge.BorderThickness = new Thickness(0);
+                    edge.ToolTip = direction < 0 ? "한 주 이전 · 더블클릭 한 달 이전" : "한 주 다음 · 더블클릭 한 달 다음";
+                    edge.Tag = direction < 0 ? "calendar_edge_previous" : "calendar_edge_next";
+                    edge.HorizontalAlignment = direction < 0 ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+                    BindCalendarEdgeNavigation(edge, direction); header.Children.Add(edge);
+                }
+                Grid.SetColumn(header, c + weekOffset); calendar.Children.Add(header);
             }
             if (settings.ShowWeekNumbers)
                 for (var r = 0; r < rowCount; r++)
@@ -91,7 +92,6 @@ namespace FamilyPlanner
             for (var i = 0; i < rowCount * 7; i++) AddDayCell(first.AddDays(i), i / 7 + 1, i % 7 + weekOffset);
             for (var r = 0; r < rowCount; r++) AddWeekEventBars(first.AddDays(r * 7), r + 1, weekOffset);
             RenderDetail();
-            TemporarySegmentPaletteTool.ApplyOverrides(this);
             if (IsLoaded && positionLocked) SchedulePublish();
         }
 
@@ -113,27 +113,22 @@ namespace FamilyPlanner
             var dateItems = VisibleItems(date).ToList();
             var isHoliday = dateItems.Any(x => x.Category == "국경일");
             var dateHeader = new StackPanel { Orientation = Orientation.Horizontal };
-            var diaryTarget = settings.UseDiary ? new DiaryDateHitTarget(date) : null;
-            MouseButtonEventHandler openDiary = delegate(object sender, MouseButtonEventArgs e)
-            {
-                if (e.ClickCount != 2) return; selectedDate = date; detailMode = "selected"; e.Handled = true; OpenDiaryEditor(date);
-            };
-            var number = new TextBlock { Text = date.Day.ToString(), FontSize = Ui(13), FontWeight = date == DateTime.Today ? FontWeights.Bold : FontWeights.Normal,
+            var monthStartLabel = date.Day == 1;
+            var number = new TextBlock { Text = monthStartLabel ? date.ToString("M/d", CultureInfo.InvariantCulture) : date.Day.ToString(), FontSize = Ui(13), FontWeight = date == DateTime.Today ? FontWeights.Bold : FontWeights.Normal,
                 Foreground = ActiveCalendarRangeMode != "weeks" && date.Month != shownMonth.Month ? T("Disabled") : isHoliday ? Brush("#DC6B73") : IsRestDay(date) ? Brush("#DC6B73") : T("Text"),
-                Margin = new Thickness(5, 3, 2, 4), Tag = diaryTarget, ToolTip = settings.UseDiary ? "더블클릭하여 일기 쓰기" : null };
+                Margin = new Thickness(5, 3, 2, 4) };
             var todayIcon = date.Date == DateTime.Today && (settings.TodayStyle == "icon" || settings.TodayStyle == "fill_icon");
             if (todayIcon)
             {
                 number.Margin = new Thickness(0); number.Foreground = Brushes.White;
-                var todayCircle = new Border { Width = Ui(23), Height = Ui(23), CornerRadius = new CornerRadius(Ui(12)),
-                    Background = Brush(settings.TodayBorderColor), Margin = new Thickness(3, 1, 2, 1), Child = number, Tag = diaryTarget,
-                    ToolTip = settings.UseDiary ? "더블클릭하여 일기 쓰기" : null };
+                var todayCircle = new Border { Width = Ui(monthStartLabel ? 34 : 25), Height = Ui(25), CornerRadius = new CornerRadius(Ui(13)),
+                    Background = Brush(settings.TodayBorderColor), Margin = new Thickness(3, 1, 2, 1), Child = number };
                 number.HorizontalAlignment = HorizontalAlignment.Center; number.VerticalAlignment = VerticalAlignment.Center;
-                if (settings.UseDiary) todayCircle.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(todayCircle);
+                dateHeader.Children.Add(todayCircle);
             }
             else
             {
-                if (settings.UseDiary) number.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(number);
+                dateHeader.Children.Add(number);
             }
             if (settings.ShowLunar)
             {
@@ -141,16 +136,17 @@ namespace FamilyPlanner
                     VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 1, 1, 2) };
                 dateHeader.Children.Add(lunar);
             }
+            if (settings.ShowMoonPhase)
+            {
+                var phase = MoonPhase(date);
+                if (phase != null) dateHeader.Children.Add(new TextBlock { Text = phase.Item1, ToolTip = phase.Item2,
+                    Foreground = T("Muted"), FontFamily = new FontFamily("Segoe UI Symbol"), FontSize = Ui(10),
+                    VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0, 0, 2) });
+            }
             var solarTerm = settings.ShowSolarTerms ? SolarTerm(date) : null;
             if (!string.IsNullOrWhiteSpace(solarTerm))
                 dateHeader.Children.Add(new TextBlock { Text = solarTerm, Foreground = T("Weekday"), FontSize = Ui(11),
                     FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 1, 2) });
-            if (settings.UseDiary && diaryDates.Contains(date.Date))
-            {
-                var diaryDot = new TextBlock { Text = "•", Foreground = Brush("#7C3AED"), FontSize = Ui(14), FontWeight = FontWeights.Bold, Tag = diaryTarget,
-                    VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0, 0, 2), ToolTip = "작성한 일기 · 더블클릭하여 열기", Cursor = Cursors.Hand };
-                diaryDot.MouseLeftButtonDown += openDiary; dateHeader.Children.Add(diaryDot);
-            }
             var holidays = string.Join(", ", dateItems.Where(x => x.Category == "국경일").Select(x => x.Title).ToArray());
             if (date == DateTime.Today)
                 dateHeader.Children.Add(new TextBlock { Text = "오늘", Foreground = T("Accent"), FontSize = Ui(11),
@@ -248,7 +244,7 @@ namespace FamilyPlanner
                 var bar = new Border { Child = text, Height = Ui(19),
                     CornerRadius = new CornerRadius(continuesBefore ? 0 : 4, continuesAfter ? 0 : 4, continuesAfter ? 0 : 4, continuesBefore ? 0 : 4),
                     Background = EventBackgroundBrush(item),
-                    Margin = new Thickness(2, Ui(29 + lane * 20), 2, 0), VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(2, Ui(28 + lane * 19), 2, 0), VerticalAlignment = VerticalAlignment.Top,
                     Cursor = Cursors.Arrow };
                 EnableItemDrag(bar, item);
                 bar.Tag = new ItemHitTarget { Item = item, SegmentStart = segmentStart, SegmentEnd = segmentEnd, Element = bar };
@@ -288,7 +284,7 @@ namespace FamilyPlanner
                         if (!settings.SidebarVisible || settings.ShowOverflowPopupWithSidebar)
                             ShowDayOverflowPopup(more, targetDate);
                     };
-                    more.Margin = new Thickness(5, Ui(31 + visibleLaneLimit * 20), 3, 0);
+                    more.Margin = new Thickness(5, Ui(29 + visibleLaneLimit * 19), 3, 0);
                     more.VerticalAlignment = VerticalAlignment.Top;
                     more.ToolTip = targetDate.ToString("M월 d일") + " 일정 모두 보기";
                     Grid.SetRow(more, row); Grid.SetColumn(more, (day - weekStart).Days + weekOffset);
@@ -298,7 +294,7 @@ namespace FamilyPlanner
 
         void ApplyCalendarMinimumHeight(int rowCount)
         {
-            var minimumCalendarHeight = Ui(34 + rowCount * 87);
+            var minimumCalendarHeight = Ui(34 + rowCount * 84);
             calendar.MinHeight = minimumCalendarHeight;
             MinHeight = Math.Max(560, minimumCalendarHeight + Ui(142));
         }
@@ -329,7 +325,7 @@ namespace FamilyPlanner
                 var prefix = localItem.AllDay ? "" : TimeText(localItem.Start) + " ";
                 var title = new TextBlock { Text = prefix + (localItem.Important ? "★ " : "") + localItem.Title,
                     FontSize = Ui(11.5), FontWeight = localItem.Important ? FontWeights.Bold : FontWeights.Normal,
-                    Foreground = EventTextBrush(localItem), TextTrimming = TextTrimming.CharacterEllipsis,
+                    Foreground = PopupEventTextBrush(localItem), TextTrimming = TextTrimming.CharacterEllipsis,
                     TextDecorations = localItem.Completed ? TextDecorations.Strikethrough : null,
                     VerticalAlignment = VerticalAlignment.Center };
                 var usesBar = localItem.AllDay || IsMultiDay(localItem);
@@ -344,17 +340,17 @@ namespace FamilyPlanner
                     var check = new CheckBox { IsChecked = localItem.Completed, VerticalAlignment = VerticalAlignment.Center,
                         Margin = new Thickness(0, 0, 7, 0) };
                     completionCheck = check;
-                    StyleThemeCheckBox(check, ItemColor(localItem));
+                    StylePopupCheckBox(check, ItemColor(localItem));
                     check.Click += async delegate { await SetTodoCompleted(localItem, check.IsChecked == true); };
                     rowContent.Children.Add(check);
                 }
                 else if (!usesBar)
                     rowContent.Children.Add(new Border { Width = Ui(8), Height = Ui(8), CornerRadius = new CornerRadius(Ui(4)),
-                        Background = EventTextBrush(localItem), Margin = new Thickness(1, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
+                        Background = PopupEventTextBrush(localItem), Margin = new Thickness(1, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
                 Grid.SetColumn(title, 2); rowContent.Children.Add(title);
                 var rightPadding = localItem.GoogleReadOnly ? 58.0 : 9.0;
                 var row = new Border { Height = Ui(28), Margin = new Thickness(0, 0, 0, 3), Padding = new Thickness(usesBar ? 9 : 5, 2, rightPadding, 2),
-                    CornerRadius = new CornerRadius(usesBar ? 6 : 0), Background = usesBar ? EventBackgroundBrush(localItem) : Brushes.Transparent,
+                    CornerRadius = new CornerRadius(usesBar ? 6 : 0), Background = usesBar ? PopupEventBackgroundBrush(localItem) : Brushes.Transparent,
                     Cursor = Cursors.Hand, Child = rowContent };
                 FrameworkElement clickableRow = row;
                 if (usesBar && IsMultiDay(localItem))
@@ -372,10 +368,10 @@ namespace FamilyPlanner
                     strip.Children.Add(row);
                     if (continuesBefore)
                         strip.Children.Add(new Polygon { Points = new PointCollection { new Point(arrowWidth, 0), new Point(0, Ui(14)), new Point(arrowWidth, Ui(28)) },
-                            Fill = EventBackgroundBrush(localItem), HorizontalAlignment = HorizontalAlignment.Left });
+                            Fill = PopupEventBackgroundBrush(localItem), HorizontalAlignment = HorizontalAlignment.Left });
                     if (continuesAfter)
                         strip.Children.Add(new Polygon { Points = new PointCollection { new Point(0, 0), new Point(arrowWidth, Ui(14)), new Point(0, Ui(28)) },
-                            Fill = EventBackgroundBrush(localItem), HorizontalAlignment = HorizontalAlignment.Right });
+                            Fill = PopupEventBackgroundBrush(localItem), HorizontalAlignment = HorizontalAlignment.Right });
                     clickableRow = strip;
                 }
                 clickableRow.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
@@ -387,7 +383,7 @@ namespace FamilyPlanner
                 var rowShell = new Grid(); rowShell.Children.Add(clickableRow);
                 if (localItem.GoogleReadOnly)
                 {
-                    var readOnly = new TextBlock { Text = "수정 불가", Foreground = T("Disabled"), FontSize = Ui(9.5),
+                    var readOnly = new TextBlock { Text = "수정 불가", Foreground = OnharuPopupChrome.Brush("#94A3B8"), FontSize = Ui(9.5),
                         HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
                         Margin = new Thickness(0, 0, Ui(12), Ui(3)), IsHitTestVisible = false };
                     Panel.SetZIndex(readOnly, 2); rowShell.Children.Add(readOnly);
@@ -397,7 +393,7 @@ namespace FamilyPlanner
             var header = new Grid { Height = Ui(42), Margin = new Thickness(2, -2, 2, 6) };
             header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             header.Children.Add(new TextBlock { Text = date.ToString("M월 d일 (ddd)", new CultureInfo("ko-KR")), FontSize = Ui(16),
-                FontWeight = FontWeights.Bold, Foreground = T("Text"), HorizontalAlignment = HorizontalAlignment.Center,
+                FontWeight = FontWeights.Bold, Foreground = OnharuPopupChrome.Brush("#334155"), HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center });
             var close = OnharuPopupChrome.ToolCloseButton(window);
             close.VerticalAlignment = VerticalAlignment.Top; close.Margin = new Thickness(0, 3, 0, 0);

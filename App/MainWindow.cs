@@ -56,7 +56,11 @@ namespace FamilyPlanner
         Canvas floatingOverlay;
         Border sidebarPanel;
         ColumnDefinition sidebarColumn;
+        // 달력과 사이드바를 담는 격자다. 접힘·펼침 버튼도 이 격자의 자식이라
+        // 버튼의 세로 위치를 세부 일정 기간 스위치에 맞출 때 기준 좌표계로 쓴다.
+        Grid bodyGrid;
         Button collapseSidebarButton;
+        double sidebarToggleTop = 8;
         Button searchButton;
         Button windowMaximizeButton;
         Button googleButton;
@@ -67,12 +71,15 @@ namespace FamilyPlanner
         Button sportsButton;
         Button settingsButton;
         SportsCalendarWindow sportsWindow;
-        Button todayButton;
         OnharuSegmentedSwitch calendarRangeSwitch;
+        Grid featureIconArea;
+        StackPanel featureIconRow;
+        Grid headerActionArea;
         OnharuSegmentedSwitch themeQuickSwitch;
         OnharuSegmentedSwitch detailPeriodSwitch;
-        OnharuSegmentedSwitch detailOrderSwitch;
-        StackPanel detailOrderSwitchHost;
+        Button detailCategoryButton;
+        Button detailTimeButton;
+        Button detailIncompleteButton;
         bool temporaryMonthView;
         DateTime periodViewAnchor;
         TextBlock googleStatus;
@@ -134,7 +141,6 @@ namespace FamilyPlanner
         {
             desktopActions.Received += HandleDesktopAction;
             settings = Store.LoadSettings();
-            TemporarySegmentPaletteTool.Initialize(settings);
             RestoreConnectedGoogleAccount();
             Store.SetAccount(settings.ActiveGoogleAccountId);
             items = Store.Load();

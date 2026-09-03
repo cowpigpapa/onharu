@@ -43,6 +43,7 @@ namespace FamilyPlanner
         [DataMember] public int GoogleOptionsVersion = 1;
         [DataMember] public string CalendarOrderMode = "category";
         [DataMember] public string DetailOrderMode = "category";
+        [DataMember] public string DetailDateFormat = "yy/MM/dd";
         [DataMember] public List<string> DetailCategoryOrder = new List<string>();
         [DataMember] public List<string> DetailTimeOrder = new List<string>();
         [DataMember] public bool ImportantFirst = true;
@@ -83,6 +84,8 @@ namespace FamilyPlanner
         [DataMember] public string ActiveGoogleAccountId;
         [DataMember] public bool ShowLunar = true;
         [DataMember] public bool ShowSolarTerms = true;
+        [DataMember] public bool ShowMoonPhase;
+        [DataMember] public string MoonPhaseDisplayMode = "onharu";
         [DataMember] public bool UseTimetable;
         [DataMember] public bool UseDiary = true;
         [DataMember] public bool UseRollover = true;
@@ -117,26 +120,7 @@ namespace FamilyPlanner
         [DataMember] public bool ShowRangeSwitch = true;
         [DataMember] public bool ShowThemeSwitch = true;
         [DataMember] public bool ShowPositionSwitch = true;
-        [DataMember] public bool EnableButtonColorTool = true;
-        [DataMember] public Dictionary<string, string> ButtonColorOverrides = DefaultButtonColors();
-
-        static Dictionary<string, string> DefaultButtonColors()
-        {
-            return new Dictionary<string, string> {
-                { "classic|palette_group:detail_period", "#FFF1E8|#C2410C" },
-                { "classic|automation:OnharuPositionMode", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.1.1.0.0.0.0.0.1", "#EEECFF|#4338CA" },
-                { "dark|visual:0.0.0.0.0.0.1.1.0.0.0.0.0.1", "#5F3DC4|#F3F0FF" },
-                { "classic|visual:0.0.0.0.0.0.1.1.0.0.0.0", "#EEECFF|#4338CA" },
-                { "classic|visual:0.0.0.0.0.0.0.1.2.0.0", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.0.1.2.0.1", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.1.1.0.0.5.0", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.0.1.1", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.0.1.2.1.0", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.0.1.2.1.1", "#4B5563|#FFFFFF" },
-                { "classic|visual:0.0.0.0.0.0.0.1.2.1.2", "#4B5563|#FFFFFF" }
-            };
-        }
+        [DataMember] public bool ShowFullColorPalette;
     }
 
     [DataContract]

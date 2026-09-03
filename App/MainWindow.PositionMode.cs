@@ -17,7 +17,6 @@ namespace FamilyPlanner
             // The fixed Explorer frame is a snapshot. Animation would publish its
             // first frame and leave the thumb behind until the next calendar click.
             positionModeSwitch.SetSelected(targetMode, false);
-            TemporarySegmentPaletteTool.ApplyOverride(positionModeSwitch);
             if (resizeSurface != null && positionLocked) resizeSurface.Cursor = Cursors.Arrow;
             if (trayPositionItem != null) trayPositionItem.Text = positionLocked ? "위치·크기 조정" : "이 위치·크기로 고정";
             if (windowMaximizeButton != null) { windowMaximizeButton.IsEnabled = !positionLocked; windowMaximizeButton.Opacity = positionLocked ? .4 : 1; }

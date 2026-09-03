@@ -20,8 +20,8 @@ namespace FamilyPlanner
                 var cutoff = IncompleteTodoCutoff();
                 var periodStart = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
                 selectedTitle.FontSize = 15;
-                selectedTitle.Text = detailMode == "selected" ? cutoff.ToString("M월 d일") + "–" + selectedDate.ToString("M월 d일")
-                    : periodStart.ToString("M월 d일") + "–" + periodStart.AddDays(6).ToString("M월 d일");
+                selectedTitle.Text = detailMode == "selected" ? DetailIncompleteRange(cutoff, selectedDate)
+                    : DetailIncompleteRange(periodStart, periodStart.AddDays(6));
                 if (!AddIncompleteTodoCard())
                     detail.Children.Add(new TextBlock { Text = "미완료 일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
                 return;
@@ -29,7 +29,7 @@ namespace FamilyPlanner
             if (detailMode == "selected")
             {
                 selectedTitle.FontSize = 15;
-                selectedTitle.Text = selectedDate.ToString("M월 d일 (ddd)", new CultureInfo("ko-KR"));
+                selectedTitle.Text = DetailDateTitle(selectedDate);
                 var hasDayItems = AddDetailDay(selectedDate, false);
                 if (!hasDayItems)
                     detail.Children.Add(new TextBlock { Text = "일정이 없습니다.", Foreground = T("Disabled"), Margin = new Thickness(0, 8, 0, 0) });
@@ -44,7 +44,7 @@ namespace FamilyPlanner
             var start = StartOfWeek(DateTime.Today).AddDays(detailMode == "next_week" ? 7 : 0);
             var end = start.AddDays(6);
             selectedTitle.FontSize = 15;
-            selectedTitle.Text = start.ToString("M월 d일") + "–" + end.ToString("M월 d일");
+            selectedTitle.Text = DetailShortRange(start, end);
             var added = false;
             for (var date = start; date <= end; date = date.AddDays(1))
             {
@@ -57,7 +57,7 @@ namespace FamilyPlanner
             if (detail.Children.Count > specialWeekStart)
                 detail.Children.Insert(specialWeekStart, new Border { Height = 1, Background = T("Grid"),
                     Margin = new Thickness(3), IsHitTestVisible = false });
-            ApplyDetailCardOrder();
+            // Weekly cards must remain attached to their date headers.
         }
 
         bool AddDetailDay(DateTime date, bool showDateHeader)
@@ -150,7 +150,7 @@ namespace FamilyPlanner
                         group.Children.Add(notice);
                     }
                 }
-                var cardBackground = importantCard ? EventBackgroundBrush(categoryItems[0]) : timeMode ? (settings.ThemeId == "dark" ? T("Card") : Brushes.White) : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor));
+                var cardBackground = importantCard ? EventBackgroundBrush(categoryItems[0]) : timeMode ? T("Card") : new SolidColorBrush(CategoryColorSystem.DetailBackground(settings.ThemeId, groupColor));
                 var liftSurface = new Border { Background = cardBackground, CornerRadius = new CornerRadius(11),
                     Padding = new Thickness(10, 8, 10, groupCollapsed ? 9 : 7), Child = group };
                 var detailCard = new Border { Background = Brushes.Transparent,
@@ -160,8 +160,6 @@ namespace FamilyPlanner
                     CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 4, 0, 7),
                     Tag = groupKey, Child = liftSurface };
                 EnableDetailCardOrder(groupHeaderSurface, detailCard, groupKey);
-                if (timeMode) TemporarySegmentPaletteTool.PromoteStableId(detailCard, "OnharuDetailCard:mode:time");
-                else TemporarySegmentPaletteTool.AttachDetailCard(detailCard, groupHeader, groupKey);
                 detail.Children.Add(detailCard);
             }
             return true;
@@ -184,16 +182,38 @@ namespace FamilyPlanner
             AddGoogleTaskSection(panel, "기한 지남", taskItems.Where(x => x.Start.Date < DateTime.Today), foreground, true);
             AddGoogleTaskSection(panel, "오늘", taskItems.Where(x => x.Start.Date == DateTime.Today), foreground, true);
             AddGoogleTaskSection(panel, "다가오는 할 일", taskItems.Where(x => x.Start.Date > DateTime.Today), foreground, true);
-            var surface = new Border { Background = settings.ThemeId == "dark" ? T("Card") : Brushes.White,
+            var surface = new Border { Background = T("Card"),
                 CornerRadius = new CornerRadius(11), Padding = new Thickness(10, 8, 10, 7), Child = panel };
             var card = new Border { Background = Brushes.Transparent, BorderBrush = settings.ThemeId == "dark" ? T("Grid") : Brush("#CBD5E1"),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 4, 0, 7), Child = surface,
                 Tag = "미완료 To-Do" };
-            TemporarySegmentPaletteTool.PromoteStableId(card, "OnharuDetailCard:mode:incomplete");
             detail.Children.Add(card); return true;
         }
 
         DateTime IncompleteTodoCutoff() { return DateTime.Today.AddMonths(-Math.Max(1, settings.IncompleteTodoLookbackMonths)).Date; }
+
+        string DetailDateTitle(DateTime date)
+        {
+            return DetailDateValue(date) + date.ToString(" (ddd)", new CultureInfo("ko-KR"));
+        }
+
+        string DetailDateValue(DateTime date)
+        {
+            return date.ToString(settings.DetailDateFormat == "MM/dd/yy" ? "MM/dd/yy" : "yy/MM/dd", CultureInfo.InvariantCulture);
+        }
+
+        // 세부 제목의 날짜 표기는 선택 날짜·이번 주·다음 주와 카테고리순·시간순·미완료가
+        // 모두 같은 양식을 쓴다. 한 화면에서 탭만 바꿨는데 표기가 달라지면 같은 값을 비교하기 어렵다.
+        // 형식 자체는 사용자 설정(`yy/MM/dd` 또는 `MM/dd/yy`)을 따른다.
+        string DetailShortRange(DateTime start, DateTime end)
+        {
+            return DetailDateValue(start) + " ~ " + DetailDateValue(end);
+        }
+
+        string DetailIncompleteRange(DateTime start, DateTime end)
+        {
+            return DetailShortRange(start, end);
+        }
 
         void AddGoogleTaskSection(Panel panel, string title, IEnumerable<PlannerItem> source, Brush foreground, bool includeDate)
         {
@@ -215,6 +235,10 @@ namespace FamilyPlanner
                 var label = new TextBlock { Text = item.Start.ToString("M월 d일") + "  " + item.Title, Foreground = EventTextBrush(item),
                     TextDecorations = item.Completed ? TextDecorations.Strikethrough : null, TextTrimming = TextTrimming.CharacterEllipsis,
                     Cursor = Cursors.Hand, ToolTip = item.Title };
+                // 고정 상태는 태그가 붙은 요소만 적중 지도에 담긴다. 태그가 없으면 이동에서는 열리고
+                // 고정에서는 아무 일이 없다. 세부 카드의 일정 글자와 같은 표식을 써서 두 상태를 맞춘다.
+                label.Tag = new ItemHitTarget { Item = item, SegmentStart = item.Start.Date, SegmentEnd = item.Start.Date,
+                    Element = label, DetailCard = true };
                 label.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) { if (e.ClickCount == 2) OpenEdit(item); };
                 row.Children.Add(label); panel.Children.Add(row);
             }
@@ -274,12 +298,7 @@ namespace FamilyPlanner
                 ApplyDetailSwitchPalette(detailPeriodSwitch);
                 detailPeriodSwitch.SetSelected(detailMode == "this_week" ? 1 : detailMode == "next_week" ? 2 : 0, false);
             }
-            if (detailOrderSwitch != null)
-            {
-                ApplyDetailSwitchPalette(detailOrderSwitch);
-                detailOrderSwitch.SetSelected(detailIncompleteMode && settings.ShowIncompleteTodoButton ? 2
-                    : settings.DetailOrderMode == "time" ? 1 : 0, false);
-            }
+            StyleDetailHeaderActionButtons();
             if (detailScroll != null)
             {
                 detailScroll.Resources["OnharuScrollThumb"] = Brush(OnharuStateColors.DetailScrollThumb(settings.ThemeId, detailMode));
@@ -287,15 +306,12 @@ namespace FamilyPlanner
             if (dateColorButton != null)
             {
                 var rangeTitle = detailMode != "selected" || detailIncompleteMode;
-                dateColorButton.Visibility = rangeTitle || !detailIncompleteMode ? Visibility.Visible : Visibility.Collapsed;
+                // Collapsed로 감추면 머리글의 높이가 줄어 날짜 제목과 오른쪽 도구 아이콘이 함께
+                // 2px 위로 움직인다. 시간순·카테고리순·미완료를 오갈 때마다 글자가 흔들려 보인다
+                // (2026-09-03 사용자 보고). 자리는 그대로 두고 그림만 감춘다.
+                dateColorButton.Visibility = rangeTitle ? Visibility.Hidden : Visibility.Visible;
                 dateColorButton.IsHitTestVisible = !rangeTitle;
-                if (rangeTitle)
-                {
-                    dateColorButton.Content = HeaderGlyph("range", T("Text"));
-                    dateColorButton.Foreground = T("Text"); dateColorButton.Background = Brushes.Transparent;
-                    dateColorButton.BorderBrush = Brushes.Transparent; dateColorButton.BorderThickness = new Thickness(0);
-                    return;
-                }
+                if (rangeTitle) return;
                 string selectedColor = null;
                 var colored = settings.DateBackgroundColors != null && settings.DateBackgroundColors.TryGetValue(DateKey(selectedDate), out selectedColor);
                 dateColorButton.Background = Brushes.Transparent;

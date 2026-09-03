@@ -15,11 +15,10 @@ namespace FamilyPlanner
         readonly Grid calendar = new Grid();
         readonly Grid calendarHost = new Grid();
         readonly Border loadingOverlay;
-        readonly TextBlock monthTitle = new TextBlock { FontSize = 22, FontWeight = FontWeights.Bold, Foreground = OnharuPopupChrome.Brush("#4338CA"), VerticalAlignment = VerticalAlignment.Center };
+        readonly TextBlock monthTitle = new TextBlock { FontSize = 22, FontWeight = FontWeights.Bold, Foreground = OnharuPopupChrome.Brush("#334155"), VerticalAlignment = VerticalAlignment.Center };
         readonly TextBlock status = new TextBlock { FontSize = 11.5, Foreground = OnharuPopupChrome.Brush("#64748B"), VerticalAlignment = VerticalAlignment.Center };
         readonly Button favoritePicker;
         readonly Popup favoritePopup;
-        Button previousPeriodButton, nextPeriodButton;
         readonly OnharuSegmentedSwitch gameFilterSwitch, rangeSwitch, scaleSwitch;
         int visibleWeeks = 4;
         readonly List<string> favoriteTeams = new List<string>();
@@ -30,6 +29,9 @@ namespace FamilyPlanner
         readonly HashSet<string> existingIds;
         readonly Dictionary<string, SportsGame> selected = new Dictionary<string, SportsGame>();
         double uiScale = 1.0;
+        Popup viewOptionsPopup;
+        DateTime navigationOrigin;
+        int navigationVersion;
         List<SportsGame> games = new List<SportsGame>();
         DateTime month = DateTime.Today;
         internal List<PlannerItem> SelectedItems { get; private set; }
@@ -43,40 +45,114 @@ namespace FamilyPlanner
             uiScale = initialScale < .95 ? .90 : initialScale > 1.05 ? 1.15 : 1.0;
             existingIds = new HashSet<string>(existingSportsIds ?? Enumerable.Empty<string>()); favoriteTeams.AddRange((favoriteTeam ?? "").Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.OrdinalIgnoreCase).Take(2));
             monthTitle.FontSize = 19 * uiScale; status.FontSize = 12.5 * uiScale;
-            Title = "KBO 경기 일정"; Width = Math.Min(SystemParameters.WorkArea.Width - 24, 1100 * uiScale); Height = Math.Min(SystemParameters.WorkArea.Height - 24, 944 * uiScale); MinWidth = Math.Min(940, Width); MinHeight = Math.Min(780, Height); WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            // 창 크기에 그림자 여백 12px을 사방으로 더한다. 없으면 Shell의 DropShadow가 창 경계에서 잘려
+            // 네 모서리에 검은 자국으로 남는다. 크기 조절은 아래 EnableResize가 테두리로 처리한다.
+            Title = "KBO 경기 일정"; Width = Math.Min(SystemParameters.WorkArea.Width - 24, 1100 * uiScale + 24); Height = Math.Min(SystemParameters.WorkArea.Height - 24, 944 * uiScale + 24); MinWidth = Math.Min(964, Width); MinHeight = Math.Min(804, Height); WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ResizeMode = ResizeMode.NoResize; WindowStartupLocation = WindowStartupLocation.CenterOwner;
             var root = new DockPanel { Margin = new Thickness(20, 16, 20, 18) };
-            var controls = new Grid { Margin = new Thickness(0, 0, 0, 10), Background = Brushes.Transparent }; controls.ColumnDefinitions.Add(new ColumnDefinition()); controls.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); controls.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); controls.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            // 제목줄은 한 줄이다. 정체성·날짜 이동·오늘·응원팀·보기 설정·닫기만 두고
+            // 나머지 조작은 톱니 버튼의 플로팅 팝오버로 접는다. 달력에 세로 공간을 최대한 넘긴다.
+            var controls = new DockPanel { Margin = new Thickness(0, 0, 0, 10), Background = Brushes.Transparent, LastChildFill = false };
             OnharuPopupChrome.StyleHeader(controls);
-            var navigation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center }; previousPeriodButton = OnharuPopupChrome.Button("«", 23, "#E0E7FF", "#4338CA"); var previous = OnharuPopupChrome.Button("‹", 23, "#EEF2FF", "#4338CA"); var today = OnharuPopupChrome.Button("오늘", 46, "#EEF2FF", "#4338CA"); var next = OnharuPopupChrome.Button("›", 23, "#EEF2FF", "#4338CA"); nextPeriodButton = OnharuPopupChrome.Button("»", 23, "#E0E7FF", "#4338CA");
-            foreach (var button in new[] { previousPeriodButton, previous, today, next, nextPeriodButton }) { button.Height = 27; button.Padding = new Thickness(0); }
-            previousPeriodButton.FontSize = nextPeriodButton.FontSize = 15; previous.FontSize = next.FontSize = 16; today.FontSize = 12.5; previousPeriodButton.FontWeight = nextPeriodButton.FontWeight = today.FontWeight = FontWeights.SemiBold;
-            previousPeriodButton.Margin = new Thickness(0, 0, 3, 0); previous.Margin = new Thickness(0, 0, 5, 0); next.Margin = new Thickness(5, 0, 0, 0); nextPeriodButton.Margin = new Thickness(3, 0, 0, 0); today.Margin = new Thickness(6, 0, 0, 0);
-            previousPeriodButton.Click += delegate { if (visibleWeeks != 0) Navigate(-4); }; nextPeriodButton.Click += delegate { if (visibleWeeks != 0) Navigate(4); };
-            previous.Click += delegate { Navigate(-1); }; today.Click += delegate { month = visibleWeeks == 0 ? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1) : DateTime.Today; LoadGames(false); }; next.Click += delegate { Navigate(1); };
-            navigation.Children.Add(previousPeriodButton); navigation.Children.Add(previous); monthTitle.Margin = new Thickness(14, 0, 12, 0); navigation.Children.Add(monthTitle); navigation.Children.Add(next); navigation.Children.Add(nextPeriodButton); navigation.Children.Add(today); Grid.SetRow(navigation, 1);
-            gameFilterSwitch = new OnharuSegmentedSwitch(new[] { "전체 경기", "응원팀 경기" }, new[] { 68.0, 84.0 }, 0, delegate(int index) { SetGameFilter(index == 1); });
-            rangeSwitch = new OnharuSegmentedSwitch(new[] { "4주", "월" }, new[] { 48.0, 42.0 }, 0, delegate(int index) { SetRange(index == 0 ? 4 : 0); });
-            scaleSwitch = new OnharuSegmentedSwitch(new[] { "작게", "중간", "크게" }, new[] { 46.0, 46.0, 46.0 },
+            // 이동 버튼은 좌우 하나씩만 둔다. 4주 이동은 별도 버튼 대신 더블클릭으로 처리한다.
+            var previous = VectorNavigationButton(true, false, "이전 · 더블클릭은 4주"); var next = VectorNavigationButton(false, false, "다음 · 더블클릭은 4주");
+            var today = OnharuPopupChrome.Button("오늘", 46, OnharuPopupChrome.TodaySurfaceColor, OnharuPopupChrome.TodayTextColor);
+            today.BorderBrush = OnharuPopupChrome.Brush(OnharuPopupChrome.TodayBorderColor);
+            today.Height = 27; today.Padding = new Thickness(0); today.FontSize = 12.5; today.FontWeight = FontWeights.SemiBold; today.Margin = new Thickness(8, 0, 0, 0);
+            BindNavigation(previous, -1); BindNavigation(next, 1);
+            today.Click += delegate { month = visibleWeeks == 0 ? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1) : DateTime.Today; LoadGames(false); };
+
+            // 칸 폭은 팝오버 안쪽 폭을 꽉 채우도록 계산한다. 팝오버 214 - 테두리 2 - 안여백 24 = 188,
+            // 여기서 스위치 자신의 테두리 1x2와 안여백 1x2를 빼면 184가 칸에 쓸 수 있는 폭이다.
+            // 아래 도구 버튼들이 폭을 꽉 채우므로 스위치만 좁으면 오른쪽에 빈 자리가 남아 보인다.
+            gameFilterSwitch = new OnharuSegmentedSwitch(new[] { "전체 경기", "응원팀" }, new[] { 92.0, 92.0 }, 0, delegate(int index) { SetGameFilter(index == 1); });
+            rangeSwitch = new OnharuSegmentedSwitch(new[] { "4주", "월 전체" }, new[] { 92.0, 92.0 }, 0, delegate(int index) { SetRange(index == 0 ? 4 : 0); });
+            scaleSwitch = new OnharuSegmentedSwitch(new[] { "작게", "중간", "크게" }, new[] { 61.34, 61.33, 61.33 },
                 uiScale < .95 ? 0 : uiScale > 1.05 ? 2 : 1, delegate(int index) { ApplyViewScale(index == 0 ? .90 : index == 1 ? 1.0 : 1.15); });
-            OnharuPopupChrome.StyleSegment(gameFilterSwitch); OnharuPopupChrome.StyleSegment(rangeSwitch); OnharuPopupChrome.StyleSegment(scaleSwitch);
-            gameFilterSwitch.Margin = rangeSwitch.Margin = scaleSwitch.Margin = new Thickness(0, 0, 7, 0);
-            var titleActions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 0, 7) }; titleActions.Children.Add(OnharuPopupChrome.FeatureTitle("⚾", "KBO 경기 일정")); var refreshTop = OnharuPopupChrome.Button("↻ 새로고침", 84, "#ECFDF5", "#047857"); refreshTop.Height = 27; refreshTop.Margin = new Thickness(10, 0, 0, 0); refreshTop.Click += delegate { LoadGames(true); }; titleActions.Children.Add(refreshTop); controls.Children.Add(titleActions);
-            var viewOptions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 0, 7) }; viewOptions.Children.Add(gameFilterSwitch); viewOptions.Children.Add(rangeSwitch); viewOptions.Children.Add(scaleSwitch); var closeTop = OnharuPopupChrome.ToolCloseButton(this); closeTop.Margin = new Thickness(1, 0, 0, 0); viewOptions.Children.Add(closeTop); Grid.SetColumn(viewOptions, 1); controls.Children.Add(viewOptions); controls.Children.Add(navigation);
-            var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center }; right.Children.Add(new TextBlock { Text = "응원팀", FontSize = 12 * uiScale, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#475569"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) }); favoritePicker = OnharuPopupChrome.Button("응원팀 선택  ▾", 150, "#FFFFFF", "#334155"); favoritePicker.Height = 30; favoritePicker.VerticalContentAlignment = VerticalAlignment.Center; favoritePicker.BorderBrush = OnharuPopupChrome.Brush("#C7D2FE"); favoritePicker.BorderThickness = new Thickness(1); favoritePicker.ToolTip = "최대 2팀까지 선택"; favoritePopup = new Popup { Placement = PlacementMode.Bottom, PlacementTarget = favoritePicker, AllowsTransparency = true, StaysOpen = false }; favoritePicker.PreviewMouseLeftButtonDown += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e) { if (!favoritePopup.IsOpen) return; favoritePopup.IsOpen = false; e.Handled = true; }; favoritePicker.Click += delegate { BuildFavoritePopup(); favoritePopup.IsOpen = true; }; right.Children.Add(favoritePicker); UpdateFavoritePicker();
-            AddButton(right, "응원팀 경기 선택", 100, "#FFF7ED", "#C2410C", delegate { SelectFavoriteGames(); });
-            AddButton(right, "전체 선택 취소", 92, "#EEF2FF", "#4338CA", delegate { selected.Clear(); RenderCalendar(); UpdateRegisterButton(); status.Text = "경기 선택을 모두 취소했습니다."; });
-            Grid.SetColumn(right, 1); Grid.SetRow(right, 1); controls.Children.Add(right); OnharuPopupChrome.EnableDrag(this, controls); DockPanel.SetDock(controls, Dock.Top); root.Children.Add(controls);
+            foreach (var segment in new[] { gameFilterSwitch, rangeSwitch, scaleSwitch })
+            {
+                segment.Height = 26; segment.Padding = new Thickness(1); segment.Margin = new Thickness(0, 0, 0, 8);
+                // 선택색은 검색창 범위 버튼·알람 모드 버튼과 같은 값을 쓴다. 창마다 다른 선택색을 만들지 않는다.
+                segment.SetPalette(OnharuPopupChrome.Brush("#EDE9FE"), OnharuPopupChrome.Brush("#6D28D9"),
+                    OnharuPopupChrome.Brush("#F8FAFC"), OnharuPopupChrome.Brush("#64748B"), OnharuPopupChrome.Brush("#C4B5FD"));
+            }
+
+            var closeTop = OnharuPopupChrome.ToolCloseButton(this); closeTop.Margin = new Thickness(7, 0, 0, 0); closeTop.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(closeTop, Dock.Right); controls.Children.Add(closeTop);
+            // 톱니는 글꼴 문자가 아니라 OnharuIcons 도형이다. 메인 헤더·설정창과 같은 그림을 쓴다.
+            var optionsButton = OnharuPopupChrome.Button("", 30, "#FFFFFF", "#334155");
+            optionsButton.Content = OnharuIcons.Draw("settings", OnharuPopupChrome.Brush("#334155"), 21);
+            optionsButton.Padding = new Thickness(0);
+            optionsButton.Height = 27; optionsButton.BorderBrush = OnharuPopupChrome.Brush("#CBD5E1");
+            optionsButton.VerticalAlignment = VerticalAlignment.Center; optionsButton.ToolTip = "보기 설정과 도구"; UiRound.Apply(optionsButton, 8);
+            DockPanel.SetDock(optionsButton, Dock.Right); controls.Children.Add(optionsButton);
+            favoritePicker = OnharuPopupChrome.Button("응원팀 선택  ▾", 150, "#FFFFFF", "#334155");
+            favoritePicker.Height = 27; favoritePicker.Margin = new Thickness(0, 0, 7, 0); favoritePicker.VerticalAlignment = VerticalAlignment.Center;
+            favoritePicker.VerticalContentAlignment = VerticalAlignment.Center; favoritePicker.BorderBrush = OnharuPopupChrome.Brush("#C7D2FE");
+            favoritePicker.BorderThickness = new Thickness(1); favoritePicker.ToolTip = "최대 2팀까지 선택";
+            favoritePopup = new Popup { Placement = PlacementMode.Bottom, PlacementTarget = favoritePicker, AllowsTransparency = true, StaysOpen = false };
+            favoritePicker.PreviewMouseLeftButtonDown += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e) { if (!favoritePopup.IsOpen) return; favoritePopup.IsOpen = false; e.Handled = true; };
+            favoritePicker.Click += delegate { BuildFavoritePopup(); favoritePopup.IsOpen = true; };
+            DockPanel.SetDock(favoritePicker, Dock.Right); controls.Children.Add(favoritePicker); UpdateFavoritePicker();
+
+            var titleGroup = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            titleGroup.Children.Add(OnharuPopupChrome.FeatureHeading("⚾", "KBO 경기 일정"));
+            previous.Margin = new Thickness(22, 0, 0, 0); titleGroup.Children.Add(previous);
+            monthTitle.Margin = new Thickness(8, 0, 8, 0); monthTitle.VerticalAlignment = VerticalAlignment.Center; titleGroup.Children.Add(monthTitle);
+            titleGroup.Children.Add(next); titleGroup.Children.Add(today);
+            DockPanel.SetDock(titleGroup, Dock.Left); controls.Children.Add(titleGroup);
+
+            // 보기 설정과 도구는 톱니 옆에 뜨는 플로팅 팝오버에 모은다.
+            // 바깥을 눌러도 닫히지 않는다. 달력을 보면서 설정을 계속 열어 둘 수 있어야 하므로
+            // StaysOpen 을 켜고 팝오버 안의 X 로만 닫는다. 제목 줄을 끌어 위치도 옮길 수 있다.
+            viewOptionsPopup = new Popup { Placement = PlacementMode.Bottom, PlacementTarget = optionsButton, AllowsTransparency = true, StaysOpen = true, HorizontalOffset = -184 };
+            var options = new StackPanel { Margin = new Thickness(12) };
+            var optionsHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 10), Background = Brushes.Transparent, Cursor = System.Windows.Input.Cursors.SizeAll };
+            var optionsClose = OnharuPopupChrome.Button("\u2715", 24, "#FFFFFF", "#111827");
+            optionsClose.Height = 24; optionsClose.FontSize = 11; optionsClose.BorderBrush = OnharuPopupChrome.Brush("#D6DCE8");
+            optionsClose.ToolTip = "설정 닫기"; UiRound.Apply(optionsClose, 7);
+            optionsClose.Click += delegate { viewOptionsPopup.IsOpen = false; };
+            DockPanel.SetDock(optionsClose, Dock.Right); optionsHeader.Children.Add(optionsClose);
+            optionsHeader.Children.Add(new TextBlock { Text = "보기 설정", FontSize = 13, FontWeight = FontWeights.Bold,
+                Foreground = OnharuPopupChrome.Brush("#334155"), VerticalAlignment = VerticalAlignment.Center });
+            EnablePopupDrag(optionsHeader);
+            options.Children.Add(optionsHeader);
+            options.Children.Add(OptionLabel("보기"));
+            options.Children.Add(gameFilterSwitch); options.Children.Add(rangeSwitch); options.Children.Add(scaleSwitch);
+            options.Children.Add(OptionLabel("도구"));
+            // 선택을 더하는 동작이므로 선택 의미색(피치)을 쓴다. 아래 선택 해제는 중립색으로 짝을 맞춘다.
+            options.Children.Add(OptionButton("응원팀 경기 선택", OnharuPopupChrome.SelectionSurfaceColor, OnharuPopupChrome.SelectionTextColor,
+                delegate { SelectFavoriteGames(); }));
+            options.Children.Add(OptionButton("선택 해제", "#FFFFFF", "#475569",
+                delegate { selected.Clear(); RenderCalendar(); UpdateRegisterButton(); status.Text = "경기 선택을 모두 취소했습니다."; }));
+            // 새로고침은 조회 동작이다. 로즈 계열은 삭제·경고에 배정돼 있어(design-onharu 3.4) 중립색을 쓴다.
+            options.Children.Add(OptionButton("↻ 새로고침", "#F1F5F9", "#475569",
+                delegate { LoadGames(true); }));
+            options.Children.Add(OptionButton("API 설정", "#F1F5F9", "#475569",
+                delegate { viewOptionsPopup.IsOpen = false; new SportsApiSetupWindow { Owner = this }.ShowDialog(); }));
+            viewOptionsPopup.Child = new Border { Width = 214, Background = OnharuPopupChrome.Brush(OnharuPopupChrome.ContentSurfaceColor),
+                BorderBrush = OnharuPopupChrome.Brush("#CBD5E1"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
+                Margin = new Thickness(0, 5, 0, 0), Child = options,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = System.Windows.Media.Color.FromRgb(30, 41, 59), BlurRadius = 16, ShadowDepth = 4, Opacity = .24 } };
+            optionsButton.PreviewMouseLeftButtonDown += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e) { if (!viewOptionsPopup.IsOpen) return; viewOptionsPopup.IsOpen = false; e.Handled = true; };
+            optionsButton.Click += delegate { viewOptionsPopup.IsOpen = true; };
+
+            OnharuPopupChrome.EnableDrag(this, controls); DockPanel.SetDock(controls, Dock.Top); root.Children.Add(controls);
             var footer = new Grid { Margin = new Thickness(0, 10, 0, 0) }; footer.ColumnDefinitions.Add(new ColumnDefinition()); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var footerLeft = new StackPanel { Orientation = Orientation.Horizontal }; var apiButton = OnharuPopupChrome.Button("API 설정", 72, "#F1F5F9", "#475569"); apiButton.Margin = new Thickness(0, 0, 10, 0); apiButton.Click += delegate { new SportsApiSetupWindow { Owner = this }.ShowDialog(); }; footerLeft.Children.Add(apiButton); footerLeft.Children.Add(status); footer.Children.Add(footerLeft);
+            // API 설정은 톱니 팝오버로 옮겼다. 하단에는 상태 문구만 남긴다.
+            var footerLeft = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center }; footerLeft.Children.Add(status); footer.Children.Add(footerLeft);
             var registration = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            registrationTarget = new ComboBox { Width = 210, Height = 40, Margin = new Thickness(10, 0, 8, 0), Padding = new Thickness(9, 0, 5, 0), VerticalContentAlignment = VerticalAlignment.Center };
+            registrationTarget = new ComboBox { Width = 210, Height = 40, Margin = new Thickness(10, 0, 8, 0), Padding = new Thickness(9, 0, 5, 0), Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#CBD5E1"), VerticalContentAlignment = VerticalAlignment.Center };
             SettingsWindow.StyleComboBox(registrationTarget);
             registrationTarget.Items.Add(new ComboBoxItem { Content = "ONHARU 로컬 일정", Tag = null, IsSelected = true });
             if (googleConnected)
                 foreach (var source in (googleCalendars ?? Enumerable.Empty<GoogleCalendarSetting>()).Where(x => x.Editable && !GoogleTasks.IsSource(x.Id) && (x.AccessRole == "owner" || x.AccessRole == "writer")).OrderBy(x => x.Primary ? 0 : 1).ThenBy(x => x.Name))
                     registrationTarget.Items.Add(new ComboBoxItem { Content = "Google · " + source.Name, Tag = source });
             registration.Children.Add(registrationTarget);
-            registerButton = OnharuPopupChrome.PrimaryButton("선택 경기 등록", 190); registerButton.Height = 40; registerButton.IsEnabled = false;
+            // 창의 대표 실행 버튼 하나에만 브랜드 그라데이션을 쓴다. 검색·시간표·알람과 같은 규격이다.
+            registerButton = OnharuPopupChrome.Button("선택 경기 등록", 190, "#4F46E5", "#FFFFFF");
+            registerButton.Background = OnharuPopupChrome.BrandGradientBrush(); registerButton.Foreground = Brushes.White;
+            registerButton.BorderBrush = Brushes.Transparent; registerButton.Height = 40; registerButton.FontWeight = FontWeights.Bold;
+            UiRound.Apply(registerButton, 8); registerButton.IsEnabled = false;
             registerButton.Click += async delegate
             {
                 SelectedItems = selected.Values.Where(x => !existingIds.Contains(SportsApi.RegistrationId(x))).Select(ToPlannerItem).ToList();
@@ -91,11 +167,88 @@ namespace FamilyPlanner
                 status.Text = string.IsNullOrWhiteSpace(message) ? "선택한 경기 " + SelectedItems.Count + "개를 등록했습니다." : message;
             };
             registration.Children.Add(registerButton); Grid.SetColumn(registration, 1); footer.Children.Add(registration); DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
-            calendarHost.Children.Add(calendar); loadingOverlay = new Border { Background = OnharuPopupChrome.Brush("#F4F7FB"), Visibility = Visibility.Collapsed, Child = new Border { Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(14), Padding = new Thickness(22, 15, 22, 15), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = new StackPanel { Children = { new TextBlock { Text = "⚾", FontSize = 25, HorizontalAlignment = HorizontalAlignment.Center }, new TextBlock { Text = "경기 일정을 준비하고 있어요…", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#4338CA"), Margin = new Thickness(0, 7, 0, 0) } } } } }; Panel.SetZIndex(loadingOverlay, 10); calendarHost.Children.Add(loadingOverlay);
-            root.Children.Add(new Border { Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#DDE4EE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(13), ClipToBounds = true, Child = calendarHost }); Content = OnharuPopupChrome.Shell(root); Loaded += delegate { LoadGames(false); };
+            calendarHost.Children.Add(calendar); loadingOverlay = new Border { Background = OnharuPopupChrome.Brush("#F4F7FB"), Visibility = Visibility.Collapsed, Child = new Border { Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush(OnharuPopupChrome.PrimaryBorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(14), Padding = new Thickness(22, 15, 22, 15), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = new StackPanel { Children = { new TextBlock { Text = "⚾", FontSize = 25, HorizontalAlignment = HorizontalAlignment.Center }, new TextBlock { Text = "경기 일정을 준비하고 있어요…", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush(OnharuPopupChrome.PrimaryTextColor), Margin = new Thickness(0, 7, 0, 0) } } } } }; Panel.SetZIndex(loadingOverlay, 10); calendarHost.Children.Add(loadingOverlay);
+            root.Children.Add(new Border { Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#DDE4EE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(13), ClipToBounds = true, Child = calendarHost });
+            var shell = OnharuPopupChrome.Shell(root);
+            shell.Margin = new Thickness(12);
+            OnharuPopupChrome.EnableResize(this, shell);
+            Content = shell; Loaded += delegate { LoadGames(false); };
+            // 팝오버는 StaysOpen 이라 창을 닫아도 남을 수 있다. 창 수명에 묶어 둔다.
+            Closed += delegate { if (viewOptionsPopup != null) viewOptionsPopup.IsOpen = false; if (favoritePopup != null) favoritePopup.IsOpen = false; };
+        }
+
+        // 팝오버 제목 줄을 잡아 옮긴다. Popup 은 창이 아니라서 DragMove 를 쓸 수 없으므로
+        // 화면 좌표의 이동량을 그대로 Offset 에 더한다.
+        void EnablePopupDrag(FrameworkElement handle)
+        {
+            var dragging = false;
+            var startPoint = new Point();
+            var startHorizontal = 0.0;
+            var startVertical = 0.0;
+            handle.MouseLeftButtonDown += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e)
+            {
+                dragging = true; startPoint = handle.PointToScreen(e.GetPosition(handle));
+                startHorizontal = viewOptionsPopup.HorizontalOffset; startVertical = viewOptionsPopup.VerticalOffset;
+                handle.CaptureMouse(); e.Handled = true;
+            };
+            handle.MouseMove += delegate(object sender, System.Windows.Input.MouseEventArgs e)
+            {
+                if (!dragging) return;
+                var current = handle.PointToScreen(e.GetPosition(handle));
+                viewOptionsPopup.HorizontalOffset = startHorizontal + (current.X - startPoint.X);
+                viewOptionsPopup.VerticalOffset = startVertical + (current.Y - startPoint.Y);
+            };
+            handle.MouseLeftButtonUp += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e)
+            {
+                if (!dragging) return;
+                dragging = false; handle.ReleaseMouseCapture(); e.Handled = true;
+            };
+        }
+
+        static TextBlock OptionLabel(string text)
+        {
+            return new TextBlock { Text = text, FontSize = 11, Foreground = OnharuPopupChrome.Brush("#64748B"),
+                Margin = new Thickness(2, 0, 0, 6) };
+        }
+
+        static Button OptionButton(string text, string background, string foreground, RoutedEventHandler click)
+        {
+            var button = OnharuPopupChrome.Button(text, double.NaN, background, foreground);
+            button.Height = 30; button.Margin = new Thickness(0, 0, 0, 6);
+            button.HorizontalAlignment = HorizontalAlignment.Stretch;
+            if (background == "#FFFFFF" || background == "#F1F5F9") button.BorderBrush = OnharuPopupChrome.Brush("#CBD5E1");
+            if (click != null) button.Click += click;
+            return button;
         }
 
         static Button AddButton(Panel panel, string text, double width, string background, string foreground, RoutedEventHandler click) { var button = OnharuPopupChrome.Button(text, width, background, foreground); button.Margin = new Thickness(5, 0, 0, 0); if (click != null) button.Click += click; panel.Children.Add(button); return button; }
+        static Button VectorNavigationButton(bool left, bool doubleArrow, string toolTip)
+        {
+            var canvas = new Canvas { Width = doubleArrow ? 22 : 16, Height = 20, ClipToBounds = false };
+            var paths = doubleArrow ? new[] { 2.0, 9.0 } : new[] { 4.0 };
+            foreach (var x in paths)
+            {
+                var geometry = left
+                    ? string.Format(System.Globalization.CultureInfo.InvariantCulture, "M{0},4.5 L{1},10 L{0},15.5", x + 7, x + 1)
+                    : string.Format(System.Globalization.CultureInfo.InvariantCulture, "M{0},4.5 L{1},10 L{0},15.5", x + 1, x + 7);
+                canvas.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse(geometry), Stroke = OnharuPopupChrome.Brush("#3B82F6"),
+                    StrokeThickness = 2.2, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                    StrokeLineJoin = PenLineJoin.Round, Fill = Brushes.Transparent });
+            }
+            // 템플릿 뿌리를 투명 Border로 둔다. ContentPresenter만 두면 배경이 없어 화살표 획 자체만
+            // 히트테스트되고, 선을 정확히 짚어야 눌린다. 메인 달력의 일·토 옆 버튼과 같은 방식으로
+            // 버튼 면 전체에서 잡히게 한다.
+            var surface = new FrameworkElementFactory(typeof(Border));
+            surface.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            surface.AppendChild(presenter);
+            return new Button { Content = canvas, Width = 30, Height = 30, Padding = new Thickness(0),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand,
+                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, ToolTip = toolTip,
+                Template = new ControlTemplate(typeof(Button)) { VisualTree = surface } };
+        }
         void ShowLoading(bool show, string message = null) { if (message != null) status.Text = message; loadingOverlay.Visibility = show ? Visibility.Visible : Visibility.Collapsed; }
 
         void SetGameFilter(bool favorites)
@@ -124,23 +277,44 @@ namespace FamilyPlanner
             if (visibleWeeks == weeks) return; visibleWeeks = weeks;
             if (weeks == 4 && month.Year == DateTime.Today.Year && month.Month == DateTime.Today.Month) month = DateTime.Today;
             rangeSwitch.SetSelected(weeks == 0 ? 1 : 0, false);
-            previousPeriodButton.IsEnabled = nextPeriodButton.IsEnabled = weeks != 0; previousPeriodButton.Opacity = nextPeriodButton.Opacity = weeks == 0 ? .38 : 1.0;
             if (IsLoaded) LoadGames(false);
         }
 
-        async void Navigate(int direction)
+        // 메인 달력과 같은 이동 규칙을 쓴다. 한 번 클릭은 한 단계, 더블클릭은 한 기간이다.
+        // 4주 보기: 클릭 1주, 더블클릭 4주. 월 보기: 클릭 한 달, 더블클릭은 첫 클릭이 이미 옮겼으므로 추가 이동 없음.
+        // 메인과 달리 이 창의 이동은 네트워크 조회를 동반한다. 첫 클릭의 조회가 끝나기 전에 두 번째
+        // 클릭이 들어오므로, 두 클릭 모두 같은 원점에서 계산하고 최신 요청만 결과를 반영한다.
+        void BindNavigation(Button button, int direction)
         {
-            var target = visibleWeeks == 0 ? month.AddMonths(direction) : month.AddDays(direction * 7);
+            button.PreviewMouseLeftButtonDown += delegate(object sender, System.Windows.Input.MouseButtonEventArgs e)
+            {
+                e.Handled = true;
+                if (e.ClickCount > 1)
+                {
+                    if (visibleWeeks == 0) return;
+                    NavigateFrom(navigationOrigin, direction * visibleWeeks);
+                    return;
+                }
+                navigationOrigin = month;
+                NavigateFrom(navigationOrigin, direction);
+            };
+        }
+
+        async void NavigateFrom(DateTime origin, int direction)
+        {
+            var request = ++navigationVersion;
+            var target = visibleWeeks == 0 ? origin.AddMonths(direction) : origin.AddDays(direction * 7);
             var targetMonths = RequestedMonths(target); ShowLoading(true, "경기 일정을 확인하는 중입니다…");
             try
             {
                 var targetGames = new List<SportsGame>(); foreach (var requested in targetMonths) targetGames.AddRange(await SportsApi.KboGames(requested.Year, requested.Month, false));
+                if (request != navigationVersion) return;
                 targetGames = targetGames.GroupBy(x => x.Id).Select(x => x.First()).ToList(); var first = DisplayFirst(target); var last = first.AddDays((visibleWeeks == 0 ? 5 : visibleWeeks) * 7 - 1);
                 if (!targetGames.Any(x => x.LocalStart.Date >= first.Date && x.LocalStart.Date <= last.Date)) { status.Text = direction < 0 ? "이전 경기 일정이 없습니다." : "다음 경기 일정이 없습니다."; return; }
                 month = target; games = targetGames; PopulateTeams(); RenderCalendar(); status.Text = monthTitle.Text + " · " + games.Count + "경기";
             }
             catch (Exception ex) { ErrorLog.Write("Navigate KBO games", ex); status.Text = ex.Message; }
-            finally { ShowLoading(false); }
+            finally { if (request == navigationVersion) ShowLoading(false); }
         }
 
         async void LoadGames(bool refresh)
@@ -185,7 +359,7 @@ namespace FamilyPlanner
         void BuildFavoritePopup()
         {
             if (favoritePopup == null) return; favoriteChecks.Clear(); var panel = new StackPanel { Margin = new Thickness(10, 9, 10, 9) };
-            panel.Children.Add(new TextBlock { Text = "응원팀 선택 · 최대 2팀", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#4338CA"), Margin = new Thickness(4, 1, 4, 7) });
+            panel.Children.Add(new TextBlock { Text = "응원팀 선택 · 최대 2팀", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush(OnharuPopupChrome.PrimaryTextColor), Margin = new Thickness(4, 1, 4, 7) });
             foreach (var team in SportsTeamLogoStore.Names.OrderBy(x => x))
             {
                 var selectedTeam = favoriteTeams.Contains(team); var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Height = 24, Margin = new Thickness(7, 0, 0, 0) }; row.Children.Add(TeamSymbol(team, 22)); row.Children.Add(new TextBlock { Text = team, FontSize = 12, Foreground = OnharuPopupChrome.Brush("#0F172A"), Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
@@ -194,8 +368,8 @@ namespace FamilyPlanner
                 check.Unchecked += delegate { if (!favoriteTeams.Remove(team)) return; FavoriteSelectionChanged(); };
                 favoriteChecks[team] = check; panel.Children.Add(check);
             }
-            var footer = new Grid { Margin = new Thickness(0, 8, 0, 0) }; footer.ColumnDefinitions.Add(new ColumnDefinition()); footer.ColumnDefinitions.Add(new ColumnDefinition()); var clear = OnharuPopupChrome.Button("전체 해제", 88, "#F1F5F9", "#64748B"); clear.Margin = new Thickness(0, 0, 4, 0); clear.Click += delegate { favoriteTeams.Clear(); FavoriteSelectionChanged(); }; var done = OnharuPopupChrome.Button("완료", 88, "#4F46E5", "#FFFFFF"); done.Margin = new Thickness(4, 0, 0, 0); done.Click += delegate { favoritePopup.IsOpen = false; }; footer.Children.Add(clear); Grid.SetColumn(done, 1); footer.Children.Add(done); panel.Children.Add(footer);
-            favoritePopup.Child = new Border { Width = 224, Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#C7D2FE"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(4), Child = panel };
+            var footer = new Grid { Margin = new Thickness(0, 8, 0, 0) }; footer.ColumnDefinitions.Add(new ColumnDefinition()); footer.ColumnDefinitions.Add(new ColumnDefinition()); var clear = OnharuPopupChrome.Button("전체 해제", 88, "#FFFFFF", "#64748B"); clear.Margin = new Thickness(0, 0, 4, 0); clear.Click += delegate { favoriteTeams.Clear(); FavoriteSelectionChanged(); }; var done = OnharuPopupChrome.ActionButton("완료", 88); done.FontWeight = FontWeights.Bold; done.Margin = new Thickness(4, 0, 0, 0); done.Click += delegate { favoritePopup.IsOpen = false; }; footer.Children.Add(clear); Grid.SetColumn(done, 1); footer.Children.Add(done); panel.Children.Add(footer);
+            favoritePopup.Child = new Border { Width = 224, Background = Brushes.White, BorderBrush = OnharuPopupChrome.Brush("#D6DCE8"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(4), Child = panel };
         }
         void UpdateFavoriteChecks() { foreach (var pair in favoriteChecks) { var selectedTeam = favoriteTeams.Contains(pair.Key); pair.Value.IsEnabled = selectedTeam || favoriteTeams.Count < 2; if (pair.Value.IsChecked != selectedTeam) pair.Value.IsChecked = selectedTeam; } }
         void FavoriteSelectionChanged() { UpdateFavoritePicker(); UpdateFavoriteChecks(); if (favoriteOnly && favoriteTeams.Count == 0) SetGameFilter(false); else if (IsLoaded) RenderCalendar(); }
@@ -215,7 +389,7 @@ namespace FamilyPlanner
                 dateHeader.MouseLeftButtonUp += delegate { ShowDayGames(date, dayGames); }; panel.Children.Add(dateHeader);
                 foreach (var game in dayGames.Take(5)) panel.Children.Add(GameChoice(game));
                 if (visibleWeeks != 0 && dayGames.Count > 5) { var more = new TextBlock { Text = "+" + (dayGames.Count - 5) + "경기 더보기", FontSize = 9.5 * uiScale, FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#4F46E5"), Cursor = System.Windows.Input.Cursors.Hand, Margin = new Thickness(3, 1, 0, 0) }; more.MouseLeftButtonUp += delegate { ShowDayGames(date, dayGames); }; panel.Children.Add(more); }
-                var cell = new Border { Background = OnharuPopupChrome.Brush(isToday ? "#DCFCE7" : "#FFFFFF"), BorderBrush = OnharuPopupChrome.Brush(isToday ? "#10B981" : "#E2E8F0"), BorderThickness = isToday ? new Thickness(2) : new Thickness(index % 7 == 0 ? 0 : 1, index < 7 ? 1 : 0, 0, 0), Child = panel }; Grid.SetRow(cell, index / 7 + 1); Grid.SetColumn(cell, index % 7); calendar.Children.Add(cell);
+                var cell = new Border { Background = OnharuPopupChrome.Brush(isToday ? OnharuPopupChrome.PrimarySurfaceColor : "#FFFFFF"), BorderBrush = OnharuPopupChrome.Brush(isToday ? OnharuPopupChrome.PrimaryBorderColor : "#E2E8F0"), BorderThickness = isToday ? new Thickness(2) : new Thickness(index % 7 == 0 ? 0 : 1, index < 7 ? 1 : 0, 0, 0), Child = panel }; Grid.SetRow(cell, index / 7 + 1); Grid.SetColumn(cell, index % 7); calendar.Children.Add(cell);
             }
         }
         string DateColor(DateTime date) { return date.Month != month.Month ? "#CBD5E1" : date.DayOfWeek == DayOfWeek.Sunday ? "#EF4444" : date.DayOfWeek == DayOfWeek.Saturday ? "#3B82F6" : "#0F172A"; }
@@ -247,7 +421,7 @@ namespace FamilyPlanner
                 var id = SportsApi.RegistrationId(game); var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(TeamSymbol(game.AwayTeam, 34)); row.Children.Add(new TextBlock { Text = game.AwayTeam, Width = 82, Margin = new Thickness(9, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold }); row.Children.Add(new TextBlock { Text = game.HasScore ? game.AwayScore + "  :  " + game.HomeScore : game.IsCancelled ? "취소" : game.LocalStart.ToString("HH:mm"), Width = 70, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = OnharuPopupChrome.Brush(game.IsCancelled ? "#EF4444" : "#475569"), FontWeight = FontWeights.Bold }); row.Children.Add(TeamSymbol(game.HomeTeam, 34)); row.Children.Add(new TextBlock { Text = game.HomeTeam, Margin = new Thickness(9, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold });
                 var box = new CheckBox { Content = row, IsChecked = selected.ContainsKey(game.Id), IsEnabled = !existingIds.Contains(id), Height = 48, Padding = new Thickness(8, 4, 8, 4), Margin = new Thickness(0, 0, 0, 5), ToolTip = game.Stadium }; box.Checked += delegate { selected[game.Id] = game; }; box.Unchecked += delegate { selected.Remove(game.Id); }; panel.Children.Add(box);
             }
-            var close = OnharuPopupChrome.FooterButton("선택 적용", "#4F46E5", "#FFFFFF"); close.Margin = new Thickness(0, 8, 0, 0); close.Click += delegate { window.Close(); }; panel.Children.Add(close); window.Content = OnharuPopupChrome.Shell(panel); window.Closed += delegate { RenderCalendar(); UpdateRegisterButton(); }; window.ShowDialog();
+            var close = OnharuPopupChrome.ActionButton("선택 적용", double.NaN); close.Margin = new Thickness(0, 8, 0, 0); close.Click += delegate { window.Close(); }; panel.Children.Add(close); window.Content = OnharuPopupChrome.Shell(panel); window.Closed += delegate { RenderCalendar(); UpdateRegisterButton(); }; window.ShowDialog();
         }
         static string TeamShort(string team) { foreach (var name in new[] { "KIA", "SSG", "LG", "KT", "NC", "두산", "삼성", "롯데", "한화", "키움" }) if ((team ?? "").IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0) return name; return string.IsNullOrWhiteSpace(team) ? "?" : team.Substring(0, Math.Min(2, team.Length)); }
         static string TeamColor(string team) { var name = TeamShort(team); if (name == "KIA" || name == "SSG") return "#CE0E2D"; if (name == "LG") return "#C30452"; if (name == "KT") return "#111827"; if (name == "NC") return "#315288"; if (name == "두산") return "#131230"; if (name == "삼성") return "#074CA1"; if (name == "롯데") return "#041E42"; if (name == "한화") return "#F37321"; if (name == "키움") return "#570514"; return "#64748B"; }

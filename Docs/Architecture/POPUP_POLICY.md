@@ -42,6 +42,7 @@
 - 설정의 제품 정보, 카테고리 순서, Google Tasks 경고, 계정 작업, 데이터 형식 선택
 - 로컬 삭제 최종 확인
 - 일기장 읽기의 일기 편집
+- 시간표의 시간표 설정 (`TimetableSettingsWindow`, 2026-09-01 본 창의 접이식 패널에서 분리)
 - KBO의 API 안내·설정 및 날짜별 경기 선택
 - 인쇄의 Windows 인쇄 대화상자
 
@@ -65,7 +66,7 @@ WPF `Popup` 또는 `ContextMenu`를 사용한다. 하나의 선택만 받고 다
 
 ## 부가기능 창 디자인 규칙
 
-- 시간표·일기장·KBO처럼 메인 달력과 함께 쓰는 독립 창은 `OnharuPopupChrome.FeatureTitle`의 34px 아이콘 박스, 20px 굵은 제목, 공통 제목색을 사용한다.
+- 시간표·KBO처럼 메인 달력과 함께 쓰는 독립 창은 `OnharuPopupChrome.FeatureHeading`의 24px 글리프 칸, 21px 굵은 제목, 공통 제목색을 사용한다. 아이콘 박스나 테두리는 두지 않는다. 검색·설정 팝업도 같은 규격이다.
 - 저장·등록처럼 한 화면의 최종 동작은 `PrimaryButton`의 ONHARU 그라데이션을 사용한다. 보조 동작은 공통 `Button`을 사용한다.
 - 둘 이상의 상호배타 보기·정렬 옵션은 개별 버튼을 나열하지 않고 `OnharuSegmentedSwitch`를 사용한다.
 - 날짜 이동의 `« ‹ 제목 › » 오늘` 순서와 23px·27px 탐색 버튼 규격은 메인 달력과 KBO 창에서 동일하게 유지한다.

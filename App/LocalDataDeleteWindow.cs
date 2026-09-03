@@ -79,7 +79,7 @@ namespace FamilyPlanner
             panel.Children.Add(new Border { Background = Brush("#F8FAFC"), BorderBrush = Brush("#E2E8F0"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(6, 5, 2, 5), Child = scroll });
             var buttons = new Grid { Margin = new Thickness(0, 12, 0, 0) }; buttons.ColumnDefinitions.Add(new ColumnDefinition()); buttons.ColumnDefinitions.Add(new ColumnDefinition());
             var cancel = OnharuPopupChrome.FooterButton("취소", "#E2E8F0", "#475569"); cancel.Margin = new Thickness(0, 0, 5, 0); cancel.Click += delegate { DialogResult = false; };
-            var delete = OnharuPopupChrome.FooterButton("🗑  선택 일정 삭제", "#E11D48", "#FFFFFF"); delete.Margin = new Thickness(5, 0, 0, 0); delete.IsEnabled = entries.Count > 0;
+            var delete = OnharuPopupChrome.FooterButton("🗑  선택 일정 삭제", "#FFF1F2", "#BE123C"); delete.BorderBrush = Brush("#FECDD3"); delete.Margin = new Thickness(5, 0, 0, 0); delete.IsEnabled = entries.Count > 0;
             delete.Click += delegate
             {
                 SelectedEntries = rows.Where(x => x.Item1.IsChecked == true).Select(x => x.Item2).ToList();
@@ -116,7 +116,7 @@ namespace FamilyPlanner
             panel.Children.Add(new TextBlock { Text = message, Foreground = Brush("#64748B"), Margin = new Thickness(0, 7, 0, 18) });
             var buttons = new Grid(); buttons.ColumnDefinitions.Add(new ColumnDefinition()); buttons.ColumnDefinitions.Add(new ColumnDefinition());
             var cancel = OnharuPopupChrome.FooterButton("취소", "#E2E8F0", "#475569"); cancel.Margin = new Thickness(0, 0, 5, 0); cancel.Click += delegate { DialogResult = false; };
-            var remove = OnharuPopupChrome.FooterButton("삭제", "#E11D48", "#FFFFFF"); remove.Margin = new Thickness(5, 0, 0, 0); remove.Click += delegate { DialogResult = true; };
+            var remove = OnharuPopupChrome.FooterButton("삭제", "#FFF1F2", "#BE123C"); remove.BorderBrush = Brush("#FECDD3"); remove.Margin = new Thickness(5, 0, 0, 0); remove.Click += delegate { DialogResult = true; };
             buttons.Children.Add(cancel); Grid.SetColumn(remove, 1); buttons.Children.Add(remove); panel.Children.Add(buttons);
             Content = OnharuPopupChrome.Shell(panel);
         }

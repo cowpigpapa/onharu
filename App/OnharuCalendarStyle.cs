@@ -16,19 +16,23 @@ namespace FamilyPlanner
             calendar.LayoutTransform = Transform.Identity;
         }
 
+        // 2026-09-03: 팝업 달력이 따뜻한 코랄·살구·민트 계열이라 ONHARU의 바이올렛·중립 계열과 따로 놀았다.
+        // 바탕과 날짜 칸은 중립으로 두고 오늘·선택만 인터페이스 강조색 `#6D5CC6` 계열을 쓴다.
+        // 연보라 `#EDE9FE`는 검색창 범위 버튼과 같은 값이다.
+        // 이 달력이 뜨는 창은 모두 밝은 팝업(OnharuPopupChrome)이라 스킨을 나누지 않는다.
         internal static Border PopupHost(UIElement content, double padding)
         {
-            return new Border { Background = Brush("#FFF8F2"), BorderBrush = Brush("#D5D8DE"), BorderThickness = new Thickness(1),
+            return new Border { Background = Brush("#FFFFFF"), BorderBrush = Brush("#CBD5E1"), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(12), Padding = new Thickness(padding), Margin = new Thickness(0, 4, 0, 0), Child = content };
         }
 
         internal static Style Create()
         {
             var style = new Style(typeof(Calendar));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, Brush("#FFF8F2")));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, Brush("#FFFFFF")));
             style.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
             style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#6D3B47")));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#334155")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 13.0));
             style.Setters.Add(new Setter(Calendar.CalendarDayButtonStyleProperty, DayStyle()));
             style.Setters.Add(new Setter(Calendar.CalendarButtonStyleProperty, MonthStyle()));
@@ -40,31 +44,31 @@ namespace FamilyPlanner
         {
             var template = new ControlTemplate(typeof(CalendarDayButton));
             var border = new FrameworkElementFactory(typeof(Border)); border.Name = "DayBorder";
-            border.SetValue(Border.BackgroundProperty, Brush("#FFFEFC")); border.SetValue(Border.BorderBrushProperty, Brush("#F3D4C7"));
+            border.SetValue(Border.BackgroundProperty, Brush("#FFFFFF")); border.SetValue(Border.BorderBrushProperty, Brush("#E2E8F0"));
             border.SetValue(Border.BorderThicknessProperty, new Thickness(.6)); border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
             var content = new FrameworkElementFactory(typeof(ContentPresenter)); content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center); border.AppendChild(content); template.VisualTree = border;
             var today = new Trigger { Property = CalendarDayButton.IsTodayProperty, Value = true };
-            today.Setters.Add(new Setter(Border.BackgroundProperty, Brush("#DDF7F0"), "DayBorder")); today.Setters.Add(new Setter(Border.BorderBrushProperty, Brush("#34B89A"), "DayBorder")); template.Triggers.Add(today);
+            today.Setters.Add(new Setter(Border.BackgroundProperty, Brush("#EDE9FE"), "DayBorder")); today.Setters.Add(new Setter(Border.BorderBrushProperty, Brush("#6D5CC6"), "DayBorder")); template.Triggers.Add(today);
             var selected = new Trigger { Property = CalendarDayButton.IsSelectedProperty, Value = true };
-            selected.Setters.Add(new Setter(Border.BackgroundProperty, Brush("#E56B6F"), "DayBorder")); selected.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White)); template.Triggers.Add(selected);
+            selected.Setters.Add(new Setter(Border.BackgroundProperty, Brush("#6D5CC6"), "DayBorder")); selected.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White)); template.Triggers.Add(selected);
             var inactive = new Trigger { Property = CalendarDayButton.IsInactiveProperty, Value = true };
             inactive.Setters.Add(new Setter(Control.OpacityProperty, .38)); template.Triggers.Add(inactive);
             var style = new Style(typeof(CalendarDayButton)); style.Setters.Add(new Setter(Control.TemplateProperty, template));
             style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(1.5))); style.Setters.Add(new Setter(Control.MinWidthProperty, 29.0));
             style.Setters.Add(new Setter(Control.MinHeightProperty, 27.0)); style.Setters.Add(new Setter(Control.FontSizeProperty, 13.0));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#5B3540"))); return style;
+            style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#334155"))); return style;
         }
 
         static Style MonthStyle()
         {
             var template = new ControlTemplate(typeof(CalendarButton));
-            var border = new FrameworkElementFactory(typeof(Border)); border.SetValue(Border.BackgroundProperty, Brush("#FDE8E3"));
+            var border = new FrameworkElementFactory(typeof(Border)); border.SetValue(Border.BackgroundProperty, Brush("#F1F5F9"));
             border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7)); border.SetValue(Border.MarginProperty, new Thickness(2));
             var content = new FrameworkElementFactory(typeof(ContentPresenter)); content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center); border.AppendChild(content); template.VisualTree = border;
             var style = new Style(typeof(CalendarButton)); style.Setters.Add(new Setter(Control.TemplateProperty, template));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#B4474D"))); style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, Brush("#475569"))); style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 13.0)); return style;
         }
 

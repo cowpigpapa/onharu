@@ -93,7 +93,7 @@ namespace FamilyPlanner
             var bodyField = Labeled("본문", body); Grid.SetRow(bodyField, 4); root.Children.Add(bodyField);
 
             var footer = new DockPanel { Margin = new Thickness(0, 18, 0, 0), Height = 36, LastChildFill = false };
-            var save = OnharuPopupChrome.Button("저장", 54, "#171717", "#FFFFFF"); save.Height = 36; save.FontWeight = FontWeights.Bold; DockPanel.SetDock(save, Dock.Right); footer.Children.Add(save);
+            var save = OnharuPopupChrome.Button("저장", 54, "#4338CA", "#FFFFFF"); save.Height = 36; save.FontWeight = FontWeights.Bold; DockPanel.SetDock(save, Dock.Right); footer.Children.Add(save);
             var cancel = OnharuPopupChrome.Button("취소", 54, "#FFFFFF", "#171717"); cancel.Height = 36; cancel.BorderBrush = Brush("#E8E4E0"); cancel.Margin = new Thickness(0, 0, 8, 0); cancel.Click += delegate { Close(); }; DockPanel.SetDock(cancel, Dock.Right); footer.Children.Add(cancel);
             save.Click += delegate
             {

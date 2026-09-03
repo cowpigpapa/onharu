@@ -66,6 +66,27 @@ namespace FamilyPlanner
             if (!input.AcceptsReturn) host.SetValue(ScrollViewer.VerticalAlignmentProperty, VerticalAlignment.Center);
             border.AppendChild(host);
             input.Template = new ControlTemplate(typeof(TextBox)) { VisualTree = border };
+            SelectAllOnFocus(input);
+        }
+
+        // 짧은 값을 받는 칸은 눌렀을 때 기존 값을 통째로 선택한다. 그래야 값을 지우거나
+        // 더블클릭하지 않고 바로 새 값을 칠 수 있다. 이미 그 칸을 쓰고 있을 때의 클릭은
+        // 커서 옮기기라 건드리지 않는다. 여러 줄 칸은 글을 쓰는 곳이라 제외한다.
+        // AcceptsReturn을 나중에 켜는 칸이 있어 판단을 실행 시점으로 미룬다.
+        public static void SelectAllOnFocus(TextBox input) { SelectAllOnFocus(input, false); }
+
+        // alwaysSelect는 줄바꿈을 받지만 값 자체는 짧은 칸을 위한 것이다. 시간표의 과목 칸이
+        // 여기에 해당한다. 칸이 좁아 줄바꿈을 허용할 뿐 글을 쓰는 곳이 아니다.
+        public static void SelectAllOnFocus(TextBox input, bool alwaysSelect)
+        {
+            if (input == null) return;
+            input.GotKeyboardFocus += delegate { if (alwaysSelect || !input.AcceptsReturn) input.SelectAll(); };
+            input.PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (input.IsKeyboardFocusWithin) return;
+                if (!alwaysSelect && input.AcceptsReturn) return;
+                e.Handled = true; input.Focus();
+            };
         }
 
         public static Border EmphasizePopup(Border shell)
@@ -122,7 +143,7 @@ namespace FamilyPlanner
             menu.ItemContainerStyle = itemStyle;
         }
 
-        public static void SoftenScrollBars(DependencyObject root)
+        public static void SoftenScrollBars(DependencyObject root, bool alignVerticalRight = false)
         {
             if (Application.Current != null && !Application.Current.Resources.Contains("OnharuScrollThumb"))
                 Application.Current.Resources["OnharuScrollThumb"] = new SolidColorBrush(Color.FromRgb(165, 180, 252));
@@ -136,7 +157,7 @@ namespace FamilyPlanner
                 {
                     var horizontal = bar.Orientation == Orientation.Horizontal;
                     if (horizontal) { bar.Height = 10; bar.Margin = new Thickness(3, 2, 3, 2); }
-                    else { bar.Width = 9; bar.Margin = new Thickness(2, 3, 2, 3); }
+                    else { bar.Width = 9; bar.Margin = alignVerticalRight ? new Thickness(4, 3, 0, 3) : new Thickness(2, 3, 2, 3); }
                     bar.Background = Brushes.Transparent; bar.BorderThickness = new Thickness(0);
                     var orientation = horizontal ? "Horizontal" : "Vertical";
                     var reversed = horizontal ? "False" : "True";
@@ -146,7 +167,7 @@ namespace FamilyPlanner
                 }
                 var thumb = child as Thumb;
                 if (thumb != null) thumb.BorderThickness = new Thickness(0);
-                SoftenScrollBars(child);
+                SoftenScrollBars(child, alignVerticalRight);
             }
         }
     }

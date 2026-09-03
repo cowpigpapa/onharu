@@ -163,7 +163,7 @@ namespace FamilyPlanner
             var element = parent as FrameworkElement;
             var googleSyncAction = element != null && element.Tag as string == "google_sync";
             var sidebarToggle = element != null && element.Tag as string == "toggle_sidebar";
-            var taggedAction = element != null && (element.Tag as string == "open_pending_sync" || googleSyncAction);
+            var taggedAction = element != null && (element.Tag as string == "toggle_section" || googleSyncAction);
             var contentAction = element != null && (element.Tag is DateTime || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget);
             var closeButton = element != null && element.Tag as string == "close_button";
             var positionModeAction = element is Button && HasAncestorTag(element, "position_mode");

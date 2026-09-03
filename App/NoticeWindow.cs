@@ -12,10 +12,11 @@ namespace FamilyPlanner
             Title = "온하루"; Width = 400; SizeToContent = SizeToContent.Height; WindowStartupLocation = WindowStartupLocation.CenterOwner;
             WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ResizeMode = ResizeMode.NoResize;
             var panel = new StackPanel { Margin = new Thickness(26, 20, 26, 18) };
-            panel.Children.Add(OnharuPopupChrome.Header(this, warning ? "!  확인이 필요합니다" : "✓  " + (string.IsNullOrWhiteSpace(heading) ? "안내" : heading), warning ? "#C2410C" : "#4338CA"));
+            panel.Children.Add(OnharuPopupChrome.Header(this, warning ? "!  " + (string.IsNullOrWhiteSpace(heading) ? "확인이 필요합니다" : heading) : "✓  " + (string.IsNullOrWhiteSpace(heading) ? "안내" : heading), warning ? "#DC2626" : "#4338CA"));
             panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap,
                 Foreground = Brush("#475569"), FontSize = 13, Margin = new Thickness(0, 11, 0, 14) });
-            var ok = OnharuPopupChrome.FooterButton("확인", warning ? "#FFF7ED" : "#4F46E5", warning ? "#C2410C" : "#FFFFFF");
+            var ok = OnharuPopupChrome.FooterButton("확인", warning ? "#FFF1F2" : "#4338CA", warning ? "#BE123C" : "#FFFFFF");
+            if (warning) ok.BorderBrush = Brush("#FECDD3");
             ok.Click += delegate { DialogResult = true; }; panel.Children.Add(ok);
             Content = OnharuPopupChrome.Shell(panel);
         }

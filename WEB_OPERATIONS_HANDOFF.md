@@ -1,6 +1,6 @@
 # ONHARU 웹 운영 인수인계
 
-최종 갱신: 2026-08-27
+최종 갱신: 2026-09-03
 
 ## 운영 환경
 
@@ -52,7 +52,8 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 
 ## 현재 릴리스
 
-- 개발 버전: `2.2.6-test` 로컬 시험 중. 홈페이지의 기존 2.2.5 시험판과 GitHub Latest·정식 다운로드 2.2.4는 유지한다.
+- 확정 정식 버전: `2.2.5`(2026-09-03). 아직 게시하지 않았다. 홈페이지의 시험판 파일과 GitHub Latest·정식 다운로드는 게시 전까지 2.2.4와 옛 시험판 그대로다.
+- 정식 2.2.5를 게시할 때 `ONHARU-2.2.5-Test-*`와 `ONHARU-2.2.6-Test-*` 시험판 파일을 함께 정리한다. 같은 번호의 다른 파일이 남으면 사용자가 혼동한다.
 
 - 공개 버전: `2.2.4`
 - 공식 릴리스: `https://github.com/cowpigpapa/onharu/releases/tag/v2.2.4`
@@ -77,6 +78,12 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 
 ## 최근 백업과 상태
 
+- 2026-09-03 사용자 제공 기준과 로컬 파일을 대조한 뒤 커밋 `9ba28f5` 시험판을 게시했다. 기준 EXE는 735,232 bytes, 2026-09-03 01:08:23 빌드, SHA-256 `427F5F4F36435ACC9FBF12F78DF00BAAC2F5F5C50B324DDE9FCB5892E9E78105`이며 워킹트리는 게시 시작 시 깨끗했다. 설치판 SHA-256은 `21A165C4C15BCA86D8F3AD9830B07C92C709C97DBB4E884906AA6BC931F4B942`, 포터블은 `7370466D2E28428B9296B20833A537B3A3340A333C03C7A00C43D3E8A6A5E1BC`다. 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.6-9ba28f5-20260903-0200.tar.gz`. 공개 재다운로드 해시와 다운로드 페이지의 커밋·해시·`v=20260903-1` 표시를 확인했고 Nginx는 active다.
+
+- 2026-09-02 08:53 현재 공유 작업 트리의 C# 소스에서 시험본을 직접 재빌드해 웹 시험판을 다시 교체했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.6-rebuilt-test-20260902-0900.tar.gz`이다. 설치판 SHA-256은 `8848BA7D13B617C2E4E1A6D037BDCF5A49ED338A44894B76151C2CE09583CDF9`, 포터블은 `456C9379BD00E01D45BC07C1D42884409B7D87B8716EEED597024E3E9A72B6F1`이다. 외부 재다운로드 해시, 다운로드 페이지의 `v=20260902-2` 캐시 키와 해시 문구, Nginx active를 확인했다. 아래 08:05 게시본은 이 빌드로 대체됐다.
+
+- 2026-09-02 Claude Code의 마지막 시험 코드를 2.2.6 시험판으로 다시 게시했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.6-latest-test-20260902-0805.tar.gz`이다. 설치판은 2,417,313 bytes, SHA-256 `6108BA63E52B40FF22E5FEE313F008BD808A83CB324C57CF2178091971C85691`; 포터블은 499,397 bytes, SHA-256 `C5F50E0DA9A66B1D25170B92B7B7212455C205290B2E30CD905D264618624D13`이다. 공개 재다운로드 해시 일치, 10개 페이지 HTTP 200, 다운로드 페이지의 해시·캐시 키 표시를 확인했다. 게시 전 확인에서 Nginx가 2026-09-01 06:30 UTC부터 API Gateway 호스트의 일시적 DNS 조회 실패로 중지된 상태임을 발견했다. 현재 DNS와 `nginx -t`가 정상임을 확인하고 서비스를 재시작했으며 설정 파일은 변경하지 않았다.
+
 - 2.2.1 게시 전 백업: `/home/ubuntu/onharu-web-backups/site-before-2.2.1-20260824-001401.tar.gz`
 - 2026-08-24 기준 9개 공개 페이지 모두 HTTP 200 확인
 - 2.2.1 설치판·포터블판의 서버 해시와 공개 파일 크기 확인 완료
@@ -90,6 +97,8 @@ scp -i "D:\Downloads\AWS_connectKey.pem" "설치 파일" ubuntu@13.125.205.54:/v
 - 공개 10개 페이지 HTTP 200과 onharu.app에서 재다운로드한 Setup·Portable의 SHA-256 일치를 확인했다.
 - 2026-08-27 2.2.4 설치판·포터블·다운로드 페이지·릴리스 노트를 게시했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.4-20260826-213048.tar.gz`이다.
 - 공개 10개 페이지 HTTP 200, Nginx active, onharu.app에서 재다운로드한 Setup·Portable의 SHA-256 일치를 확인했다.
+- 2026-09-01 기념일 펼침 상태의 추가 버튼 크기를 고정한 2.2.6 시험판을 다시 게시했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.6-test-refresh-20260901-0812.tar.gz`이다. 설치판 SHA-256은 `1BE0DA5A30AF11425E43B46F2DD9156C9D22F393D8CFA3D08ED7CE84FD7EB98C`, 포터블은 `4C27F6FC563C112A3FD538A1A123DBF313FC0AA11A94C4D3021197308912BBE4`이며 공개 재다운로드 해시 일치와 10개 페이지 HTTP 200을 확인했다.
+- 2026-09-01 Clay 디자인을 시간표에 한정 적용한 2.2.6 시험판을 다시 게시했다. 게시 전 백업은 `/home/ubuntu/onharu-web-backups/site-before-2.2.6-clay-timetable-20260901-1330.tar.gz`이다. 설치판 SHA-256은 `60A0D2E8A27F8BD5E50F2CE85F4E810C4F1167124591EA48E3D2E90D934E25E1`, 포터블은 `5C3EABDFE9EBA619126345973F16125E7D275DA1AADFB92143D39005D6B297D3`이며 공개 재다운로드 해시 일치와 10개 페이지 HTTP 200을 확인했다.
 
 ## 운영 주의사항
 

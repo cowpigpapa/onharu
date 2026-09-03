@@ -29,7 +29,7 @@ namespace FamilyPlanner
             var footer = new Grid { Margin = new Thickness(0, 15, 0, 0) }; footer.ColumnDefinitions.Add(new ColumnDefinition()); footer.ColumnDefinitions.Add(new ColumnDefinition());
             var remove = OnharuPopupChrome.FooterButton("API 키 삭제", "#FFF1F2", "#BE123C"); remove.Margin = new Thickness(0, 0, 5, 0); remove.IsEnabled = SportsApiKeyStore.HasKey;
             remove.Click += delegate { SportsApiKeyStore.Delete(); keyBox.Clear(); remove.IsEnabled = false; status.Text = "API 키를 삭제했습니다."; }; footer.Children.Add(remove);
-            var connect = OnharuPopupChrome.FooterButton(SportsApiKeyStore.HasKey ? "새 API 키 연결" : "API 키 연결", "#4F46E5", "#FFFFFF"); connect.Margin = new Thickness(5, 0, 0, 0);
+            var connect = OnharuPopupChrome.ActionButton(SportsApiKeyStore.HasKey ? "새 API 키 연결" : "API 키 연결", double.NaN); connect.Margin = new Thickness(5, 0, 0, 0);
             connect.Click += async delegate
             {
                 var key = keyBox.Password.Trim();
@@ -61,7 +61,7 @@ namespace FamilyPlanner
                 panel.Children.Add(new TextBlock { Text = line, FontSize = 13, Foreground = OnharuPopupChrome.Brush("#334155"), Margin = new Thickness(0, 0, 0, 9), TextWrapping = TextWrapping.Wrap });
             panel.Children.Add(new Border { Background = OnharuPopupChrome.Brush("#FFFBEB"), BorderBrush = OnharuPopupChrome.Brush("#FDE68A"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(11), Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(0, 4, 0, 10), Child = new TextBlock { Text = "월별 첫 조회와 새로고침에서만 크레딧을 사용하고 이후에는 PC 캐시를 사용합니다. 이 서비스는 KBO의 공식 개발자 API가 아닌 공개 일정의 관리형 연동 서비스입니다.", Foreground = OnharuPopupChrome.Brush("#92400E"), TextWrapping = TextWrapping.Wrap, FontSize = 11.5 } });
             panel.Children.Add(new TextBlock { Text = "사이트 주소", FontWeight = FontWeights.SemiBold, Foreground = OnharuPopupChrome.Brush("#475569"), Margin = new Thickness(0, 0, 0, 4) });
-            var open = OnharuPopupChrome.FooterButton("https://parse.bot/marketplace · KBO Schedule API  ↗", "#4F46E5", "#FFFFFF");
+            var open = OnharuPopupChrome.ActionButton("https://parse.bot/marketplace · KBO Schedule API  ↗", double.NaN);
             open.Click += delegate { Process.Start(new ProcessStartInfo("https://parse.bot/marketplace/94785380-1559-45df-a2b8-58bad46be68a/koreabaseball-com-api") { UseShellExecute = true }); }; panel.Children.Add(open);
             Content = OnharuPopupChrome.Shell(panel);
         }

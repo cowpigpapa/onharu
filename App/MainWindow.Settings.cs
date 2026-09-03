@@ -25,7 +25,7 @@ namespace FamilyPlanner
                 settings.CalendarOrderMode, settings.ImportantFirst, settings.MultiDayFirst, settings.CompletedLast, settings.Use24HourTime, settings.ShowWeekNumbers, settings.WeekNumberRule, settings.WeekStartDay, settings.RestDays,
                 settings.PastelEventStyle, settings.AutoSyncMinutes, settings.GoogleCalendars,
                 GoogleCalendar.IsConnected, settings.AllowDragMove, settings.AllowLocalDragMove, settings.AllowGoogleDragMove, settings.AllowDetailCardDrag, settings.AllowSpecialCardDrag,
-                localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.BackupFolder, backupCount, settings.CategoryOrder,
+                localItems.Count, settings.ShowLunar, settings.ShowSolarTerms, settings.ShowMoonPhase, settings.MoonPhaseDisplayMode, settings.BackupFolder, backupCount, settings.CategoryOrder,
                 settings.CustomPalette, settings.CustomPalettePastelStyle, settings.PaletteNames, settings.SavedPalettes, settings.SelectedPaletteIndex, settings.RandomizePaletteOnStartup,
                 settings.SelectedDateStyle,
                 settings.SelectedDateFillColor, settings.SelectedDateBorderColor, settings.TodayColor, settings.TodayStyle, settings.TodayBorderColor, settings.DefaultCalendarKey, settings.DefaultAllDay,
@@ -35,7 +35,7 @@ namespace FamilyPlanner
                 settings.ShowSearchIcon, settings.ShowRangeSwitch, settings.ShowThemeSwitch, settings.ShowPositionSwitch,
                 settings.HolidayVisible, settings.LocalBaseballEnabled, settings.DdayEnabled, settings.AnniversaryEnabled,
                 settings.LocalBusinessEnabled, settings.LocalPersonalEnabled, settings.LocalBaseballEnabled, settings.DdayEnabled, settings.AnniversaryEnabled,
-                settings.EnableButtonColorTool);
+                settings.DetailDateFormat, settings.ShowFullColorPalette);
             PlacementTrace.Write("SETTINGS ui-created ms=" + settingsWatch.ElapsedMilliseconds);
             window.PrintRequested += delegate
             {
@@ -53,18 +53,12 @@ namespace FamilyPlanner
             if (!settingsAccepted) return;
             var googleTasksChanged = settings.ShowGoogleTasks != window.ShowGoogleTasks;
             var baseballFeatureEnabled = !settings.UseProBaseball && window.UseProBaseball;
-            var ddayColorChanged = !string.Equals(Colors["D-Day"], window.DdayColor, StringComparison.OrdinalIgnoreCase);
             Colors["업무일정"] = window.BusinessColor; Colors["개인일정"] = window.PersonalColor;
             Colors["야구"] = window.BaseballColor; Colors["D-Day"] = window.DdayColor;
             Colors["기념일"] = window.AnniversaryColor; Colors["국경일"] = window.HolidayColor;
             settings.BusinessColor = window.BusinessColor; settings.PersonalColor = window.PersonalColor;
             settings.BaseballColor = window.BaseballColor; settings.DdayColor = window.DdayColor;
             settings.AnniversaryColor = window.AnniversaryColor; settings.HolidayColor = window.HolidayColor;
-            if (ddayColorChanged && settings.ButtonColorOverrides != null)
-            {
-                settings.ButtonColorOverrides.Remove("classic|automation:OnharuDetailCard:special:D-Day");
-                settings.ButtonColorOverrides.Remove("dark|automation:OnharuDetailCard:special:D-Day");
-            }
             settings.FontSize = window.SelectedFontSize; settings.CalendarOrderMode = window.OrderMode;
             settings.ImportantFirst = window.ImportantFirst;
             settings.MultiDayFirst = window.MultiDayFirst;
@@ -90,9 +84,12 @@ namespace FamilyPlanner
             if (!temporaryMonthView && shownMonth == default(DateTime)) shownMonth = DateTime.Today;
             settings.ShowLunar = window.ShowLunar;
             settings.ShowSolarTerms = window.ShowSolarTerms;
+            settings.ShowMoonPhase = window.ShowMoonPhase;
+            settings.MoonPhaseDisplayMode = window.MoonPhaseDisplayMode;
+            settings.DetailDateFormat = window.DetailDateFormat;
             settings.UseTimetable = window.UseTimetable;
             settings.UseDiary = window.UseDiary;
-            settings.UseRollover = window.UseRollover;
+            settings.UseRollover = false;
             settings.ShowIncompleteTodoButton = window.ShowIncompleteTodoButton;
             settings.ShowOverflowPopupWithSidebar = window.ShowOverflowPopupWithSidebar;
             settings.IncompleteTodoLookbackMonths = window.IncompleteTodoLookbackMonths;
@@ -118,8 +115,7 @@ namespace FamilyPlanner
             settings.DdayPanelVisible = window.DdayCategoryVisible;
             settings.AnniversaryVisible = window.AnniversaryCategoryVisible;
             settings.AutomaticUpdateChecks = window.AutomaticUpdateChecks;
-            settings.EnableButtonColorTool = window.EnableButtonColorTool;
-            TemporarySegmentPaletteTool.Enabled = settings.EnableButtonColorTool;
+            settings.ShowFullColorPalette = window.ShowFullColorPalette;
             settings.ThemeId = OnharuThemePalette.Normalize(window.ThemeId);
             foreach (var source in settings.GoogleCalendars.Where(x => GoogleTasks.IsSource(x.Id))) source.Editable = false;
             if (timetableButton != null) timetableButton.Visibility = settings.UseTimetable ? Visibility.Visible : Visibility.Collapsed;
@@ -129,7 +125,6 @@ namespace FamilyPlanner
             if (calendarRangeSwitch != null) calendarRangeSwitch.Visibility = settings.ShowRangeSwitch ? Visibility.Visible : Visibility.Collapsed;
             if (themeQuickSwitch != null) themeQuickSwitch.Visibility = settings.ShowThemeSwitch ? Visibility.Visible : Visibility.Collapsed;
             if (positionModeSwitch != null) positionModeSwitch.Visibility = settings.ShowPositionSwitch ? Visibility.Visible : Visibility.Collapsed;
-            if (!settings.UseDiary && diaryReaderWindow != null) diaryReaderWindow.Close();
             diaryDates.Clear(); diaryDatesLoaded = false;
             settings.SelectedDateStyle = window.SelectedDateStyle;
             settings.SelectedDateFillColor = window.SelectedDateFillColor;
@@ -137,7 +132,6 @@ namespace FamilyPlanner
             settings.TodayColor = window.TodayColor;
             settings.TodayStyle = window.TodayStyle;
             settings.TodayBorderColor = window.TodayIconColor;
-            UpdateTodayButtonStyle();
             settings.BackupFolder = window.BackupFolder;
             settings.PastelEventStyle = window.PastelEventStyle;
             settings.AutoSyncMinutes = window.AutoSyncMinutes;

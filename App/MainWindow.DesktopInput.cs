@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace FamilyPlanner
@@ -59,11 +60,15 @@ namespace FamilyPlanner
                 var check = current as CheckBox;
                 if (check != null) { target = check; targetElement = check; break; }
                 var element = current as FrameworkElement;
-                if (element != null && (element.Tag as string == "open_pending_sync" || element.Tag as string == "google_sync" || element.Tag as string == "open_anniversary")) { target = element.Tag; targetElement = element; break; }
-                if (element != null && (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget)) { target = element.Tag; break; }
+                if (element != null && (element.Tag as string == "google_sync" || element.Tag as string == "toggle_section")) { target = element.Tag; targetElement = element; break; }
+                if (element != null && (element.Tag is DateTime || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget)) { target = element.Tag; break; }
                 current = VisualTreeHelper.GetParent(current);
             }
-            if (weekCountOverlay != null && !IsInside(targetElement, weekCountOverlay)) CloseWeekCountOverlay();
+            // 기간 스위치를 다시 누르면 스위치 자신의 `Clicked`가 토글로 닫는다. 여기서 먼저 닫아 버리면
+            // 이어지는 RaiseEvent(Click)이 `weekCountOverlay == null`을 보고 다시 열어, 고정 상태에서만
+            // 두 번째 클릭이 먹히지 않았다(2026-09-03 사용자 확인). 이동 상태는 이 경로를 타지 않아 정상이었다.
+            if (weekCountOverlay != null && !IsInside(targetElement, weekCountOverlay)
+                && !IsInside(targetElement, calendarRangeSwitch)) CloseWeekCountOverlay();
             if (doubleClick) target = target ?? lastDesktopClickTarget;
             else lastDesktopClickTarget = target;
 
@@ -82,12 +87,28 @@ namespace FamilyPlanner
                 {
                     HandleCalendarNavigationClick(navigation == "calendar_previous" ? -1 : 1, doubleClick); return;
                 }
+                if (navigation == "calendar_edge_previous" || navigation == "calendar_edge_next")
+                {
+                    HandleCalendarEdgeNavigationClick(navigation == "calendar_edge_previous" ? -1 : 1, doubleClick); return;
+                }
                 if (doubleClick)
                 {
                     // Explorer can deliver WM_LBUTTONDBLCLK without a fresh
                     // WM_LBUTTONDOWN action when clicks are close together.
                     // Ensure the palette opens, but never toggle an already
                     // open palette closed on the second half of a double-click.
+                    //
+                    // 2026-09-03: 기간 스위치는 반대다. 두 번째 클릭이 토글로 닫는 것이 정상 동작인데,
+                    // 빠르게 두 번 누르면 그 클릭이 더블클릭으로 와서 여기서 삼켜졌다. 사용자에게는
+                    // `가끔 한 번씩 안 먹는` 것으로 보였다. 천천히 누르면 두 번 다 단일 클릭이라 잘 됐다.
+                    // 스위치는 더블클릭의 두 번째 절반도 보통 클릭으로 흘려보낸다.
+                    if (IsInside(targetButton, calendarRangeSwitch))
+                    {
+                        FlashDesktopButton(targetButton);
+                        targetButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent, targetButton));
+                        if (positionLocked) SchedulePublish();
+                        return;
+                    }
                     if (targetButton == dateColorButton && dateColorPalette != null &&
                         dateColorPalette.Visibility != Visibility.Visible)
                     {
@@ -108,8 +129,14 @@ namespace FamilyPlanner
             var targetSlider = target as Slider;
             if (targetSlider != null && !doubleClick) { AdjustDesktopOpacity(packedPoint, true, true); return; }
             if (target as string == "google_sync" && !doubleClick) { GoogleClick(null, null); return; }
-            if (target as string == "open_pending_sync" && !doubleClick) { OpenPendingSync(null, null); SchedulePublish(); return; }
-            if (target as string == "open_anniversary" && !doubleClick) { OpenAnniversary(null); return; }
+            // 사이드바 그룹 머리글은 Button이 아니라 TextBlock이라 이동 상태에서만 동작했다.
+            // 고정 상태에서는 이 경로로 같은 MouseLeftButtonUp을 대신 올려 준다.
+            if (target as string == "toggle_section" && !doubleClick && targetElement != null)
+            {
+                targetElement.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
+                { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
+                SchedulePublish(); return;
+            }
             var targetCheck = target as CheckBox;
             if (targetCheck != null)
             {
@@ -125,13 +152,6 @@ namespace FamilyPlanner
             {
                 if (doubleClick) { selectedDate = ((DateTime)target).Date; detailMode = "selected"; AddItem(null, null); }
                 else SelectDateFast((DateTime)target);
-                return;
-            }
-            var diaryDateTarget = target as DiaryDateHitTarget;
-            if (diaryDateTarget != null)
-            {
-                if (doubleClick) { selectedDate = diaryDateTarget.Date; detailMode = "selected"; OpenDiaryEditor(selectedDate); }
-                else SelectDateFast(diaryDateTarget.Date);
                 return;
             }
             var targetItem = target as PlannerItem;
@@ -301,8 +321,8 @@ namespace FamilyPlanner
                 var nested = FindDesktopElement(root, child, point);
                 if (nested != null) return nested;
                 if (child is Button || child is CheckBox || child is Slider) return child;
-                if (element.Tag as string == "open_pending_sync") return child;
-                if (element.Tag is DateTime || element.Tag is DiaryDateHitTarget || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget) return child;
+                if (element.Tag as string == "toggle_section") return child;
+                if (element.Tag is DateTime || element.Tag is PlannerItem || element.Tag is ItemHitTarget || element.Tag is DetailGroupHitTarget) return child;
             }
             return null;
         }

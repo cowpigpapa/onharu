@@ -31,7 +31,7 @@ namespace FamilyPlanner
             if (content == null || content.Length == 0) throw new InvalidOperationException("보낼 일정이 없습니다.");
             if (content.Length > 1024 * 1024) throw new InvalidOperationException("메일 첨부 파일은 1MB까지 보낼 수 있습니다.");
             var request = new Request { Recipient = recipient, FileName = fileName, ContentType = contentType,
-                ContentBase64 = Convert.ToBase64String(content), ItemCount = itemCount, ClientVersion = "2.2.6-test", GoogleIdToken = googleIdToken };
+                ContentBase64 = Convert.ToBase64String(content), ItemCount = itemCount, ClientVersion = "2.2.5", GoogleIdToken = googleIdToken };
             byte[] json;
             using (var stream = new MemoryStream())
             { new DataContractJsonSerializer(typeof(Request)).WriteObject(stream, request); json = stream.ToArray(); }
